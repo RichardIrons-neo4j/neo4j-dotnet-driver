@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
+using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.Messaging;
 using Neo4j.Driver.Internal.Protocol;
 
@@ -27,53 +29,78 @@ internal sealed class FailureMessageSerializer : ReadOnlySerializer, IPackStream
 
     public override object Deserialize(
         BoltProtocolVersion boltProtocolVersion,
-        PackStreamReader reader,
+        PackStreamReader packStreamReader,
         byte _,
         long __)
     {
-        var values = reader.ReadMap();
-        var code = values["code"]?.ToString();
-        var message = values["message"]?.ToString();
-
-        // codes were fixed in bolt 5, so we need to interpret these codes.
-        if (boltProtocolVersion.MajorVersion < 5)
-        {
-            if (code == "Neo.TransientError.Transaction.Terminated")
-            {
-                code = "Neo.ClientError.Transaction.Terminated";
-            }
-
-            if (code == "Neo.TransientError.Transaction.LockClientStopped")
-            {
-                code = "Neo.ClientError.Transaction.LockClientStopped";
-            }
-        }
-
-        return new FailureMessage(code, message);
+        var values = packStreamReader.ReadMap();
+        var majorVersion = boltProtocolVersion.MajorVersion;
+        return BuildFailureMessage(values, majorVersion);
     }
 
     public IResponseMessage DeserializeMessage(
-        BoltProtocolVersion formatVersion,
+        BoltProtocolVersion boltProtocolVersion,
         SpanPackStreamReader packStreamReader)
     {
         var values = packStreamReader.ReadMap();
-        var code = values["code"]?.ToString();
-        var message = values["message"]?.ToString();
+        var majorVersion = boltProtocolVersion.MajorVersion;
+        return BuildFailureMessage(values, majorVersion);
+    }
 
-        // codes were fixed in bolt 5, so we need to interpret these codes.
-        if (formatVersion.MajorVersion < 5)
+    private static FailureMessage BuildFailureMessage(IReadOnlyDictionary<string, object> values, int majorVersion)
+    {
+        FailureMessage response = new();
+        foreach (var (key, value) in values)
         {
-            if (code == "Neo.TransientError.Transaction.Terminated")
+            switch (key)
             {
-                code = "Neo.ClientError.Transaction.Terminated";
-            }
+                case "neo4j_code":
+                case "code":
+                    response.Code = FixCodeForBolt5(majorVersion, value?.ToString() ?? string.Empty);
+                    break;
 
-            if (code == "Neo.TransientError.Transaction.LockClientStopped")
-            {
-                code = "Neo.ClientError.Transaction.LockClientStopped";
+                case "message":
+                    response.Message = value?.ToString();
+                    break;
+
+                case "gql_status":
+                    response.GqlStatus = value?.ToString();
+                    break;
+
+                case "description":
+                    response.GqlStatusDescription = value?.ToString();
+                    break;
+
+                case "diagnostic_record":
+                    response.GqlDiagnosticRecord = (Dictionary<string, object>)value;
+                    break;
+
+                case "cause":
+                    response.GqlCause = BuildFailureMessage((Dictionary<string, object>)value, majorVersion);
+                    break;
+
+                default:
+                    throw new ProtocolException($"Unexpected key: {key} in FAILURE message.");
             }
         }
 
-        return new FailureMessage(code, message);
+        GqlErrors.FillGqlDefaults(response);
+        return response;
+    }
+
+    private static string FixCodeForBolt5(int majorVersion, string code)
+    {
+        // codes were fixed in bolt 5, so we need to interpret these codes.
+        if (majorVersion >= 5)
+        {
+            return code;
+        }
+
+        return code switch
+        {
+            "Neo.TransientError.Transaction.Terminated" => "Neo.ClientError.Transaction.Terminated",
+            "Neo.TransientError.Transaction.LockClientStopped" => "Neo.ClientError.Transaction.LockClientStopped",
+            _ => code
+        };
     }
 }

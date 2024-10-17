@@ -267,4 +267,17 @@ internal static class CollectionExtensions
 
         return true;
     }
+
+    public static void FillMissingFrom<TKey, TValue>(
+        this IDictionary<TKey, TValue> dict,
+        IDictionary<TKey, TValue> other)
+    {
+        foreach (var key in other.Keys)
+        {
+            if (!dict.ContainsKey(key))
+            {
+                dict[key] = other[key];
+            }
+        }
+    }
 }

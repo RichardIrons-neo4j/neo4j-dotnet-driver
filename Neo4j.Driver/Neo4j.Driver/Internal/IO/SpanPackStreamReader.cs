@@ -48,41 +48,22 @@ internal ref struct SpanPackStreamReader
 
     private object ReadValue(PackStreamType streamType)
     {
-        switch (streamType)
+        return streamType switch
         {
-            case PackStreamType.Bytes:
-                return ReadBytes();
-
-            case PackStreamType.Null:
-                return ReadNull();
-
-            case PackStreamType.Boolean:
-                return ReadBoolean();
-
-            case PackStreamType.Integer:
-                return ReadLong();
-
-            case PackStreamType.Float:
-                return ReadDouble();
-
-            case PackStreamType.String:
-                return ReadString();
-
-            case PackStreamType.Map:
-                return ReadMap();
-
-            case PackStreamType.List:
-                return ReadList();
-
-            case PackStreamType.Struct:
-                return ReadStruct();
-
-            default:
-                throw new ArgumentOutOfRangeException(
-                    nameof(streamType),
-                    streamType,
-                    $"Unknown value type: {streamType}");
-        }
+            PackStreamType.Bytes => ReadBytes(),
+            PackStreamType.Null => ReadNull(),
+            PackStreamType.Boolean => ReadBoolean(),
+            PackStreamType.Integer => ReadLong(),
+            PackStreamType.Float => ReadDouble(),
+            PackStreamType.String => ReadString(),
+            PackStreamType.Map => ReadMap(),
+            PackStreamType.List => ReadList(),
+            PackStreamType.Struct => ReadStruct(),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(streamType),
+                streamType,
+                $"Unknown value type: {streamType}")
+        };
     }
 
     internal PackStreamType PeekNextType()
@@ -92,17 +73,11 @@ internal ref struct SpanPackStreamReader
 
         switch (markerHighNibble)
         {
-            case PackStream.TinyString:
-                return PackStreamType.String;
-
-            case PackStream.TinyList:
-                return PackStreamType.List;
-
-            case PackStream.TinyMap:
-                return PackStreamType.Map;
-
-            case PackStream.TinyStruct:
-                return PackStreamType.Struct;
+            case PackStream.TinyString: return PackStreamType.String;
+            case PackStream.TinyList: return PackStreamType.List;
+            case PackStream.TinyMap: return PackStreamType.Map;
+            case PackStream.TinyStruct: return PackStreamType.Struct;
+            default: break; // otherwise continue processing
         }
 
         if ((sbyte)markerByte >= PackStream.Minus2ToThe4)
@@ -110,51 +85,19 @@ internal ref struct SpanPackStreamReader
             return PackStreamType.Integer;
         }
 
-        switch (markerByte)
+        return markerByte switch
         {
-            case PackStream.Null:
-                return PackStreamType.Null;
-
-            case PackStream.True:
-            case PackStream.False:
-                return PackStreamType.Boolean;
-
-            case PackStream.Float64:
-                return PackStreamType.Float;
-
-            case PackStream.Bytes8:
-            case PackStream.Bytes16:
-            case PackStream.Bytes32:
-                return PackStreamType.Bytes;
-
-            case PackStream.String8:
-            case PackStream.String16:
-            case PackStream.String32:
-                return PackStreamType.String;
-
-            case PackStream.List8:
-            case PackStream.List16:
-            case PackStream.List32:
-                return PackStreamType.List;
-
-            case PackStream.Map8:
-            case PackStream.Map16:
-            case PackStream.Map32:
-                return PackStreamType.Map;
-
-            case PackStream.Struct8:
-            case PackStream.Struct16:
-                return PackStreamType.Struct;
-
-            case PackStream.Int8:
-            case PackStream.Int16:
-            case PackStream.Int32:
-            case PackStream.Int64:
-                return PackStreamType.Integer;
-
-            default:
-                throw new ProtocolException($"Unknown type 0x{markerByte:X2}");
-        }
+            PackStream.Null => PackStreamType.Null,
+            PackStream.True or PackStream.False => PackStreamType.Boolean,
+            PackStream.Float64 => PackStreamType.Float,
+            PackStream.Bytes8 or PackStream.Bytes16 or PackStream.Bytes32 => PackStreamType.Bytes,
+            PackStream.String8 or PackStream.String16 or PackStream.String32 => PackStreamType.String,
+            PackStream.List8 or PackStream.List16 or PackStream.List32 => PackStreamType.List,
+            PackStream.Map8 or PackStream.Map16 or PackStream.Map32 => PackStreamType.Map,
+            PackStream.Struct8 or PackStream.Struct16 => PackStreamType.Struct,
+            PackStream.Int8 or PackStream.Int16 or PackStream.Int32 or PackStream.Int64 => PackStreamType.Integer,
+            _ => throw new ProtocolException($"Unknown type 0x{markerByte:X2}")
+        };
     }
 
     private IList<object> ReadList(int length)
@@ -239,17 +182,12 @@ internal ref struct SpanPackStreamReader
     public bool ReadBoolean()
     {
         var marker = NextByte();
-        if (marker == PackStream.True)
+        return marker switch
         {
-            return true;
-        }
-
-        if (marker == PackStream.False)
-        {
-            return false;
-        }
-
-        throw new ProtocolException($"Expected an boolean, but got: 0x{marker:X2}");
+            PackStream.True => true,
+            PackStream.False => false,
+            _ => throw new ProtocolException($"Expected an boolean, but got: 0x{marker:X2}")
+        };
     }
 
     public int ReadInteger()

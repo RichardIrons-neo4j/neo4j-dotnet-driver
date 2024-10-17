@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using Neo4j.Driver.Internal.IO;
 using Neo4j.Driver.Internal.IO.MessageSerializers;
 using Neo4j.Driver.Internal.MessageHandling;
@@ -21,15 +22,58 @@ namespace Neo4j.Driver.Internal.Messaging;
 
 internal sealed class FailureMessage : IResponseMessage
 {
+    public FailureMessage()
+    {
+    }
+
     public FailureMessage(string code, string message)
     {
         Code = code;
         Message = message;
     }
 
-    public string Code { get; }
+    /// <summary>
+    /// Code is the Neo4j-specific error code, to be deprecated in favor of GqlStatus.
+    /// </summary>
+    public string Code { get; set; }
 
-    public string Message { get; }
+    /// <summary>
+    /// The specific error message describing the failure.
+    /// </summary>
+    public string Message { get; set; }
+
+    /// <summary>
+    /// Returns the GQLSTATUS.
+    /// </summary>
+    public string GqlStatus { get; set; }
+
+    /// <summary>
+    /// Provides a standard description for the associated GQLStatus code.
+    /// </summary>
+    public string GqlStatusDescription { get; set; }
+
+    /// <summary>
+    /// A high-level categorization of the error, specific to GQL error handling.
+    /// </summary>
+    public string GqlClassification { get; set; }
+
+    /// <summary>
+    /// The raw classification as received from the server.
+    /// </summary>
+    public string GqlRawClassification { get; set; }
+
+    /// <summary>
+    /// GqlDiagnosticRecord returns further information about the status for diagnostic purposes.
+    /// GqlDiagnosticRecord is part of the GQL compliant errors preview feature.
+    /// </summary>
+    public Dictionary<string, object> GqlDiagnosticRecord { get; set; }
+
+    /// <summary>
+    /// GqlCause represents the underlying error, if any, which caused the current error.
+    /// GqlCause is part of the GQL compliant errors preview feature
+    /// (see README on what it means in terms of support and compatibility guarantees)
+    /// </summary>
+    public FailureMessage GqlCause { get; set; }
 
     public void Dispatch(IResponsePipeline pipeline)
     {
@@ -42,4 +86,6 @@ internal sealed class FailureMessage : IResponseMessage
     {
         return $"FAILURE code={Code}, message={Message}";
     }
+
+
 }
