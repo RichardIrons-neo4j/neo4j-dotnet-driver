@@ -75,6 +75,7 @@ public class Neo4jException : Exception
     /// Initializes a new instance of the <see cref="Neo4jException"/> class using the specified <see cref="FailureMessage"/>.
     /// </summary>
     /// <param name="failureMessage">The failure message containing error details.</param>
+    /// <param name="innerException">The inner exception.</param>
     internal Neo4jException(FailureMessage failureMessage, Exception innerException = null)
         : base(failureMessage.Message, innerException)
     {
