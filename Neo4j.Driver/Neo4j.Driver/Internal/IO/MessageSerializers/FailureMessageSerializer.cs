@@ -47,9 +47,9 @@ internal sealed class FailureMessageSerializer : ReadOnlySerializer, IPackStream
         return BuildFailureMessage(values, majorVersion);
     }
 
-    private static FailureMessage BuildFailureMessage(IReadOnlyDictionary<string, object> values, int majorVersion)
+    internal static FailureMessage BuildFailureMessage(IReadOnlyDictionary<string, object> values, int majorVersion)
     {
-        FailureMessage response = new();
+        var response = new FailureMessage();
         foreach (var (key, value) in values)
         {
             switch (key)
@@ -68,6 +68,7 @@ internal sealed class FailureMessageSerializer : ReadOnlySerializer, IPackStream
                     break;
 
                 case "description":
+
                     response.GqlStatusDescription = value?.ToString();
                     break;
 

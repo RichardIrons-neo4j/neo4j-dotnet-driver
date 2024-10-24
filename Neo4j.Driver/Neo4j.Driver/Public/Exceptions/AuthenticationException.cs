@@ -15,8 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Runtime.Serialization;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -33,6 +35,11 @@ public class AuthenticationException : SecurityException
     /// </summary>
     /// <param name="message">The error message.</param>
     public AuthenticationException(string message) : base(message)
+    {
+    }
+
+    internal AuthenticationException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }

@@ -17,6 +17,7 @@ using System;
 using System.IO;
 using System.Net.Sockets;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver.Internal;
 
@@ -24,9 +25,9 @@ internal static class ErrorExtensions
 {
     private static Neo4jExceptionFactory _exceptionFactory = new();
 
-    public static Neo4jException ParseServerException(string code, string message)
+    public static Neo4jException ParseServerException(FailureMessage failureMessage)
     {
-        return _exceptionFactory.GetException(code, message);
+        return _exceptionFactory.GetException(failureMessage);
     }
 
     public static bool CanBeRetried(this Exception error)

@@ -16,7 +16,9 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -27,10 +29,72 @@ namespace Neo4j.Driver;
 public class Neo4jException : Exception
 {
     /// <summary>
+    /// Gets or sets the GQL status of the exception.
+    /// </summary>
+    public string GqlStatus { get; set; }
+
+    /// <summary>
+    /// Gets or sets the GQL status description of the exception.
+    /// </summary>
+    public string GqlStatusDescription { get; set; }
+
+    /// <summary>
+    /// Gets or sets the GQL classification of the exception.
+    /// </summary>
+    public string GqlClassification { get; set; }
+
+    /// <summary>
+    /// The raw classification as received from the server.
+    /// </summary>
+    public string GqlRawClassification { get; set; }
+
+    /// <summary>
+    /// GqlDiagnosticRecord returns further information about the status for diagnostic purposes.
+    /// GqlDiagnosticRecord is part of the GQL compliant errors preview feature.
+    /// </summary>
+    public Dictionary<string, object> GqlDiagnosticRecord { get; set; }
+
+    /// <summary>
+    /// Gets whether the exception retriable or not.
+    /// </summary>
+    public virtual bool IsRetriable => false;
+
+    /// <summary>
+    /// Gets or sets the code of a Neo4j exception.
+    /// </summary>
+    public string Code { get; set; }
+
+    /// <summary>
     /// Create a new <see cref="Neo4jException"/>
     /// </summary>
     public Neo4jException()
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Neo4jException"/> class using the specified <see cref="FailureMessage"/>.
+    /// </summary>
+    /// <param name="failureMessage">The failure message containing error details.</param>
+    internal Neo4jException(FailureMessage failureMessage, Exception innerException = null)
+        : base(failureMessage.Message, innerException)
+    {
+        Code = failureMessage.Code;
+        GqlStatus = failureMessage.GqlStatus;
+        GqlStatusDescription = failureMessage.GqlStatusDescription;
+        GqlClassification = failureMessage.GqlClassification;
+        GqlRawClassification = failureMessage.GqlRawClassification;
+        GqlDiagnosticRecord = failureMessage.GqlDiagnosticRecord;
+    }
+
+    internal static Neo4jException Create(FailureMessage failureMessage)
+    {
+        Exception innerException = null;
+        if (failureMessage.GqlCause is not null)
+        {
+            innerException = Create(failureMessage.GqlCause);
+        }
+
+        return new Neo4jException(failureMessage, innerException);
     }
 
     /// <summary>
@@ -74,13 +138,5 @@ public class Neo4jException : Exception
         Code = code;
     }
 
-    /// <summary>
-    /// Gets whether the exception retriable or not.
-    /// </summary>
-    public virtual bool IsRetriable => false;
 
-    /// <summary>
-    /// Gets or sets the code of a Neo4j exception.
-    /// </summary>
-    public string Code { get; set; }
 }

@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver.Internal.MessageHandling;
 
@@ -25,7 +26,7 @@ internal interface IResponsePipeline
     void Enqueue(IResponseHandler handler);
     void OnSuccess(IDictionary<string, object> metadata);
     void OnRecord(object[] fieldValues);
-    void OnFailure(string code, string message);
+    void OnFailure(FailureMessage failureMessage);
     void OnIgnored();
     void AssertNoFailure();
     void AssertNoProtocolViolation();

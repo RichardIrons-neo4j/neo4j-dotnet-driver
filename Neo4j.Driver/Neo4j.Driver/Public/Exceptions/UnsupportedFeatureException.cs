@@ -13,7 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Runtime.Serialization;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -32,6 +34,11 @@ public class UnsupportedFeatureException : ClientException
     /// </summary>
     /// <param name="message">The error message</param>
     internal UnsupportedFeatureException(string message) : base(message)
+    {
+    }
+
+    internal UnsupportedFeatureException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }

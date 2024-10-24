@@ -17,6 +17,7 @@
 
 using System;
 using System.Runtime.Serialization;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -29,6 +30,11 @@ public class SecurityException : Neo4jException
 {
     internal bool Notified = false;
     internal bool Retriable = false;
+
+    internal SecurityException(FailureMessage failureMessage, Exception innerException) : base(failureMessage,
+        innerException)
+    {
+    }
 
     /// <summary>
     /// Create a new <see cref="SecurityException"/> with an error message.

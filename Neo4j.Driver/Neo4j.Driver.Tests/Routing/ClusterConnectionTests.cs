@@ -19,6 +19,7 @@ using FluentAssertions;
 using Moq;
 using Neo4j.Driver.Internal;
 using Neo4j.Driver.Internal.Connector;
+using Neo4j.Driver.Internal.Messaging;
 using Neo4j.Driver.Internal.Routing;
 using Xunit;
 
@@ -67,7 +68,7 @@ public class ClusterConnectionTests
             var clusterConn =
                 new ClusterConnection(CreateConnectionWithMode(AccessMode.Read), Uri, handlerMock.Object);
 
-            var inError = ErrorExtensions.ParseServerException(code, null);
+            var inError = ErrorExtensions.ParseServerException(new FailureMessage(code, "random error"));
             var outError = await Record.ExceptionAsync(() => clusterConn.OnErrorAsync(inError));
             outError.Should().BeOfType<ClientException>();
             handlerMock.Verify(x => x.OnConnectionErrorAsync(Uri, null, inError), Times.Never);
@@ -83,7 +84,7 @@ public class ClusterConnectionTests
             var clusterConn =
                 new ClusterConnection(CreateConnectionWithMode(AccessMode.Write), Uri, handlerMock.Object);
 
-            var inError = ErrorExtensions.ParseServerException(code, null);
+            var inError = ErrorExtensions.ParseServerException(new FailureMessage(code, "random error"));
             var outError = await Record.ExceptionAsync(() => clusterConn.OnErrorAsync(inError));
             outError.Should().BeOfType<SessionExpiredException>();
             handlerMock.Verify(x => x.OnConnectionErrorAsync(Uri, null, inError), Times.Never);

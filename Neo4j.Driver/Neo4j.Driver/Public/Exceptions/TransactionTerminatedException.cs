@@ -15,6 +15,7 @@
 
 using System;
 using System.Runtime.Serialization;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -31,6 +32,11 @@ public sealed class TransactionTerminatedException : ClientException
 
     internal TransactionTerminatedException(Exception inner) :
         base((inner as Neo4jException)?.Code, inner.Message, inner)
+    {
+    }
+
+    internal TransactionTerminatedException(FailureMessage failureMessage, Exception innerException) :
+        base(failureMessage, innerException)
     {
     }
 }

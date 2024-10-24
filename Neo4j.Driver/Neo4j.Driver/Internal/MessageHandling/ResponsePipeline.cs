@@ -79,11 +79,11 @@ internal sealed class ResponsePipeline : IResponsePipeline
         handler.OnRecord(fieldValues);
     }
 
-    public void OnFailure(string code, string message)
+    public void OnFailure(FailureMessage failureMessage)
     {
-        LogFailure(code, message);
+        LogFailure(failureMessage.Code, failureMessage.Message);
         var handler = Dequeue();
-        _error = new ResponsePipelineError(ErrorExtensions.ParseServerException(code, message));
+        _error = new ResponsePipelineError(ErrorExtensions.ParseServerException(failureMessage));
         handler.OnFailure(_error);
     }
 

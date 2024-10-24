@@ -15,7 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Runtime.Serialization;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -31,6 +33,11 @@ public class ValueTruncationException : ClientException
     /// </summary>
     /// <param name="message">The error message.</param>
     public ValueTruncationException(string message) : base(message)
+    {
+    }
+
+    internal ValueTruncationException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }

@@ -45,6 +45,6 @@ public class FailureMessageTests
         var message = new FailureMessage("e.g.Code", "e.g.Message");
         message.Dispatch(mockPipeline.Object);
 
-        mockPipeline.Verify(x => x.OnFailure("e.g.Code", "e.g.Message"));
+        mockPipeline.Verify(x => x.OnFailure(message));
     }
 }

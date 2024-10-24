@@ -77,7 +77,7 @@ internal sealed class FailureMessage : IResponseMessage
 
     public void Dispatch(IResponsePipeline pipeline)
     {
-        pipeline.OnFailure(Code, Message);
+        pipeline.OnFailure(this);
     }
 
     public IPackStreamSerializer Serializer => FailureMessageSerializer.Instance;

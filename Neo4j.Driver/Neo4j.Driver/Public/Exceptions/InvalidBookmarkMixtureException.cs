@@ -15,7 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -30,6 +32,11 @@ public class InvalidBookmarkMixtureException : ClientException
     /// </summary>
     /// <param name="message">The error message.</param>
     public InvalidBookmarkMixtureException(string message) : base(message)
+    {
+    }
+
+    internal InvalidBookmarkMixtureException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }

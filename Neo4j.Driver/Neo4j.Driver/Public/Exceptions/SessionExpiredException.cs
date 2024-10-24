@@ -17,6 +17,7 @@
 
 using System;
 using System.Runtime.Serialization;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -46,6 +47,11 @@ public class SessionExpiredException : Neo4jException
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
     public SessionExpiredException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+    internal SessionExpiredException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }

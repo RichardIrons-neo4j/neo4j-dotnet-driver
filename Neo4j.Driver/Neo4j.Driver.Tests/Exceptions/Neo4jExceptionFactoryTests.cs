@@ -17,14 +17,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.Messaging;
 using Xunit;
 
 namespace Neo4j.Driver.Tests.Exceptions;
 
 public class Neo4jExceptionFactoryTests
 {
+    [SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible")]
     public static IEnumerable<object[]> CodeToTypeMapping = new[]
     {
         new object[] { "Neo.ClientError.Statement.ArgumentError", typeof(StatementArgumentException) },
@@ -47,7 +50,7 @@ public class Neo4jExceptionFactoryTests
     public void ShouldCreateCorrectExceptionType(string code, Type exceptionType)
     {
         var subject = new Neo4jExceptionFactory();
-        var exception = subject.GetException(code, "test message");
+        var exception = subject.GetException(new FailureMessage(code, "test message"));
         exception.Should().BeOfType(exceptionType);
         exception.Code.Should().Be(code);
         exception.Message.Should().Be("test message");

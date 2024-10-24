@@ -242,7 +242,7 @@ public class ResponsePipelineTests
             var pipeline = CreatePipelineWithHandler(log.Object);
             var (code, message) = ("Neo.TransientError.Transaction.Terminated", "transaction terminated.");
 
-            pipeline.OnFailure(code, message);
+            pipeline.OnFailure(new FailureMessage(code, message));
 
             log.Verify(
                 x => x.Debug(
@@ -260,7 +260,7 @@ public class ResponsePipelineTests
             var pipeline = CreatePipelineWithHandler(log.Object);
             var (code, message) = ("Neo.TransientError.Transaction.Terminated", "transaction terminated.");
 
-            pipeline.OnFailure(code, message);
+            pipeline.OnFailure(new FailureMessage(code, message));
 
             log.Verify(x => x.Debug("S: {0}", It.IsAny<object[]>()), Times.Never);
         }
@@ -273,7 +273,7 @@ public class ResponsePipelineTests
 
             pipeline.HasNoPendingMessages.Should().BeFalse();
 
-            pipeline.OnFailure(code, message);
+            pipeline.OnFailure(new FailureMessage(code, message));
 
             pipeline.HasNoPendingMessages.Should().BeTrue();
         }
@@ -287,7 +287,7 @@ public class ResponsePipelineTests
             var handler = new Mock<IResponseHandler>();
             pipeline.Enqueue(handler.Object);
 
-            pipeline.OnFailure(code, message);
+            pipeline.OnFailure(new FailureMessage(code, message));
 
             handler.Verify(
                 x => x.OnFailure(It.IsNotNull<ResponsePipelineError>()),
@@ -300,7 +300,7 @@ public class ResponsePipelineTests
             var pipeline = CreatePipelineWithHandler();
             var (code, message) = ("Neo.TransientError.Transaction.Terminated", "transaction terminated.");
 
-            pipeline.OnFailure(code, message);
+            pipeline.OnFailure(new FailureMessage(code, message));
 
             var exc = Record.Exception(() => pipeline.AssertNoFailure());
 
@@ -317,7 +317,7 @@ public class ResponsePipelineTests
             var pipeline = CreatePipelineWithHandler();
             var (code, message) = ("Neo.TransientError.Transaction.Terminated", "transaction terminated.");
 
-            pipeline.OnFailure(code, message);
+            pipeline.OnFailure(new FailureMessage(code, message));
 
             var exc = Record.Exception(() => pipeline.AssertNoProtocolViolation());
 
@@ -333,7 +333,7 @@ public class ResponsePipelineTests
             var handler = new Mock<IResponseHandler>();
             pipeline.Enqueue(handler.Object);
 
-            pipeline.OnFailure(code, message);
+            pipeline.OnFailure(new FailureMessage(code, message));
 
             var exc = Record.Exception(() => pipeline.AssertNoProtocolViolation());
 
@@ -403,7 +403,7 @@ public class ResponsePipelineTests
         {
             var pipeline = CreatePipelineWithHandler();
             var (code, message) = ("Neo.TransientError.Transaction.Terminated", "transaction terminated.");
-            pipeline.OnFailure(code, message);
+            pipeline.OnFailure(new FailureMessage(code, message));
 
             var handler = new Mock<IResponseHandler>();
             pipeline.Enqueue(handler.Object);

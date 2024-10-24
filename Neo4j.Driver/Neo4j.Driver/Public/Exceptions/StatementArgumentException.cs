@@ -15,8 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Runtime.Serialization;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -32,6 +34,11 @@ public class StatementArgumentException : ClientException
     /// </summary>
     /// <param name="message">The error message.</param>
     public StatementArgumentException(string message) : base(message)
+    {
+    }
+
+    internal StatementArgumentException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }

@@ -15,7 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -33,5 +35,10 @@ public class TokenExpiredException : SecurityException
     public TokenExpiredException(string message) : base(message)
     {
 
+    }
+
+    internal TokenExpiredException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
+    {
     }
 }

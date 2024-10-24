@@ -18,6 +18,7 @@
 using System;
 using System.Runtime.Serialization;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -71,6 +72,11 @@ public class ClientException : Neo4jException
     /// <param name="innerException">The inner exception.</param>
     public ClientException(string code, string message, Exception innerException)
         : base(code, message, innerException)
+    {
+    }
+
+    internal ClientException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }

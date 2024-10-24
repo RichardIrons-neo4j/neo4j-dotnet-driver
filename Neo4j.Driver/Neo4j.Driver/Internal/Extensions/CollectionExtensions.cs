@@ -280,4 +280,25 @@ internal static class CollectionExtensions
             }
         }
     }
+
+    public static void OverwriteFrom<TKey, TValue>(
+        this IDictionary<TKey, TValue> dict,
+        params (TKey key, TValue value)[] pairs)
+    {
+        OverwriteFrom(dict, default, pairs);
+    }
+
+    public static void OverwriteFrom<TKey, TValue>(
+        this IDictionary<TKey, TValue> dict,
+        TValue ignoreValue,
+        params (TKey key, TValue value)[] pairs)
+    {
+        foreach (var (key, value) in pairs)
+        {
+            if (!Equals(value, ignoreValue))
+            {
+                dict[key] = value;
+            }
+        }
+    }
 }

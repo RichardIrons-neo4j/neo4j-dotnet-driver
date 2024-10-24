@@ -20,12 +20,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Neo4j.Driver.Internal.Helpers;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver.Internal.ExceptionHandling;
 
 internal class Neo4jExceptionFactory
 {
-    private record FactoryInfo(string Code, Func<string, string, Exception, Neo4jException> ExceptionFactory);
+    private record FactoryInfo(string Code, Func<FailureMessage, Exception, Neo4jException> ExceptionFactory);
+
     private readonly List<FactoryInfo> _exceptionFactories = new();
     private readonly SimpleWildcardHelper _simpleWildcardHelper = new();
 
@@ -79,36 +81,45 @@ internal class Neo4jExceptionFactory
     {
         foreach (var (code, type) in codesAndExceptions)
         {
-            Func<string, string, Exception, Neo4jException> factory;
-            if (type.GetConstructor(new[] { typeof(string), typeof(string), typeof(Exception) }) is {} threeParamCtr)
+            var ctor = type.GetConstructor(
+                BindingFlags.NonPublic | BindingFlags.Instance,
+                null,
+                [typeof(FailureMessage), typeof(Exception)],
+                null);
+
+            if (ctor is not null)
             {
-                factory = (c, m, x) => (Neo4jException)threeParamCtr.Invoke(new object[] { c, m, x });
-            }
-            else if (type.GetConstructor(new[] { typeof(string), typeof(Exception) }) is {} twoParamCtr)
-            {
-                factory = (_, m, x) => (Neo4jException)twoParamCtr.Invoke(new object[] { m, x });
-            }
-            else if (type.GetConstructor(new[] { typeof(string) }) is {} oneParamCtr)
-            {
-                factory = (_, m, _) => (Neo4jException)oneParamCtr.Invoke(new object[] { m });
+                // create a factory function that will create the exception
+                Neo4jException Factory(FailureMessage message, Exception inner)
+                {
+                    return (Neo4jException)ctor.Invoke([message, inner]);
+                }
+
+                _exceptionFactories.Add(new FactoryInfo(code, Factory));
             }
             else
             {
-                continue;
+                throw new Neo4jException(
+                    $"Neo4jException type {type.FullName} does not have a constructor that takes " +
+                    $"a {nameof(FailureMessage)} and an {nameof(Exception)}");
             }
 
-            _exceptionFactories.Add(new FactoryInfo(code, factory));
         }
     }
 
-    public Neo4jException GetException(string code, string message, Exception innerException = null)
+    public Neo4jException GetException(FailureMessage failureMessage)
     {
-        var factoryInfo = _exceptionFactories.FirstOrDefault(f => _simpleWildcardHelper.StringMatches(code, f.Code));
-        var exception = factoryInfo is null
-            ? new Neo4jException(code, message, innerException)
-            : factoryInfo.ExceptionFactory(code, message, innerException);
+        var factoryInfo =
+            _exceptionFactories.FirstOrDefault(f => _simpleWildcardHelper.StringMatches(failureMessage.Code, f.Code));
 
-        exception.Code = code;
+        if (factoryInfo is null)
+        {
+            return Neo4jException.Create(failureMessage);
+        }
+
+        var innerException = failureMessage.GqlCause != null ? GetException(failureMessage.GqlCause) : null;
+
+        var exception = factoryInfo.ExceptionFactory(failureMessage, innerException);
         return exception;
     }
 }

@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using Moq;
 using Neo4j.Driver.Internal.IO;
 using Neo4j.Driver.Internal.MessageHandling;
+using Neo4j.Driver.Internal.Messaging;
 using Neo4j.Driver.Internal.Protocol;
 using Xunit;
 
@@ -182,7 +183,7 @@ public class InMemoryPipelinedMessageReaderTests
         var pipeline = MockPipeline();
         await pipereader.ReadAsync(pipeline.Object, new MessageFormat(BoltProtocolVersion.V5_0,
             TestDriverContext.MockContext));
-        pipeline.Verify(x => x.OnFailure("a", "b"), Times.Once);
+        pipeline.Verify(x => x.OnFailure(It.IsAny<FailureMessage>()), Times.Once);
         pipeline.Verify(x => x.OnIgnored(), Times.Never);
     }
 

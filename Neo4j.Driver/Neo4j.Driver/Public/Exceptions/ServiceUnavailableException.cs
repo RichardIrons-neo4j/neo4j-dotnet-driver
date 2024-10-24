@@ -17,6 +17,7 @@
 
 using System;
 using System.Runtime.Serialization;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -43,6 +44,11 @@ public class ServiceUnavailableException : Neo4jException
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
     public ServiceUnavailableException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+    internal ServiceUnavailableException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }

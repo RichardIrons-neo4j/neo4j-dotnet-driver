@@ -18,6 +18,7 @@
 using System;
 using System.Runtime.Serialization;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver;
 
@@ -61,6 +62,11 @@ public class DatabaseException : Neo4jException
     /// <param name="innerException">The inner exception which caused this error.</param>
     public DatabaseException(string code, string message, Exception innerException)
         : base(code, message, innerException)
+    {
+    }
+
+    internal DatabaseException(FailureMessage failureMessage, Exception innerException)
+        : base(failureMessage, innerException)
     {
     }
 }
