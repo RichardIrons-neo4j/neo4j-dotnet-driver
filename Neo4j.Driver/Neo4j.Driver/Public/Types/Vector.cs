@@ -80,12 +80,9 @@ public abstract class Vector : IValue, IVector, IEquatable<IVector>
     /// <exception cref="NotSupportedException">Thrown if <typeparamref name="T"/> is not a supported type.</exception>
     public static Vector<T> Create<T>(T[] values, byte[] originalByteStream = null) where T : struct
     {
-        if (!IsSupported(typeof(T)))
-        {
-            throw new NotSupportedException($"Type {typeof(T).Name} is not supported for Vector.");
-        }
-
-        return new Vector<T>(values, originalByteStream);
+        return !IsSupported(typeof(T))
+            ? throw new NotSupportedException($"Type {typeof(T).Name} is not supported for Vector.")
+            : new Vector<T>(values, originalByteStream);
     }
 
     private static readonly MethodInfo CreateMethodInfo = typeof(Vector).GetMethod(nameof(Create));
