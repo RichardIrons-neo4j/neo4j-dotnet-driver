@@ -14,12 +14,9 @@
 // limitations under the License.
 
 using System.Buffers;
-using System.Collections.Generic;
 using System.IO.Pipelines;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Neo4j.Driver.Bolt.Transport;
+namespace Neo4j.Driver.Bolt.Transport.Abstractions;
 
 /// <summary>
 /// Assembles Bolt protocol chunks from a byte source into complete message payloads. Each yielded

@@ -19,9 +19,5 @@
         </PackageReference>
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Neo4j.Generators\Neo4j.Generators.csproj"/>
-    </ItemGroup>
-
 
 </Project>

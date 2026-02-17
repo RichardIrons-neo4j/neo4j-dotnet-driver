@@ -3,9 +3,8 @@ using System.IO.Pipelines;
 using FluentAssertions;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using Neo4j.Driver.Bolt.Transport;
+using Neo4j.Driver.Bolt.Transport.Implementations;
 using NUnit.Framework;
-using Chunk = byte[];
-using ChunkSet = byte[][];
 
 namespace Neo4j.Driver.Bolt.Tests;
 
@@ -24,7 +23,7 @@ public class ChunkAssemblerTests
 
         var sequence = new ReadOnlySequence<byte>(bytes);
         var reader = PipeReader.Create(sequence);
-        var assembler = new ChunkAssembler();
+        var assembler = new ChunkAssembler(new ConsoleLogger());
         byte[] expectedBytes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         // Act
@@ -56,8 +55,92 @@ public class ChunkAssemblerTests
         var messages = await TestMessageAssembly(chunks);
 
         // Assert
+        var messageResults = messages.ToArray();
+        messageResults.Should().HaveCount(1);
+        messageResults[0].ToArray().Should().BeEquivalentTo(expectedMessage);
+    }
+
+    [Test]
+    public async Task ThrowsOnIncompleteHeader()
+    {
+        byte[] bytes = [0x00]; // Only 1 byte of header
+        var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
+        var assembler = new ChunkAssembler(new ConsoleLogger());
+        
+        var act = async () =>  await assembler.ReadMessagesAsync(reader).ToListAsync();
+
+        await act.Should().ThrowAsync<ProtocolException>();
+    }
+    
+    [Test]
+    public async Task ThrowsOnIncompleteBody()
+    {
+        // Header says 10 bytes, only 2 provided
+        byte[] bytes = [0x00, 0x0A, 0x01, 0x02];
+        var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
+        var assembler = new ChunkAssembler(new ConsoleLogger());
+    
+        var act = async () => await assembler.ReadMessagesAsync(reader).ToListAsync();
+    
+        await act.Should().ThrowAsync<ProtocolException>();
+    }
+    
+    [Test]
+    public async Task HandlesZeroLengthMessage()
+    {
+        byte[] bytes = [0x00, 0x00]; // Message size = 0
+        var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
+        var assembler = new ChunkAssembler(new ConsoleLogger());
+    
+        var messages = await assembler.ReadMessagesAsync(reader).ToListAsync();
+    
         messages.Should().HaveCount(1);
-        messages[0].ToArray().Should().BeEquivalentTo(expectedMessage);
+        messages[0].Length.Should().Be(0);
+    }
+    
+    [Test]
+    public async Task HandlesEmptyPipe()
+    {
+        var reader = PipeReader.Create(new ReadOnlySequence<byte>([]));
+        var assembler = new ChunkAssembler(new ConsoleLogger());
+    
+        var messages = await assembler.ReadMessagesAsync(reader).ToListAsync();
+    
+        messages.Should().BeEmpty();
+    }
+    
+    [Test]
+    public async Task ThrowsOnCancellation()
+    {
+        var pipe = new Pipe();
+        var assembler = new ChunkAssembler(new ConsoleLogger());
+        using var cts = new CancellationTokenSource();
+    
+        var readTask = assembler.ReadMessagesAsync(pipe.Reader, cts.Token).ToListAsync();
+    
+        // Cancel before any data arrives
+        cts.Cancel();
+    
+        var act = async () => await readTask;
+    
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+    
+    [Test]
+    public async Task ThrowsOnIncompleteSecondMessage()
+    {
+        // First message complete, second message incomplete
+        byte[] bytes =
+        [
+            0x00, 0x02, 0xAA, 0xBB, // Complete message (2 bytes)
+            0x00, 0x05, 0x01        // Incomplete message (header says 5, only 1 provided)
+        ];
+        var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
+        var assembler = new ChunkAssembler(new ConsoleLogger());
+    
+        var act = async () => await assembler.ReadMessagesAsync(reader).ToListAsync();
+    
+        await act.Should().ThrowAsync<ProtocolException>();
     }
 
     [TestCaseSource(nameof(GetChunkingTestCases))]
@@ -72,6 +155,38 @@ public class ChunkAssemblerTests
         {
             messages[i].ToArray().Should().BeEquivalentTo(testCase.ExpectedMessages[i]);
         }
+    }
+
+    private static List<MessageChunkingTestCase> GetChunkingTestCases()
+    {
+        const int numMessages = 5;
+        const int minMessageSize = 0;
+        const int maxMessageSize = 5;
+        const int maxSplits = 3;
+        const int minChunkSize = 5;
+
+        List<byte[]> messages = [];
+        var byteArrayBuilder = new ByteArrayBuilder();
+        for (var m = 0; m < numMessages; m++)
+        {
+            var messageSize = Random.Shared.Next(minMessageSize, maxMessageSize + 1);
+            var message = new byte[messageSize];
+            Random.Shared.NextBytes(message);
+            messages.Add(message);
+            byteArrayBuilder = byteArrayBuilder.PackStreamMessage(message);
+        }
+
+        // now we have a long byte array with all the messages packed in it
+        var bytes = byteArrayBuilder.ToArray();
+        var chunkSets = CreateChunkSets(bytes, maxSplits, minChunkSize).ToArray();
+
+        return chunkSets
+            .Select(chunkSet => new MessageChunkingTestCase()
+            {
+                ExpectedMessages = messages.ToArray(),
+                Chunks = chunkSet
+            })
+            .ToList();
     }
 
     public class MessageChunkingTestCase
@@ -95,44 +210,13 @@ public class ChunkAssemblerTests
         }
     }
 
-    private static List<MessageChunkingTestCase> GetChunkingTestCases()
+    private static List<byte[][]> CreateChunkSets(Memory<byte> bytes, int parts, int minSize = 1)
     {
-        const int numMessages = 5;
-        const int minMessageSize = 0;
-        const int maxMessageSize = 2;
-        const int maxSplits = 2;
-
-        List<byte[]> messages = [];
-        var byteArrayBuilder = new ByteArrayBuilder();
-        for (var m = 0; m < numMessages; m++)
-        {
-            var messageSize = Random.Shared.Next(minMessageSize, maxMessageSize + 1);
-            var message = new byte[messageSize];
-            Random.Shared.NextBytes(message);
-            messages.Add(message);
-            byteArrayBuilder = byteArrayBuilder.PackStreamMessage(message);
-        }
-
-        // now we have a long byte array with all the messages packed in it
-        var bytes = byteArrayBuilder.ToArray();
-        var chunkSets = CreateChunkSets(bytes, maxSplits).ToArray();
-
-        return chunkSets
-            .Select(chunkSet => new MessageChunkingTestCase()
-            {
-                ExpectedMessages = messages.ToArray(),
-                Chunks = chunkSet
-            })
-            .ToList();
-    }
-
-    private static List<ChunkSet> CreateChunkSets(Memory<byte> bytes, int parts, int minSize = 1)
-    {
-        var result = new List<ChunkSet>();
+        var result = new List<byte[][]>();
         var sizes = SetSizeGenerator.GenerateSizes(bytes.Length, parts, minSize);
         foreach (var size in sizes)
         {
-            var chunkSet = new List<Chunk>();
+            var chunkSet = new List<byte[]>();
             var offset = 0;
             foreach (var s in size)
             {
@@ -142,16 +226,25 @@ public class ChunkAssemblerTests
             result.Add(chunkSet.ToArray());
         }
 
-        return result.Take(2).ToList();
+        return result;
     }
-    
 
-    private static async Task<ReadOnlySequence<byte>[]> TestMessageAssembly(IEnumerable<byte[]> chunks)
+    private static async Task<byte[][]> TestMessageAssembly(IEnumerable<byte[]> chunks)
     {
         var chunkPipe = new TestChunkPipe(chunks);
-        var assembler = new ChunkAssembler();
-
-        var result = Task.Run(() => assembler.ReadMessagesAsync(chunkPipe.Reader).ToArrayAsync().AsTask());
+        var assembler = new ChunkAssembler(new ConsoleLogger());
+        var messages = new List<byte[]>();
+        
+        var result = Task.Run(async () =>
+        {
+            await foreach (var readMessage in assembler.ReadMessagesAsync(chunkPipe.Reader).ConfigureAwait(false))
+            {
+                messages.Add(readMessage.ToArray());
+            }
+            
+            return messages.ToArray();
+        });
+        
         await chunkPipe.PlayMessages().ConfigureAwait(false);
         return await result.ConfigureAwait(false);
     }
