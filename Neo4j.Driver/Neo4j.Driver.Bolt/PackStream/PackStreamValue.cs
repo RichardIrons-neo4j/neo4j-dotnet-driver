@@ -14,156 +14,122 @@
 // limitations under the License.
 
 using System.Buffers;
+using System.Runtime.CompilerServices;
 using Neo4j.Driver.Internal.IO;
-using PackStreamMarker = Neo4j.Driver.Internal.IO.PackStream;
+using Marker = Neo4j.Driver.Internal.IO.PackStream;
 
 namespace Neo4j.Driver.Bolt.PackStream;
 
 public readonly ref struct PackStreamValue
 {
+    private readonly SequenceReader<byte> _sequenceReader;
     private readonly byte _markerByte;
-    private readonly ReadOnlySequence<byte> _bytes;
-    private readonly PackStreamType _type;
 
-    private PackStreamValue(ReadOnlySequence<byte> bytes)
+    internal PackStreamValue(
+        sbyte? tinyIntValue = null,
+        sbyte? int8Value = null,
+        short? int16Value = null,
+        int? int32Value = null,
+        long? int64Value = null,
+        float? floatValue = null,
+        double? doubleValue = null,
+        bool? booleanValue = null,
+        ReadOnlyMemory<byte>? bytesValue = null,
+        IEnumerable<PackStreamValue>? listValue = null,
+        IEnumerable<PackStreamKeyValuePair>? mapValue = null,
+        PackStreamStruct? structValue = null)
     {
-        _markerByte = bytes.First.Span[0];
-        _bytes = bytes.Slice(1);
+        var nonNullCount = 0;
+        nonNullCount += tinyIntValue == null ? 0 : 1;
+        nonNullCount += int8Value == null ? 0 : 1;
+        nonNullCount += int16Value == null ? 0 : 1;
+        nonNullCount += int32Value == null ? 0 : 1;
+        nonNullCount += int64Value == null ? 0 : 1;
+        nonNullCount += floatValue == null ? 0 : 1;
+        nonNullCount += doubleValue == null ? 0 : 1;
+        nonNullCount += booleanValue == null ? 0 : 1;
+        nonNullCount += bytesValue == null ? 0 : 1;
+        nonNullCount += listValue == null ? 0 : 1;
+        nonNullCount += mapValue == null ? 0 : 1;
+        nonNullCount += structValue == null ? 0 : 1;
 
-        _type = _markerByte switch
+        if (nonNullCount > 1)
         {
-            PackStreamMarker.Null => PackStreamType.Null,
-            PackStreamMarker.True or PackStreamMarker.False => PackStreamType.Boolean,
-            PackStreamMarker.Float64 or PackStreamMarker.Float32 => PackStreamType.Float,
-            PackStreamMarker.Bytes8 or PackStreamMarker.Bytes16 or PackStreamMarker.Bytes32 => PackStreamType.Bytes,
-            PackStreamMarker.String8 or PackStreamMarker.String16 or PackStreamMarker.String32 => PackStreamType.String,
-            PackStreamMarker.List8 or PackStreamMarker.List16 or PackStreamMarker.List32 => PackStreamType.List,
-            PackStreamMarker.Map8 or PackStreamMarker.Map16 or PackStreamMarker.Map32 => PackStreamType.Map,
-            PackStreamMarker.Struct8 or PackStreamMarker.Struct16 => PackStreamType.Struct,
-            PackStreamMarker.Int8 
-                or PackStreamMarker.Int16 
-                or PackStreamMarker.Int32 
-                or PackStreamMarker.Int64 => PackStreamType.Integer,
-            <= 0x7F or >= 0xF0 => PackStreamType.Integer, // Tiny [negative] int
-            var b when (b & 0xF0) == PackStreamMarker.TinyString => PackStreamType.String, // Tiny string
-            var b when (b & 0xF0) == PackStreamMarker.TinyList => PackStreamType.List, // Tiny list
-            var b when (b & 0xF0) == PackStreamMarker.TinyMap => PackStreamType.Map, // Tiny map
-            var b when (b & 0xF0) == PackStreamMarker.TinyStruct => PackStreamType.Struct, // Tiny struct
-            _ => throw new InvalidOperationException($"Unknown marker byte: 0x{_markerByte:X2}")
-        };
+            throw new ArgumentException("No more than one parameter can be non-null");
+        }
+        
+        // could do `IsNull = nullCount == 12` here, but
+        // that could easily be missed when changing the type
+        IsNull = 
+            tinyIntValue == null
+            && int8Value == null
+            && int16Value == null
+            && int32Value == null
+            && int64Value == null
+            && floatValue == null
+            && doubleValue == null
+            && booleanValue == null
+            && bytesValue == null
+            && listValue == null
+            && mapValue == null
+            && structValue == null;
+        
+        _tinyIntValue = tinyIntValue;
+        _int8Value = int8Value;
+        _int16Value = int16Value;
+        _int32Value = int32Value;
+        _int64Value = int64Value;
+        _floatValue = floatValue;
+        _doubleValue = doubleValue;
+        _booleanValue = booleanValue;
+        _bytesValue = bytesValue;
+        ListValue = listValue;
+        MapValue = mapValue;
+        StructValue = structValue;
     }
+
+    public bool IsNull { get; }
+
+    private readonly sbyte? _tinyIntValue;
+    public sbyte TinyIntValue => _tinyIntValue ?? throw new InvalidOperationException("Value is not a TinyInt");
+    public static PackStreamValue TinyInt(sbyte value) => new(tinyIntValue: value);
+
+    private readonly sbyte? _int8Value;
+    public sbyte Int8Value => _int8Value ?? throw new InvalidOperationException("Value is not an Int8");
+    public static PackStreamValue Int8(sbyte value) => new(int8Value: value);
+
+    private readonly short? _int16Value;
+    public short Int16Value => _int16Value ?? throw new InvalidOperationException("Value is not an Int16");
+    public static PackStreamValue Int16(short value) => new(int16Value: value);
+
+    private readonly int? _int32Value;
+    public int Int32Value => _int32Value ?? throw new InvalidOperationException("Value is not an Int32");
+    public static PackStreamValue Int32(int value) => new(int32Value: value);
+
+    private readonly long? _int64Value;
+    public long Int64Value => _int64Value ?? throw new InvalidOperationException("Value is not an Int64");
+    public static PackStreamValue Int64(long value) => new(int64Value: value);
+
+    private readonly float? _floatValue;
+    public float FloatValue => _floatValue ?? throw new InvalidOperationException("Value is not a Float");
+    public static PackStreamValue Float(float value) => new(floatValue: value);
     
-    // Factory method
-    public static PackStreamValue Create(ReadOnlySequence<byte> bytes) => new(bytes);
+    private readonly double? _doubleValue;
+    public double DoubleValue => _doubleValue ?? throw new InvalidOperationException("Value is not a Double");
+    public static PackStreamValue Double(double value) => new(doubleValue: value);
 
-    public sbyte ByteValue
-    {
-        get
-        {
-            if (_markerByte is >= 0xF0 or <= 0x7F)
-            {
-                return (sbyte)_markerByte;
-            }
+    private readonly bool? _booleanValue;
+    public bool BooleanValue => _booleanValue ?? throw new InvalidOperationException("Value is not a Boolean");
+    public static PackStreamValue Boolean(bool value) => new(booleanValue: value);
 
-            throw new InvalidOperationException($"Marker byte value 0x{_markerByte:X2} is not a byte");
-        }
-    }
-
-    public sbyte Int8Value =>
-        (_markerByte == PackStreamMarker.Int8)
-            ? (sbyte)_bytes.First.Span[0]
-            : throw new InvalidOperationException($"Marker byte value 0x{_markerByte:X2} is not an Int8");
-
-    public short Int16Value
-    {
-        get
-        {
-            if (_markerByte == PackStreamMarker.Int16)
-            {
-                var sequenceReader = new SequenceReader<byte>(_bytes);
-                return sequenceReader.ReadShort();
-            }
-
-            throw new InvalidOperationException($"Marker byte value 0x{_markerByte:X2} is not a TinyInt");
-        }
-    }
-
-    public int Int32Value
-    {
-        get
-        {
-            if (_markerByte == PackStreamMarker.Int32)
-            {
-                var sequenceReader = new SequenceReader<byte>(_bytes);
-                return sequenceReader.ReadInt();
-            }
-
-            throw new InvalidOperationException($"Marker byte value 0x{_markerByte:X2} is not an Int32");
-        }
-    }
-
-    public long LongValue
-    {
-        get
-        {
-            if (_markerByte == PackStreamMarker.Int64)
-            {
-                var sequenceReader = new SequenceReader<byte>(_bytes);
-                return sequenceReader.ReadLong();
-            }
-
-            throw new InvalidOperationException($"Marker byte value 0x{_markerByte:X2} is not an Int64");
-        }
-    }
-
-    public float FloatValue
-    {
-        get
-        {
-            if (_markerByte == PackStreamMarker.Float32)
-            {
-                var sequenceReader = new SequenceReader<byte>(_bytes);
-                return BitConverter.Int32BitsToSingle(sequenceReader.ReadInt());
-            }
-
-            throw new InvalidOperationException($"Marker byte value 0x{_markerByte:X2} is not a Float32");
-        }
-    }
-
-    public double DoubleValue
-    {
-        get
-        {
-            if (_markerByte == PackStreamMarker.Float64)
-            {
-                var sequenceReader = new SequenceReader<byte>(_bytes);
-                return BitConverter.Int64BitsToDouble(sequenceReader.ReadLong());
-            }
-
-            throw new InvalidOperationException($"Marker byte value 0x{_markerByte:X2} is not a Float64");
-        }
-    }
-
-    public PackStreamStringValue StringValue => new(_markerByte, _bytes);
-
-    public bool BooleanValue
-    {
-        get
-        {
-            return _markerByte switch
-            {
-                0xC2 => false,
-                0xC3 => true,
-                _ => throw new InvalidOperationException($"Marker byte value 0x{_markerByte:X2} is not a bool")
-            };
-        }
-    }
-    
-    public bool IsNull => _markerByte == PackStreamMarker.Null;
+    private readonly ReadOnlyMemory<byte>? _bytesValue;
+    public ReadOnlyMemory<byte> BytesValue => _bytesValue ?? throw new InvalidOperationException("Value is not Bytes");
 
     public IEnumerable<PackStreamValue>? ListValue { get; }
     public IEnumerable<PackStreamKeyValuePair>? MapValue { get; }
     public PackStreamStruct? StructValue { get; }
+
+    public static PackStreamValue Null() => new();
 }
 
 public struct PackStreamStruct
@@ -189,16 +155,16 @@ public readonly ref struct PackStreamStringValue
         }
 
         _seqReader = new SequenceReader<byte>(_bytes);
-        
+
         Size = _markerByte switch
         {
-            PackStreamMarker.String8 => _bytes.First.Span[0],
-            PackStreamMarker.String16 => (uint)_seqReader.ReadShort(),
-            PackStreamMarker.String32 => (uint)_seqReader.ReadInt(),
+            Marker.String8 => _bytes.First.Span[0],
+            Marker.String16 => (uint)_seqReader.ReadShort(),
+            Marker.String32 => (uint)_seqReader.ReadInt(),
             _ => throw new InvalidOperationException(
                 $"Marker byte value 0x{_markerByte:X2} is not a valid string marker")
         };
-        
+
         _seqReader.Advance(Size);
 
         _markerByte = markerByte;

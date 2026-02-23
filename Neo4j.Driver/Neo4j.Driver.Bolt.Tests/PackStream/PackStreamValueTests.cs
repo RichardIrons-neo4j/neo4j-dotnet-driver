@@ -31,9 +31,9 @@ public class PackStreamValueTests
     public void CorrectlyDecodesByteValue(byte[] inputBytes, sbyte expected)
     {
         var bytes = new ReadOnlySequence<byte>(inputBytes);
-        var value = PackStreamValue.Create(bytes);
+        var value = PackStreamValue.Read(bytes);
 
-        var result = value.ByteValue;
+        var result = value.TinyIntValue;
 
         result.Should().Be(expected);
     }
@@ -47,7 +47,7 @@ public class PackStreamValueTests
     public void CorrectlyDecodesInt8Value(byte[] inputBytes, sbyte expected)
     {
         var bytes = new ReadOnlySequence<byte>(inputBytes);
-        var value = PackStreamValue.Create(bytes);
+        var value = PackStreamValue.Read(bytes);
 
         var result = value.Int8Value;
 
@@ -64,7 +64,7 @@ public class PackStreamValueTests
     public void CorrectlyDecodesInt16Value(byte[] inputBytes, short expected)
     {
         var bytes = new ReadOnlySequence<byte>(inputBytes);
-        var value = PackStreamValue.Create(bytes);
+        var value = PackStreamValue.Read(bytes);
 
         var result = value.Int16Value;
 
@@ -81,7 +81,7 @@ public class PackStreamValueTests
     public void CorrectlyDecodesInt32Value(byte[] inputBytes, int expected)
     {
         var bytes = new ReadOnlySequence<byte>(inputBytes);
-        var value = PackStreamValue.Create(bytes);
+        var value = PackStreamValue.Read(bytes);
 
         var result = value.Int32Value;
 
@@ -98,7 +98,7 @@ public class PackStreamValueTests
     public void CorrectlyDecodesLongValue(byte[] inputBytes, long expected)
     {
         var bytes = new ReadOnlySequence<byte>(inputBytes);
-        var value = PackStreamValue.Create(bytes);
+        var value = PackStreamValue.Read(bytes);
 
         var result = value.LongValue;
 
@@ -115,7 +115,7 @@ public class PackStreamValueTests
     public void CorrectlyDecodesFloatValue(byte[] inputBytes, float expected)
     {
         var bytes = new ReadOnlySequence<byte>(inputBytes);
-        var value = PackStreamValue.Create(bytes);
+        var value = PackStreamValue.Read(bytes);
 
         var result = value.FloatValue;
 
@@ -132,7 +132,7 @@ public class PackStreamValueTests
     public void CorrectlyDecodesDoubleValue(byte[] inputBytes, double expected)
     {
         var bytes = new ReadOnlySequence<byte>(inputBytes);
-        var value = PackStreamValue.Create(bytes);
+        var value = PackStreamValue.Read(bytes);
 
         var result = value.DoubleValue;
 
@@ -145,10 +145,17 @@ public class PackStreamValueTests
     public void CorrectlyDecodesBooleanValue(byte[] inputBytes, bool expected)
     {
         var bytes = new ReadOnlySequence<byte>(inputBytes);
-        var value = PackStreamValue.Create(bytes);
+        var value = PackStreamValue.Read(bytes);
 
         var result = value.BooleanValue;
 
         result.Should().Be(expected);
     }
+
+    // [Test]
+    // public void ZeroSizeSlice()
+    // {
+    //     var seq = new ReadOnlySequence<byte>([0xC0]);
+    //     PackStreamValue.Read(seq).Size.Should().Be(1); // just the marker byte
+    // }
 }
