@@ -9,7 +9,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests;
 
 [TestFixture]
-public class ChunkAssemblerTests
+public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
 {
     [Test]
     public async Task AssemblesCorrectlyFormedMessage()

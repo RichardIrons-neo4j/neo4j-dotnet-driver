@@ -14,10 +14,11 @@
 // limitations under the License.
 
 using System.Buffers;
+using System.IO.Pipelines;
 
 namespace Neo4j.Driver.Bolt.PackStream;
 
 internal interface IPackStreamDecoder
 {
-    IEnumerable<PackStreamValue> Decode(ReadOnlySequence<byte> buffer, int valueCount);
+    IAsyncEnumerable<PackStreamValue> Decode(PipeReader buffer, int valueCount);
 }
