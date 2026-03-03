@@ -13,10 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.Extensions.Logging;
 using Moq.AutoMock;
-using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using NUnit.Framework;
+using Serilog;
+using Serilog.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Neo4j.Driver.Bolt.Tests;
 
@@ -24,19 +25,17 @@ namespace Neo4j.Driver.Bolt.Tests;
 public class UnitTestBase<T> where T : class
 {
     protected AutoMocker AutoMocker = new();
-    protected T Subject;
-    protected ILogger Logger { get; private set; }
 
-    public UnitTestBase()
-    {
-        Subject = null!;
-    }
-    
+    private Lazy<T>? _subject;
+    protected T Subject => _subject?.Value ?? throw new InvalidOperationException("Subject not initialized.");
+
     [SetUp]
-    private void SetUp()
+    public void SetUp()
     {
-        Subject = AutoMocker.CreateInstance<T>();
-        Logger = new ConsoleLogger();
-        AutoMocker.Use(Logger);
+        AutoMocker = new AutoMocker();
+        _subject = new Lazy<T>(() => AutoMocker.CreateInstance<T>());
+        var logger = new LoggerConfiguration().WriteTo.Console().MinimumLevel.Debug().CreateLogger();
+        var frameworkLogger = new SerilogLoggerProvider(logger).CreateLogger("Neo4j.Driver.Bolt.Tests");
+        AutoMocker.Use(frameworkLogger);
     }
 }

@@ -13,12 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.IO.Pipelines;
+using Microsoft.Extensions.Logging;
 
-namespace Neo4j.Driver.Bolt.PackStream.Abstractions;
+namespace Neo4j.Driver.Bolt.Extensions;
 
-internal interface IPackStreamDecoder
+public static class LoggerExtensions
 {
-    IAsyncEnumerable<PackStreamValue> Decode(PipeReader buffer, int valueCount);
+    extension(ILogger logger)
+    {
+        public void LogIf(LogLevel logLevel, string template, Func<object[]> args)
+        {
+            if (logger.IsEnabled(logLevel))
+            {
+                logger.Log(logLevel, template, args());
+            }
+        }
+    }
 }
- 

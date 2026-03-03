@@ -13,9 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Buffers;
-using System.Collections.Concurrent;
 using System.IO.Pipelines;
+using Microsoft.Extensions.Logging;
+using Neo4j.Driver.Bolt.Extensions;
+using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 
@@ -24,15 +25,34 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations;
 internal class PackStreamDecoder : IPackStreamDecoder
 {
     private readonly IChunkAssembler _chunkAssembler;
+    private readonly ILogger _logger;
     private readonly Dictionary<byte, IValueDecoder> _decoders = new();
 
-    public PackStreamDecoder(IValueDecoder[] decoders, IChunkAssembler chunkAssembler)
+    public PackStreamDecoder(
+        IValueDecoder[] decoders,
+        IChunkAssembler chunkAssembler,
+        ILogger logger)
     {
         _chunkAssembler = chunkAssembler ?? throw new ArgumentNullException(nameof(chunkAssembler));
+        _logger = logger;
+
+        if (decoders is null or { Length: 0 })
+        {
+            throw new ArgumentNullException(nameof(decoders), "At least one decoder must be provided.");
+        }
+
         foreach (var decoder in decoders)
         {
             foreach (var markerByte in decoder.HandledMarkerBytes)
             {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                {
+                    _logger.LogDebug(
+                        "Registering decoder {decoder} for marker byte: {markerByte}",
+                        decoder.GetType().Name,
+                        $"0x{markerByte:X2}");
+                }
+
                 _decoders[markerByte] = decoder;
             }
         }
@@ -43,12 +63,16 @@ internal class PackStreamDecoder : IPackStreamDecoder
         var processed = 0;
         var count = 0;
 
+        _logger.LogDebug("Beginning PackStream decoding loop");
         await foreach (var buffer in _chunkAssembler.ReadMessagesAsync(pipeReader))
         {
-            while (processed < buffer.Length && count < valueCount)
+            _logger.LogIf(LogLevel.Trace, "Decoding {bytes} bytes", () => [buffer.Length]);
+            var bufferPosition = 0;
+            while (bufferPosition < buffer.Length && count < valueCount)
             {
-                var remaining = buffer.Slice(processed);
+                var remaining = buffer.Slice(bufferPosition);
                 var markerByte = remaining.First.Span[0];
+                _logger.LogIf(LogLevel.Trace, "Decoding marker byte: {markerByte}", () => [markerByte]);
 
                 if (!_decoders.TryGetValue(markerByte, out var decoder))
                 {
@@ -56,10 +80,17 @@ internal class PackStreamDecoder : IPackStreamDecoder
                 }
 
                 var decoderResult = decoder.Decode(remaining);
-                processed += decoderResult.BytesConsumed;
+                _logger.LogTrace(
+                    "Decoded value: {value} (consumed {bytesConsumed} bytes)",
+                    decoderResult.Value,
+                    decoderResult.BytesConsumed);
+
+                bufferPosition += decoderResult.BytesConsumed;
                 count++;
                 yield return decoderResult.Value;
             }
+
+            processed += bufferPosition;
         }
 
         if (count < valueCount)

@@ -19,24 +19,23 @@ using Marker = Neo4j.Driver.Internal.IO.PackStream;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-public class BooleanDecoder : IValueDecoder
+public class NullDecoder : IValueDecoder
 {
-    public byte[] HandledMarkerBytes => [Marker.True, Marker.False];
+    public byte[] HandledMarkerBytes => [Marker.Null];
 
     public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
-        if(buffer.IsEmpty)
+        if (buffer.IsEmpty)
         {
-            throw new InvalidOperationException("Buffer is empty. Cannot decode boolean value.");
+            throw new InvalidOperationException("Buffer is empty. Cannot decode null value.");
         }
 
-        var value = buffer.FirstSpan[0] switch
+        if (buffer.FirstSpan[0] != Marker.Null)
         {
-            Marker.True => PackStreamValue.Boolean(true),
-            Marker.False => PackStreamValue.Boolean(false),
-            _ => throw new InvalidOperationException($"Unknown marker byte: 0x{buffer.FirstSpan[0]:X2}")
-        };
-        
-        return new ValueDecoderResult(value, 1);
+            throw new InvalidOperationException($"Unknown marker byte: 0x{buffer.FirstSpan[0]:X2}");
+        }
+
+        return new ValueDecoderResult(PackStreamValue.Null(), 1);
     }
 }
+
