@@ -14,7 +14,6 @@
 // limitations under the License.
 
 using System.Buffers;
-using System.IO.Pipelines;
 
 namespace Neo4j.Driver.Bolt.Transport.Abstractions;
 
@@ -27,13 +26,13 @@ namespace Neo4j.Driver.Bolt.Transport.Abstractions;
 public interface IChunkAssembler
 {
     /// <summary>
-    /// Reads from the given pipe reader and yields one message payload per Bolt message.
+    /// Reads from the given byte reader and yields one message payload per Bolt message.
     /// Each payload is the raw message bytes (PackStream) without chunk framing.
     /// </summary>
-    /// <param name="pipeReader">The pipe reader to read from (e.g. from the network).</param>
+    /// <param name="byteReader">The byte reader to read from (e.g. from the network).</param>
     /// <param name="cancellationToken">Cancellation for the read operation.</param>
     /// <returns>An async sequence of message payloads.</returns>
     IAsyncEnumerable<ReadOnlySequence<byte>> ReadMessagesAsync(
-        PipeReader pipeReader,
+        IByteReader byteReader,
         CancellationToken cancellationToken = default);
 }

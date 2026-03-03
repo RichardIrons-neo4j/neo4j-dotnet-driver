@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.IO.Pipelines;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.Extensions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
@@ -58,13 +57,13 @@ internal class PackStreamDecoder : IPackStreamDecoder
         }
     }
 
-    public async IAsyncEnumerable<PackStreamValue> Decode(PipeReader pipeReader, int valueCount)
+    public async IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount)
     {
         var processed = 0;
         var count = 0;
 
         _logger.LogDebug("Beginning PackStream decoding loop");
-        await foreach (var buffer in _chunkAssembler.ReadMessagesAsync(pipeReader))
+        await foreach (var buffer in _chunkAssembler.ReadMessagesAsync(byteReader))
         {
             _logger.LogIf(LogLevel.Trace, "Decoding {bytes} bytes", () => [buffer.Length]);
             var bufferPosition = 0;
