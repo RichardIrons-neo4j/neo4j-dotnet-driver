@@ -28,14 +28,11 @@ namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoder;
 [TestFixture]
 internal class ListDecoderTests : UnitTestBase<ListDecoder>
 {
-    private TestPackStreamDecoder _decoder = null!;
-
     [SetUp]
     public new void SetUp()
     {
         base.SetUp();
-        _decoder = new TestPackStreamDecoder();
-        AutoMocker.Use<IPackStreamDecoder>(_decoder);
+        AutoMocker.Use<IPackStreamDecoder>(new TestPackStreamDecoder());
         AutoMocker.Use<IPackStreamSizeReader>(new PackStreamSizeReader());
     }
 
@@ -379,6 +376,73 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
     {
         // 0xC0 is Null marker, not a list marker
         Action act = () => Subject.Decode(new ReadOnlySequence<byte>([0xC0]));
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void ThrowsOnList8WithInsufficientHeaderBytes()
+    {
+        // List8 marker alone without the size byte
+        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List8]);
+
+        Action act = () => Subject.Decode(buffer);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void ThrowsOnList16WithInsufficientHeaderBytes()
+    {
+        // List16 marker with only 1 size byte instead of 2
+        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List16, 0x00]);
+
+        Action act = () => Subject.Decode(buffer);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void ThrowsOnList32WithInsufficientHeaderBytes()
+    {
+        // List32 marker with only 3 size bytes instead of 4
+        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List32, 0x00, 0x00, 0x00]);
+
+        Action act = () => Subject.Decode(buffer);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void ThrowsOnTinyListWithInsufficientData()
+    {
+        // TinyList claims 3 items but only has 2 bytes of data
+        var buffer = new ReadOnlySequence<byte>([0x93, 0x01, 0x02]);
+
+        Action act = () => Subject.Decode(buffer);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void ThrowsOnList8WithInsufficientData()
+    {
+        // List8 with count of 5 but only 3 items
+        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List8, 0x05, 0x01, 0x02, 0x03]);
+
+        Action act = () => Subject.Decode(buffer);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void ThrowsOnNestedListWithInsufficientData()
+    {
+        // Outer list claims 2 items, first is a list [1, 2], second claims to be a list but data is truncated
+        // [0x92, 0x92, 0x01, 0x02, 0x92] - second nested list has no items
+        var buffer = new ReadOnlySequence<byte>([0x92, 0x92, 0x01, 0x02, 0x91]);
+
+        Action act = () => Subject.Decode(buffer);
 
         act.Should().Throw<InvalidOperationException>();
     }

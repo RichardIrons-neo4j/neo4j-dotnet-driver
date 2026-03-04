@@ -77,7 +77,26 @@ internal class ListDecoder : IValueDecoder
 
         for (var i = 0; i < itemCount; i++)
         {
+            if (remaining.IsEmpty)
+            {
+                throw new InvalidOperationException(
+                    $"Unexpected end of data: expected {itemCount} list items but only found {i}.");
+            }
+
             var result = _decoder.Decode(remaining);
+
+            if (result.BytesConsumed == 0)
+            {
+                throw new InvalidOperationException(
+                    "Decoder returned zero bytes consumed.");
+            }
+
+            if (result.BytesConsumed > remaining.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Decoder reports consuming {result.BytesConsumed} bytes but only {remaining.Length} bytes remain.");
+            }
+
             totalBytes += result.BytesConsumed;
             remaining = remaining.Slice(result.BytesConsumed);
         }
