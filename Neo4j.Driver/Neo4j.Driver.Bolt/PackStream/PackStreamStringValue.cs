@@ -19,13 +19,14 @@ using System.Text;
 namespace Neo4j.Driver.Bolt.PackStream;
 
 /// <summary>
-/// A stack-allocated enumerator that lazily decodes UTF-8 characters from a byte sequence.
+/// A PackStream string value that supports allocation-free enumeration of UTF-8 characters,
+/// or heap-allocated string conversion via ToString().
 /// </summary>
-public readonly ref struct Utf8CharEnumerator
+public readonly ref struct PackStreamStringValue
 {
     private readonly ReadOnlySequence<byte> _bytes;
 
-    public Utf8CharEnumerator(ReadOnlySequence<byte> bytes) => _bytes = bytes;
+    public PackStreamStringValue(ReadOnlySequence<byte> bytes) => _bytes = bytes;
 
     public Enumerator GetEnumerator() => new(_bytes);
 

@@ -37,6 +37,11 @@ public class ByteArrayBuilder : IEnumerable<byte>
         return new ByteArrayBuilder(this, Enumerable.Range(start, count).Select(i => (byte)i));
     }
 
+    public ByteArrayBuilder Range(Range range)
+    {
+        return Range((byte)range.Start.Value, (byte)(range.End.Value - range.Start.Value));
+    }
+
     public ByteArrayBuilder PackStreamMessage(IEnumerable<byte> bytes)
     {
         var byteArray = bytes.ToArray();
@@ -51,7 +56,7 @@ public class ByteArrayBuilder : IEnumerable<byte>
 
     private ByteArrayBuilder(ByteArrayBuilder? previous, IEnumerable<byte> bytes)
     {
-        IEnumerable<byte> prepend = previous ?? Enumerable.Empty<byte>();
+        var prepend = previous ?? Enumerable.Empty<byte>();
         Bytes = prepend.Concat(bytes).ToArray();
     }
     

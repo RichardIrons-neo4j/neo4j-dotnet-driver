@@ -13,11 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Buffers;
+using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 
 namespace Neo4j.Driver.Bolt.PackStream.Abstractions;
 
 internal interface IPackStreamDecoder
 {
+    /// <summary>
+    /// Decodes values asynchronously from a byte reader.
+    /// </summary>
     IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount);
+
+    /// <summary>
+    /// Decodes a single value synchronously from an already-buffered sequence.
+    /// Used for nested structures like lists and maps.
+    /// </summary>
+    ValueDecoderResult Decode(ReadOnlySequence<byte> buffer);
 }

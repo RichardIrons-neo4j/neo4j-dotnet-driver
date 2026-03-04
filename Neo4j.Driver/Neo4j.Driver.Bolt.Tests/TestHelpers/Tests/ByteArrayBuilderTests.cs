@@ -30,11 +30,11 @@ public class ByteArrayBuilderTests
     [Test]
     public void ConcatenatesFluently()
     {
-        var zeroes = new ByteArrayBuilder()
+        var bytes = new ByteArrayBuilder()
             .Range(0, 5)
             .Range(10, 5);
         
-        zeroes.Should().BeEquivalentTo([0, 1, 2, 3, 4, 10, 11, 12, 13, 14]);
+        bytes.Should().BeEquivalentTo([0, 1, 2, 3, 4, 10, 11, 12, 13, 14]);
     }
 
     [Test]
