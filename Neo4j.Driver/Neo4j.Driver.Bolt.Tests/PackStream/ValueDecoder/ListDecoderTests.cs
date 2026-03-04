@@ -26,16 +26,17 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoder;
 
 [TestFixture]
-internal class ListDecoderTests
+internal class ListDecoderTests : UnitTestBase<ListDecoder>
 {
-    private ListDecoder _subject = null!;
     private TestPackStreamDecoder _decoder = null!;
 
     [SetUp]
-    public void SetUp()
+    public new void SetUp()
     {
+        base.SetUp();
         _decoder = new TestPackStreamDecoder();
-        _subject = new ListDecoder(_decoder, new PackStreamSizeReader());
+        AutoMocker.Use<IPackStreamDecoder>(_decoder);
+        AutoMocker.Use<IPackStreamSizeReader>(new PackStreamSizeReader());
     }
 
     [Test]
@@ -45,7 +46,7 @@ internal class ListDecoderTests
             .Range(0x90..0xA0)
             .ExactBytes([PackStreamMarker.List8, PackStreamMarker.List16, PackStreamMarker.List32]);
 
-        _subject.HandledMarkerBytes.Should().BeEquivalentTo(validBytes);
+        Subject.HandledMarkerBytes.Should().BeEquivalentTo(validBytes);
     }
 
     #region Empty Lists
@@ -55,7 +56,7 @@ internal class ListDecoderTests
     {
         var buffer = new ReadOnlySequence<byte>([0x90]); // TinyList with 0 items
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(0);
         result.BytesConsumed.Should().Be(1);
@@ -66,7 +67,7 @@ internal class ListDecoderTests
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List8, 0x00]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(0);
         result.BytesConsumed.Should().Be(2);
@@ -82,7 +83,7 @@ internal class ListDecoderTests
         // TinyList with 1 item: [1]
         var buffer = new ReadOnlySequence<byte>([0x91, 0x01]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(1);
         result.BytesConsumed.Should().Be(2);
@@ -95,7 +96,7 @@ internal class ListDecoderTests
         // TinyList with 3 items: [1, 2, 3]
         var buffer = new ReadOnlySequence<byte>([0x93, 0x01, 0x02, 0x03]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(3);
         result.BytesConsumed.Should().Be(4);
@@ -118,7 +119,7 @@ internal class ListDecoderTests
 
         var buffer = new ReadOnlySequence<byte>(bytes);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(15);
         result.BytesConsumed.Should().Be(16);
@@ -135,7 +136,7 @@ internal class ListDecoderTests
         // List8 with 2 items: [5, 6]
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List8, 0x02, 0x05, 0x06]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(4);
@@ -148,7 +149,7 @@ internal class ListDecoderTests
         // List16 with 2 items: [7, 8]
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List16, 0x00, 0x02, 0x07, 0x08]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(5);
@@ -161,7 +162,7 @@ internal class ListDecoderTests
         // List32 with 2 items: [9, 10]
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List32, 0x00, 0x00, 0x00, 0x02, 0x09, 0x0A]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(7);
@@ -181,7 +182,7 @@ internal class ListDecoderTests
         // 0x92, 0x03, 0x04 = TinyList(2) containing 3, 4
         var buffer = new ReadOnlySequence<byte>([0x92, 0x92, 0x01, 0x02, 0x92, 0x03, 0x04]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(7);
@@ -197,7 +198,7 @@ internal class ListDecoderTests
         // [[], []]
         var buffer = new ReadOnlySequence<byte>([0x92, 0x90, 0x90]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(3);
@@ -218,7 +219,7 @@ internal class ListDecoderTests
         // 0x91 = TinyList(1)
         var buffer = new ReadOnlySequence<byte>([0x91, 0x91, 0x91, 0x01]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(1);
         result.BytesConsumed.Should().Be(4);
@@ -254,14 +255,13 @@ internal class ListDecoderTests
             0x91, 0x04              // Level 3c: [4]
         ]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(1);
         result.BytesConsumed.Should().Be(11);
 
         var level1 = result.Value.ListValue.ToEnumerable().First().ListValue.ToEnumerable().ToArray();
         level1.Should().HaveCount(2);
-        level1
 
         // First item at level 1: [[1, 2], [3]]
         var level2a = level1[0].ListValue.ToEnumerable().ToArray();
@@ -291,7 +291,7 @@ internal class ListDecoderTests
             0x04                    // Integer 4
         ]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(3);
         result.BytesConsumed.Should().Be(6);
@@ -315,7 +315,7 @@ internal class ListDecoderTests
             0x05                            // Integer 5
         ]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(3);
         result.BytesConsumed.Should().Be(8);
@@ -341,7 +341,7 @@ internal class ListDecoderTests
             0x92, 0x03, 0x91, 0x04          // [3, [4]]
         ]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(10);
@@ -369,7 +369,7 @@ internal class ListDecoderTests
     [Test]
     public void ThrowsOnEmptyBuffer()
     {
-        Action act = () => _subject.Decode(ReadOnlySequence<byte>.Empty);
+        Action act = () => Subject.Decode(ReadOnlySequence<byte>.Empty);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -378,7 +378,7 @@ internal class ListDecoderTests
     public void ThrowsOnUnknownMarker()
     {
         // 0xC0 is Null marker, not a list marker
-        Action act = () => _subject.Decode(new ReadOnlySequence<byte>([0xC0]));
+        Action act = () => Subject.Decode(new ReadOnlySequence<byte>([0xC0]));
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -392,7 +392,7 @@ internal class ListDecoderTests
     {
         var buffer = new ReadOnlySequence<byte>([0x95, 0x01, 0x02, 0x03, 0x04, 0x05]);
 
-        var result = _subject.Decode(buffer);
+        var result = Subject.Decode(buffer);
 
         var sum = result.Value.ListValue.ToEnumerable().Sum(v => v.IntValue);
 
