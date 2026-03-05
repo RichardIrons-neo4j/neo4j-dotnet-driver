@@ -48,7 +48,9 @@ internal class ListDecoder : IValueDecoder
     public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
         if (buffer.IsEmpty)
+        {
             throw new InvalidOperationException("Buffer is empty. Cannot decode List value.");
+        }
 
         var marker = buffer.FirstSpan[0];
 
@@ -105,19 +107,20 @@ internal class ListDecoder : IValueDecoder
 
             var result = _decoder.Decode(remaining);
 
-            if (result.BytesConsumed == 0)
+            var bytesConsumed = result.BytesConsumed;
+            if (bytesConsumed == 0)
             {
                 throw new InvalidOperationException("Decoder returned zero bytes consumed.");
             }
 
-            if (result.BytesConsumed > remaining.Length)
+            if (bytesConsumed > remaining.Length)
             {
                 throw new InvalidOperationException(
-                    $"Decoder reports consuming {result.BytesConsumed} bytes but only {remaining.Length} bytes remain.");
+                    $"Decoder reports consuming {bytesConsumed} bytes but only {remaining.Length} bytes remain.");
             }
 
-            totalBytes += result.BytesConsumed;
-            remaining = remaining.Slice(result.BytesConsumed);
+            totalBytes += bytesConsumed;
+            remaining = remaining.Slice(bytesConsumed);
         }
 
         return totalBytes;

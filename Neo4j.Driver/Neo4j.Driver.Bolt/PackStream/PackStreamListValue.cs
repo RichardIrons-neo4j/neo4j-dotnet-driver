@@ -102,7 +102,9 @@ public readonly struct PackStreamListValue
         public bool MoveNext()
         {
             if (_remainingCount == 0)
+            {
                 return false;
+            }
 
             if (_reader.Remaining == 0)
             {

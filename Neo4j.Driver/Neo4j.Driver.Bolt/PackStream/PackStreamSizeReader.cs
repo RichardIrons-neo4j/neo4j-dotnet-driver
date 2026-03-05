@@ -50,7 +50,9 @@ internal class PackStreamSizeReader : IPackStreamSizeReader
     public (int HeaderSize, int Count) ReadSize8(ReadOnlySequence<byte> buffer, string typeName)
     {
         if (buffer.Length < 2)
+        {
             throw new InvalidOperationException($"Buffer too short. {typeName} requires at least 2 bytes.");
+        }
 
         return (2, buffer.Slice(1, 1).FirstSpan[0]);
     }
@@ -59,11 +61,15 @@ internal class PackStreamSizeReader : IPackStreamSizeReader
     public (int HeaderSize, int Count) ReadSize16(ReadOnlySequence<byte> buffer, string typeName)
     {
         if (buffer.Length < 3)
+        {
             throw new InvalidOperationException($"Buffer too short. {typeName} requires at least 3 bytes.");
+        }
 
         var slice = buffer.Slice(1, 2);
         if (slice.IsSingleSegment)
+        {
             return (3, BinaryPrimitives.ReadUInt16BigEndian(slice.FirstSpan));
+        }
 
         Span<byte> temp = stackalloc byte[2];
         slice.CopyTo(temp);
@@ -74,11 +80,15 @@ internal class PackStreamSizeReader : IPackStreamSizeReader
     public (int HeaderSize, int Count) ReadSize32(ReadOnlySequence<byte> buffer, string typeName)
     {
         if (buffer.Length < 5)
+        {
             throw new InvalidOperationException($"Buffer too short. {typeName} requires at least 5 bytes.");
+        }
 
         var slice = buffer.Slice(1, 4);
         if (slice.IsSingleSegment)
+        {
             return (5, (int)BinaryPrimitives.ReadUInt32BigEndian(slice.FirstSpan));
+        }
 
         Span<byte> temp = stackalloc byte[4];
         slice.CopyTo(temp);
