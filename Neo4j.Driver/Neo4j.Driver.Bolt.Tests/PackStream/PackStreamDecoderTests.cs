@@ -18,6 +18,7 @@ using Moq;
 using NUnit.Framework;
 using FluentAssertions;
 using Neo4j.Driver.Bolt.PackStream;
+using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Implementations;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
@@ -36,9 +37,10 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
             [0x01],
             [0x01],
             PackStreamValue.Int(-123));
-
-        IValueDecoder[] decoders = [dummyDecoder];
-        AutoMocker.Use(decoders);
+        
+        AutoMocker.GetMock<IValueDecoderProvider>()
+            .Setup(x => x.GetDecoder(It.IsAny<byte>(), It.IsAny<IPackStreamDecoder>()))
+            .Returns(dummyDecoder);
 
         ReadOnlySequence<byte>[] messages = [new(packStreamMessage)];
         var chunkAssembler = AutoMocker.GetMock<IChunkAssembler>();
@@ -62,13 +64,12 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
             [[0xFF, 0x00]] = PackStreamValue.Float(123.456)
         };
 
-        var decoders = new List<IValueDecoder>();
         foreach (var (bytes, packStreamValue) in packStreamMessages)
         {
-            decoders.Add(new MockDecoder([bytes[0]], bytes, packStreamValue));
+            AutoMocker.GetMock<IValueDecoderProvider>()
+                .Setup(x => x.GetDecoder(bytes[0], It.IsAny<IPackStreamDecoder>()))
+                .Returns(new MockDecoder([bytes[0]], bytes, packStreamValue));
         }
-
-        AutoMocker.Use(decoders.ToArray());
 
         var messages = packStreamMessages.Select(kvp => new ReadOnlySequence<byte>(kvp.Key)).ToArray();
         var chunkAssembler = AutoMocker.GetMock<IChunkAssembler>();

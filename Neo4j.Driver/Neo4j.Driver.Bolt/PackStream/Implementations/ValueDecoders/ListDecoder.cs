@@ -27,15 +27,14 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// List16: marker 0xD5 + 2 byte big-endian count
 /// List32: marker 0xD6 + 4 byte big-endian count
 /// </summary>
-internal class ListDecoder : IValueDecoder
+internal class ListDecoder : IRecursiveValueDecoder
 {
-    private readonly IPackStreamDecoder _decoder;
     private readonly IPackStreamSizeReader _sizeReader;
     private readonly ILogger _logger;
+    private IPackStreamDecoder? _recursionDecoder;
 
-    public ListDecoder(IPackStreamDecoder decoder, IPackStreamSizeReader sizeReader, ILogger logger)
+    public ListDecoder(IPackStreamSizeReader sizeReader, ILogger logger)
     {
-        _decoder = decoder ?? throw new ArgumentNullException(nameof(decoder));
         _sizeReader = sizeReader ?? throw new ArgumentNullException(nameof(sizeReader));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -47,6 +46,11 @@ internal class ListDecoder : IValueDecoder
 
     public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
+        if (_recursionDecoder is null)
+        {
+            throw new InvalidOperationException("Recursion decoder is not set.");
+        }
+        
         if (buffer.IsEmpty)
         {
             throw new InvalidOperationException("Buffer is empty. Cannot decode List value.");
@@ -79,17 +83,27 @@ internal class ListDecoder : IValueDecoder
         var value = PackStreamValue.List(
             buffer.Slice(headerSize, totalItemBytes),
             itemCount,
-            _decoder);
+            _recursionDecoder);
 
         _logger.LogDebug("Decoded list: {ItemCount} items, {TotalBytes} total bytes", itemCount, headerSize + totalItemBytes);
 
         return new ValueDecoderResult(value, headerSize + totalItemBytes);
     }
 
+    public void SetRecursionDecoder(IPackStreamDecoder decoder)
+    {
+        _recursionDecoder = decoder;
+    }
+
     private int CalculateTotalItemBytes(ReadOnlySequence<byte> data, int itemCount)
     {
         var remaining = data;
         var totalBytes = 0;
+
+        if (_recursionDecoder is null)
+        {
+            throw new InvalidOperationException("Recursion decoder is not set.");
+        }
 
         for (var i = 0; i < itemCount; i++)
         {
@@ -105,7 +119,7 @@ internal class ListDecoder : IValueDecoder
                 _logger.LogTrace("Decoding list item {Index}/{Count}, next marker: 0x{Marker:X2}", i + 1, itemCount, nextByte);
             }
 
-            var result = _decoder.Decode(remaining);
+            var result = _recursionDecoder.Decode(remaining);
 
             var bytesConsumed = result.BytesConsumed;
             if (bytesConsumed == 0)

@@ -16,6 +16,7 @@
 using System.Buffers;
 using System.Text;
 using FluentAssertions;
+using Moq;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
@@ -29,6 +30,13 @@ namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoder;
 [TestFixture]
 internal class ListDecoderTests : UnitTestBase<ListDecoder>
 {
+    [SetUp]
+    public void SetUp()
+    {
+        AutoMocker.Use<IPackStreamSizeReader>(new PackStreamSizeReader());
+        Subject.SetRecursionDecoder(new MockPackStreamDecoder(Subject));
+    }
+    
     [Test]
     public void HandlesAllListMarkerBytes()
     {
@@ -98,9 +106,10 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
     public void DecodesTinyListMaxSize()
     {
         // TinyList with 15 items (max for TinyList)
+        byte[] payload = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
         var bytes = new ByteArrayBuilder()
             .ExactBytes([0x9F]) // TinyList marker for 15 items
-            .Range(0x01, 15) // Items 1-15
+            .ExactBytes(payload)
             .Bytes;
 
         var buffer = new ReadOnlySequence<byte>(bytes);
@@ -109,46 +118,46 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
 
         result.Value.ListValue.Count.Should().Be(15);
         result.BytesConsumed.Should().Be(16);
-        result.Value.ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo(Enumerable.Range(1, 15));
+        result.Value.ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo(payload);
     }
 
     [Test]
     public void DecodesList8()
     {
         // List8 with 2 items: [5, 6]
-        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List8, 0x02, 0x05, 0x06]);
+        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List8, 0x02, 0x05, 0x03]);
 
         var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(4);
-        result.Value.ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([5, 6]);
+        result.Value.ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([5, 3]);
     }
 
     [Test]
     public void DecodesList16()
     {
         // List16 with 2 items: [7, 8]
-        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List16, 0x00, 0x02, 0x07, 0x08]);
+        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List16, 0x00, 0x02, 0x01, 0x02]);
 
         var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(5);
-        result.Value.ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([7, 8]);
+        result.Value.ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([1, 2]);
     }
 
     [Test]
     public void DecodesList32()
     {
         // List32 with 2 items: [9, 10]
-        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List32, 0x00, 0x00, 0x00, 0x02, 0x09, 0x0A]);
+        var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List32, 0x00, 0x00, 0x00, 0x02, 0x01, 0x02]);
 
         var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(7);
-        result.Value.ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([9, 10]);
+        result.Value.ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([1, 2]);
     }
 
     [Test]
@@ -158,7 +167,7 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
         // Using mock bytes 0x20 and 0x21 which the mock decoder maps to "Hello" and "World"
         var buffer = new ReadOnlySequence<byte>([0x92, 0x20, 0x21]);
 
-        var result = Subject.Decode(buffer, TODO);
+        var result = Subject.Decode(buffer);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(3);
@@ -191,7 +200,7 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
         // List8 marker alone without the size byte
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List8]);
 
-        Action act = () => Subject.Decode(buffer, TODO);
+        Action act = () => Subject.Decode(buffer);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -247,7 +256,7 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
         // [0x92, 0x92, 0x01, 0x02, 0x92] - second nested list has no items
         var buffer = new ReadOnlySequence<byte>([0x92, 0x92, 0x01, 0x02, 0x91]);
 
-        Action act = () => Subject.Decode(buffer, TODO);
+        Action act = () => Subject.Decode(buffer);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -266,11 +275,12 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
 
     private class MockPackStreamDecoder : IPackStreamDecoder
     {
-        private readonly IValueDecoder _listDecoder;
+        private readonly IRecursiveValueDecoder _listDecoder;
 
-        public MockPackStreamDecoder(IValueDecoder listDecoder)
+        public MockPackStreamDecoder(IRecursiveValueDecoder listDecoder)
         {
             _listDecoder = listDecoder;
+            _listDecoder.SetRecursionDecoder(this);
         }
 
         public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount) =>
@@ -281,24 +291,24 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
         {
             var array = buffer.ToArray();
-            return array switch
+            return array[0] switch
             {
-                [0x01] => new(PackStreamValue.Int(1), 1),
-                [0x02] => new(PackStreamValue.Int(2), 1),
-                [0x03] => new(PackStreamValue.Int(3), 1),
-                [0x04] => new(PackStreamValue.Int(4), 1),
-                [0x05] => new(PackStreamValue.Int(5), 1),
-                [0x11] => new(PackStreamValue.Float(0.1f), 1),
-                [0x12] => new(PackStreamValue.Float(0.2f), 1),
-                [0x13] => new(PackStreamValue.Float(0.3f), 1),
-                [0x14] => new(PackStreamValue.Float(0.4f), 1),
-                [0x15] => new(PackStreamValue.Float(0.5f), 1),
-                [0x20] => new(PackStreamValue.String(GetUtfBytes("Hello")), 1),
-                [0x21] => new(PackStreamValue.String(GetUtfBytes("World")), 1),
-                [>= 0x90 and <= 0x9F, _]
-                    or [PackStreamMarker.List8, _]
-                    or [PackStreamMarker.List16, _]
-                    or [PackStreamMarker.List32, _] => _listDecoder.Decode(buffer, TODO),
+                0x01 => new(PackStreamValue.Int(1), 1),
+                0x02 => new(PackStreamValue.Int(2), 1),
+                0x03 => new(PackStreamValue.Int(3), 1),
+                0x04 => new(PackStreamValue.Int(4), 1),
+                0x05 => new(PackStreamValue.Int(5), 1),
+                0x11 => new(PackStreamValue.Float(0.1f), 1),
+                0x12 => new(PackStreamValue.Float(0.2f), 1),
+                0x13 => new(PackStreamValue.Float(0.3f), 1),
+                0x14 => new(PackStreamValue.Float(0.4f), 1),
+                0x15 => new(PackStreamValue.Float(0.5f), 1),
+                0x20 => new(PackStreamValue.String(GetUtfBytes("Hello")), 1),
+                0x21 => new(PackStreamValue.String(GetUtfBytes("World")), 1),
+                >= 0x90 and <= 0x9F
+                    or PackStreamMarker.List8
+                    or PackStreamMarker.List16
+                    or PackStreamMarker.List32 => _listDecoder.Decode(buffer),
 
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(buffer),

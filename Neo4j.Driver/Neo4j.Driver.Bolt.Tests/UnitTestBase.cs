@@ -29,7 +29,7 @@ public class UnitTestBase<T> where T : class
     protected T Subject => _subject?.Value ?? throw new InvalidOperationException("Subject not initialized.");
 
     [SetUp]
-    public void SetUp()
+    public void SetUpBase()
     {
         AutoMocker = new AutoMocker();
         _subject = new Lazy<T>(() => AutoMocker.CreateInstance<T>());
