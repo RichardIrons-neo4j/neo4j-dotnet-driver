@@ -53,27 +53,8 @@ public readonly struct PackStreamListValue
         var remaining = _itemsData;
         for (var i = 0; i < _itemCount; i++)
         {
-            if (remaining.IsEmpty)
-            {
-                throw new InvalidOperationException(
-                    $"Unexpected end of data: expected {_itemCount} list items but only found {i}.");
-            }
-
             var result = _decoder.Decode(remaining);
-
             var consumed = result.BytesConsumed;
-            if (consumed == 0)
-            {
-                throw new InvalidOperationException(
-                    "Decoder returned zero bytes consumed.");
-            }
-
-            if (consumed > remaining.Length)
-            {
-                throw new InvalidOperationException(
-                    $"Decoder reports consuming {consumed} bytes but only {remaining.Length} bytes remain.");
-            }
-
             yield return result.Value;
             remaining = remaining.Slice(consumed);
         }
@@ -106,26 +87,7 @@ public readonly struct PackStreamListValue
                 return false;
             }
 
-            if (_reader.Remaining == 0)
-            {
-                throw new InvalidOperationException(
-                    $"Unexpected end of data: expected {_remainingCount} more list items but no data remains.");
-            }
-
             var result = _decoder.Decode(_reader.UnreadSequence);
-
-            if (result.BytesConsumed == 0)
-            {
-                throw new InvalidOperationException(
-                    "Decoder returned zero bytes consumed, which would cause an infinite loop.");
-            }
-
-            if (result.BytesConsumed > _reader.Remaining)
-            {
-                throw new InvalidOperationException(
-                    $"Decoder consumed {result.BytesConsumed} bytes but only {_reader.Remaining} bytes remain.");
-            }
-
             _current = result.Value;
             _reader.Advance(result.BytesConsumed);
             _remainingCount--;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
+using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
@@ -21,6 +22,13 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
 public abstract class ValueDecoderBase : IValueDecoder
 {
+    protected readonly ILogger? Logger;
+
+    protected ValueDecoderBase(ILogger? logger = null)
+    {
+        Logger = logger;
+    }
+
     public abstract byte[] HandledMarkerBytes { get; }
 
     public abstract ValueDecoderResult Decode(ReadOnlySequence<byte> buffer);
