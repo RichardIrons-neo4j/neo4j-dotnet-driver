@@ -62,7 +62,7 @@ internal class ListDecoder : SequenceDecoderBase, IRecursiveValueDecoder
         var reader = new SequenceReader<byte>(buffer);
         var marker = ReadValidMarkerByte(ref reader);
 
-        Logger?.LogDebug("Decoding list with marker 0x{Marker:X2}", marker);
+        Logger.LogDebug("Decoding list with marker 0x{Marker:X2}", marker);
 
         var itemCount = marker switch
         {
@@ -72,7 +72,7 @@ internal class ListDecoder : SequenceDecoderBase, IRecursiveValueDecoder
             _ => throw new InvalidOperationException($"Unknown list marker byte: 0x{marker:X2}")
         };
 
-        Logger?.LogDebug("List header: {ItemCount} items", itemCount);
+        Logger.LogDebug("List header: {ItemCount} items", itemCount);
 
         var listItemsData = DecodePayload(ref reader, itemCount, _recursionDecoder);
 
@@ -81,7 +81,7 @@ internal class ListDecoder : SequenceDecoderBase, IRecursiveValueDecoder
             itemCount,
             _recursionDecoder);
 
-        Logger?.LogDebug("Decoded list: {ItemCount} items, {TotalBytes} total bytes", itemCount, listItemsData.Length);
+        Logger.LogDebug("Decoded list: {ItemCount} items, {TotalBytes} total bytes", itemCount, listItemsData.Length);
 
         return new ValueDecoderResult(value, (int)reader.Consumed);
     }

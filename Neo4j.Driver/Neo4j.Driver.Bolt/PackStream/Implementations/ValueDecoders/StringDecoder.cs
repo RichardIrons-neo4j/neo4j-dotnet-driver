@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
+using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
@@ -33,7 +34,7 @@ internal class StringDecoder : ValueDecoderBase
     private static IntegerSize GetIntSize(byte marker) => (IntegerSize)(marker - PackStreamMarker.String8);
     private static readonly byte[] TinyStringMarkers = Enumerable.Range(0x80, 16).Select(i => (byte)i).ToArray();
 
-    public StringDecoder(IPackStreamSizeReader sizeReader)
+    public StringDecoder(IPackStreamSizeReader sizeReader, ILogger logger) : base(logger)
     {
         _sizeReader = sizeReader ?? throw new ArgumentNullException(nameof(sizeReader));
     }

@@ -61,7 +61,7 @@ internal class MapDecoder : SequenceDecoderBase, IRecursiveValueDecoder
         var reader = new SequenceReader<byte>(buffer);
         var marker = ReadValidMarkerByte(ref reader);
 
-        Logger?.LogDebug("Decoding map with marker 0x{Marker:X2}", marker);
+        Logger.LogDebug("Decoding map with marker 0x{Marker:X2}", marker);
 
         var entryCount = marker switch
         {
@@ -71,7 +71,7 @@ internal class MapDecoder : SequenceDecoderBase, IRecursiveValueDecoder
             _ => throw new InvalidOperationException($"Unknown map marker byte: 0x{marker:X2}")
         };
 
-        Logger?.LogDebug("Map header: {EntryCount} entries", entryCount);
+        Logger.LogDebug("Map header: {EntryCount} entries", entryCount);
 
         var entriesData = DecodePayload(ref reader, 2 * entryCount, _recursionDecoder);
 
@@ -80,7 +80,7 @@ internal class MapDecoder : SequenceDecoderBase, IRecursiveValueDecoder
             entryCount,
             _recursionDecoder);
 
-        Logger?.LogDebug("Decoded map: {EntryCount} entries, {TotalBytes} total bytes", entryCount, entriesData.Length);
+        Logger.LogDebug("Decoded map: {EntryCount} entries, {TotalBytes} total bytes", entryCount, entriesData.Length);
 
         return new ValueDecoderResult(value, (int)reader.Consumed);
     }

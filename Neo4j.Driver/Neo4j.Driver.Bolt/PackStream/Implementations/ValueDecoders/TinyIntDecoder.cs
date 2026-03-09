@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
+using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
@@ -25,7 +26,11 @@ public class TinyIntDecoder : ValueDecoderBase
 
     private static readonly IEnumerable<byte> NegativeTinyIntMarkers =
         Enumerable.Range(0xF0, 0x10).Select(i => (byte)i).ToArray();
-    
+
+    public TinyIntDecoder(ILogger logger) : base(logger)
+    {
+    }
+
     public override byte[] HandledMarkerBytes => [..PositiveTinyIntMarkers, ..NegativeTinyIntMarkers];
 
 

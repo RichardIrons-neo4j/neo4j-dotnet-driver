@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
+using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
@@ -27,6 +28,10 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// </summary>
 internal class BytesDecoder : ValueDecoderBase
 {
+    public BytesDecoder(ILogger logger) : base(logger)
+    {
+    }
+
     public override byte[] HandledMarkerBytes =>
         [PackStreamMarker.Bytes8, PackStreamMarker.Bytes16, PackStreamMarker.Bytes32];
 
