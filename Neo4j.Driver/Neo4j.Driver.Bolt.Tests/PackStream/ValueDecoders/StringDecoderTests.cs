@@ -5,7 +5,7 @@ using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoder;
+namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
 internal class StringDecoderTests : UnitTestBase<StringDecoder>

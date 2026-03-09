@@ -28,7 +28,7 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00, 0x2A]); // marker + count 42
 
-        var result = Subject.ReadSize8(buffer, "Test");
+        var result = Subject.ReadSize8(buffer);
 
         result.HeaderSize.Should().Be(2);
         result.Count.Should().Be(42);
@@ -39,7 +39,7 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00, 0xFF]); // marker + count 255
 
-        var result = Subject.ReadSize8(buffer, "Test");
+        var result = Subject.ReadSize8(buffer);
 
         result.HeaderSize.Should().Be(2);
         result.Count.Should().Be(255);
@@ -50,10 +50,9 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00]); // only marker
 
-        Action act = () => Subject.ReadSize8(buffer, "TestType");
+        Action act = () => Subject.ReadSize8(buffer);
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*TestType*2 bytes*");
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Test]
@@ -61,7 +60,7 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00, 0x01, 0x00]); // marker + count 256 (big-endian)
 
-        var result = Subject.ReadSize16(buffer, "Test");
+        var result = Subject.ReadSize16(buffer);
 
         result.HeaderSize.Should().Be(3);
         result.Count.Should().Be(256);
@@ -72,7 +71,7 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00, 0xFF, 0xFF]); // marker + count 65535
 
-        var result = Subject.ReadSize16(buffer, "Test");
+        var result = Subject.ReadSize16(buffer);
 
         result.HeaderSize.Should().Be(3);
         result.Count.Should().Be(65535);
@@ -83,10 +82,9 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00, 0x01]); // only 2 bytes
 
-        Action act = () => Subject.ReadSize16(buffer, "TestType");
+        Action act = () => Subject.ReadSize16(buffer);
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*TestType*3 bytes*");
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Test]
@@ -94,7 +92,7 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00, 0x00, 0x01, 0x00, 0x00]); // marker + count 65536 (big-endian)
 
-        var result = Subject.ReadSize32(buffer, "Test");
+        var result = Subject.ReadSize32(buffer);
 
         result.HeaderSize.Should().Be(5);
         result.Count.Should().Be(65536);
@@ -105,7 +103,7 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00, 0x7F, 0xFF, 0xFF, 0xFF]); // marker + count 2147483647
 
-        var result = Subject.ReadSize32(buffer, "Test");
+        var result = Subject.ReadSize32(buffer);
 
         result.HeaderSize.Should().Be(5);
         result.Count.Should().Be(int.MaxValue);
@@ -116,10 +114,9 @@ internal class PackStreamSizeReaderTests : UnitTestBase<PackStreamSizeReader>
     {
         var buffer = new ReadOnlySequence<byte>([0x00, 0x01, 0x02, 0x03]); // only 4 bytes
 
-        Action act = () => Subject.ReadSize32(buffer, "TestType");
+        Action act = () => Subject.ReadSize32(buffer);
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*TestType*5 bytes*");
+        act.Should().Throw<InvalidOperationException>();
     }
 }
 

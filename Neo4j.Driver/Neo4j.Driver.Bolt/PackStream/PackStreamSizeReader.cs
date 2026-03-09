@@ -28,41 +28,41 @@ internal interface IPackStreamSizeReader
     /// Reads a 1-byte size value from the buffer at position 1.
     /// Returns (headerSize: 2, count).
     /// </summary>
-    (int HeaderSize, int Count) ReadSize8(ReadOnlySequence<byte> buffer, string typeName);
+    (int HeaderSize, int Count) ReadSize8(ReadOnlySequence<byte> buffer);
 
     /// <summary>
     /// Reads a 2-byte big-endian size value from the buffer at position 1.
     /// Returns (headerSize: 3, count).
     /// </summary>
-    (int HeaderSize, int Count) ReadSize16(ReadOnlySequence<byte> buffer, string typeName);
+    (int HeaderSize, int Count) ReadSize16(ReadOnlySequence<byte> buffer);
 
     /// <summary>
     /// Reads a 4-byte big-endian size value from the buffer at position 1.
     /// Returns (headerSize: 5, count).
     /// </summary>
-    (int HeaderSize, int Count) ReadSize32(ReadOnlySequence<byte> buffer, string typeName);
+    (int HeaderSize, int Count) ReadSize32(ReadOnlySequence<byte> buffer);
 }
 
 /// <inheritdoc />
 internal class PackStreamSizeReader : IPackStreamSizeReader
 {
     /// <inheritdoc />
-    public (int HeaderSize, int Count) ReadSize8(ReadOnlySequence<byte> buffer, string typeName)
+    public (int HeaderSize, int Count) ReadSize8(ReadOnlySequence<byte> buffer)
     {
         if (buffer.Length < 2)
         {
-            throw new InvalidOperationException($"Buffer too short. {typeName} requires at least 2 bytes.");
+            throw new InvalidOperationException($"Buffer too short.requires at least 2 bytes.");
         }
 
         return (2, buffer.Slice(1, 1).FirstSpan[0]);
     }
 
     /// <inheritdoc />
-    public (int HeaderSize, int Count) ReadSize16(ReadOnlySequence<byte> buffer, string typeName)
+    public (int HeaderSize, int Count) ReadSize16(ReadOnlySequence<byte> buffer)
     {
         if (buffer.Length < 3)
         {
-            throw new InvalidOperationException($"Buffer too short. {typeName} requires at least 3 bytes.");
+            throw new InvalidOperationException($"Buffer too short.  requires at least 3 bytes.");
         }
 
         var slice = buffer.Slice(1, 2);
@@ -77,11 +77,11 @@ internal class PackStreamSizeReader : IPackStreamSizeReader
     }
 
     /// <inheritdoc />
-    public (int HeaderSize, int Count) ReadSize32(ReadOnlySequence<byte> buffer, string typeName)
+    public (int HeaderSize, int Count) ReadSize32(ReadOnlySequence<byte> buffer)
     {
         if (buffer.Length < 5)
         {
-            throw new InvalidOperationException($"Buffer too short. {typeName} requires at least 5 bytes.");
+            throw new InvalidOperationException($"Buffer too short.  requires at least 5 bytes.");
         }
 
         var slice = buffer.Slice(1, 4);

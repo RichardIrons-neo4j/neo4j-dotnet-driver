@@ -52,7 +52,7 @@ public readonly struct PackStreamValue
 
     // Integer
     public long IntValue => _intValue ?? throw new InvalidOperationException($"Cannot read IntValue from {_type}");
-    public static PackStreamValue Int(long value) => new(PackStreamType.Integer, intValue: value);
+    public static PackStreamValue Integer(long value) => new(PackStreamType.Integer, intValue: value);
 
     // Float
     public double FloatValue =>

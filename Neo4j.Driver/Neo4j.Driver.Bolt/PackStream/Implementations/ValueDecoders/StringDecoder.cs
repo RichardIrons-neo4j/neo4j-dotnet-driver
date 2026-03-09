@@ -15,6 +15,7 @@
 
 using System.Buffers;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
@@ -25,10 +26,11 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// String16: marker 0xD1 + 2 byte big-endian length
 /// String32: marker 0xD2 + 4 byte big-endian length
 /// </summary>
-internal class StringDecoder : IValueDecoder
+internal class StringDecoder : ValueDecoderBase
 {
     private readonly IPackStreamSizeReader _sizeReader;
 
+    private static IntegerSize GetIntSize(byte marker) => (IntegerSize)(marker - PackStreamMarker.String8);
     private static readonly byte[] TinyStringMarkers = Enumerable.Range(0x80, 16).Select(i => (byte)i).ToArray();
 
     public StringDecoder(IPackStreamSizeReader sizeReader)
@@ -36,35 +38,27 @@ internal class StringDecoder : IValueDecoder
         _sizeReader = sizeReader ?? throw new ArgumentNullException(nameof(sizeReader));
     }
 
-    public byte[] HandledMarkerBytes => [..TinyStringMarkers, PackStreamMarker.String8, PackStreamMarker.String16, PackStreamMarker.String32];
+    public override byte[] HandledMarkerBytes =>
+    [
+        ..TinyStringMarkers, PackStreamMarker.String8, PackStreamMarker.String16, PackStreamMarker.String32
+    ];
 
-    public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
+    public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
-        if (buffer.IsEmpty)
-        {
-            throw new InvalidOperationException("Buffer is empty. Cannot decode String value.");
-        }
+        var reader = new SequenceReader<byte>(buffer);
+        var marker = ReadValidMarkerByte(ref reader);
 
-        var marker = buffer.FirstSpan[0];
-
-        var (headerSize, length) = marker switch
+        var length = marker switch
         {
-            >= 0x80 and <= 0x8F => (1, marker & 0x0F),
-            PackStreamMarker.String8 => _sizeReader.ReadSize8(buffer, "String8"),
-            PackStreamMarker.String16 => _sizeReader.ReadSize16(buffer, "String16"),
-            PackStreamMarker.String32 => _sizeReader.ReadSize32(buffer, "String32"),
+            >= 0x80 and <= 0x8F => marker & 0x0F,
+            PackStreamMarker.String8 or PackStreamMarker.String16 or PackStreamMarker.String32 => 
+                    ReadSize(ref reader, GetIntSize(marker))
+            ,
             _ => throw new InvalidOperationException($"Unknown marker byte: 0x{marker:X2}")
         };
 
-        var totalLength = headerSize + length;
-        if (buffer.Length < totalLength)
-        {
-            throw new InvalidOperationException("Buffer too short to read string data.");
-        }
-
-        var stringData = buffer.Slice(headerSize, length);
+        var stringData = ReadExact(ref reader, length);
         var value = PackStreamValue.String(stringData);
-
-        return new ValueDecoderResult(value, totalLength);
+        return new ValueDecoderResult(value, (int)reader.Consumed);
     }
 }

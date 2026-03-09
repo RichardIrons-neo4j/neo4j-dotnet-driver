@@ -15,32 +15,22 @@
 
 using System.Buffers;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-public class TinyIntDecoder : ValueDecoderBase
+public class IntegerDecoder : ValueDecoderBase
 {
-    private static readonly IEnumerable<byte> PositiveTinyIntMarkers =
-        Enumerable.Range(0x00, 0x80).Select(i => (byte)i).ToArray();
+    public override byte[] HandledMarkerBytes =>
+        [PackStreamMarker.Int8, PackStreamMarker.Int16, PackStreamMarker.Int32, PackStreamMarker.Int64];
 
-    private static readonly IEnumerable<byte> NegativeTinyIntMarkers =
-        Enumerable.Range(0xF0, 0x10).Select(i => (byte)i).ToArray();
-    
-    public override byte[] HandledMarkerBytes => [..PositiveTinyIntMarkers, ..NegativeTinyIntMarkers];
-
+    private static IntegerSize GetIntSize(byte marker) => (IntegerSize)(marker - PackStreamMarker.Int8);
 
     public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
-        var marker = buffer.FirstSpan[0];
-
-        var value = marker switch
-        {
-            <= 0x7F => marker, // positive tiny int
-            >= 0xF0 => marker - 256, // negative tiny int
-            _ => throw new InvalidOperationException($"Unknown marker byte: 0x{marker:X2}")
-        };
-            
-        return new ValueDecoderResult(PackStreamValue.Integer(value), 1);
+        var reader = new SequenceReader<byte>(buffer);
+        var marker = ReadValidMarkerByte(ref reader);
+        var value =  ReadInteger(ref reader, GetIntSize(marker));
+        return new ValueDecoderResult(PackStreamValue.Integer(value), (int)reader.Consumed);
     }
-    
 }

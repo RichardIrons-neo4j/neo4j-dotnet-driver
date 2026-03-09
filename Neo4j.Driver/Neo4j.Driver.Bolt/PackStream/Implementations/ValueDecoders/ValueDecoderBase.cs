@@ -19,22 +19,35 @@ using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHe
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-internal class BooleanDecoder : ValueDecoderBase
+public abstract class ValueDecoderBase : IValueDecoder
 {
-    public override byte[] HandledMarkerBytes => [PackStreamMarker.True, PackStreamMarker.False];
+    public abstract byte[] HandledMarkerBytes { get; }
 
-    public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
+    public abstract ValueDecoderResult Decode(ReadOnlySequence<byte> buffer);
+
+    public enum IntegerSize
     {
-        var reader = new SequenceReader<byte>(buffer);
-        var marker = ReadValidMarkerByte(ref reader);
-        
-        var value = marker switch
+        Byte = 0,
+        Short = 1,
+        Int = 2,
+        Long = 3,
+    }
+
+    protected virtual bool IsMarkerByteHandled(byte markerByte) => HandledMarkerBytes.Contains(markerByte);
+
+    protected byte ReadValidMarkerByte(ref SequenceReader<byte> reader)
+    {
+        EnsureReaderNotFinished(reader);
+        var markerByte = ReadByte(ref reader);
+        EnsureMarkerByteValid(markerByte);
+        return markerByte;
+    }
+
+    protected void EnsureMarkerByteValid(byte markerByte)
+    {
+        if (!HandledMarkerBytes.Contains(markerByte))
         {
-            PackStreamMarker.True => PackStreamValue.Boolean(true),
-            PackStreamMarker.False => PackStreamValue.Boolean(false),
-            _ => throw new InvalidOperationException($"Unknown marker byte: 0x{buffer.FirstSpan[0]:X2}")
-        };
-        
-        return new ValueDecoderResult(value, (int)reader.Consumed);
+            throw new InvalidOperationException($"Unknown marker byte: 0x{markerByte:X2}");
+        }
     }
 }

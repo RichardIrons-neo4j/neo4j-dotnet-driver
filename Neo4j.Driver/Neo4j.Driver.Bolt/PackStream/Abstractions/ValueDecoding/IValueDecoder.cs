@@ -17,12 +17,6 @@ using System.Buffers;
 
 namespace Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 
-public readonly ref struct ValueDecoderResult(PackStreamValue value, int bytesConsumed)
-{
-    public PackStreamValue Value { get; } = value;
-    public int BytesConsumed { get; } = bytesConsumed;
-}
-
 public interface IValueDecoder
 {
     byte[] HandledMarkerBytes { get; }
