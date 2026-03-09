@@ -28,6 +28,7 @@ public readonly struct PackStreamValue
     private readonly ReadOnlySequence<byte>? _stringBytes;
     private readonly PackStreamListValue? _listValue;
     private readonly PackStreamMapValue? _mapValue;
+    private readonly PackStreamStructValue? _structValue;
 
     private PackStreamValue(
         PackStreamType type,
@@ -37,7 +38,8 @@ public readonly struct PackStreamValue
         ReadOnlySequence<byte>? bytesValue = null,
         ReadOnlySequence<byte>? stringBytes = null,
         PackStreamListValue? listValue = null,
-        PackStreamMapValue? mapValue = null)
+        PackStreamMapValue? mapValue = null,
+        PackStreamStructValue? structValue = null)
     {
         _type = type;
         _intValue = intValue;
@@ -47,6 +49,7 @@ public readonly struct PackStreamValue
         _stringBytes = stringBytes;
         _listValue = listValue;
         _mapValue = mapValue;
+        _structValue = structValue;
     }
 
     public PackStreamType Type => _type;
@@ -103,10 +106,15 @@ public readonly struct PackStreamValue
         IPackStreamDecoder decoder) =>
         new(PackStreamType.Map, mapValue: new PackStreamMapValue(entriesData, entryCount, decoder));
 
+    // Struct
+    public PackStreamStructValue StructValue =>
+        _structValue ?? throw new InvalidOperationException($"Cannot read StructValue from {_type}");
+
+    internal static PackStreamValue Struct(PackStreamStructValue structValue) =>
+        new(PackStreamType.Struct, structValue: structValue);
+
     // Null
     public static PackStreamValue Null() => new(PackStreamType.Null);
-
-    // TODO: Struct
 
     public override string ToString() => _type switch
     {
@@ -117,6 +125,7 @@ public readonly struct PackStreamValue
         PackStreamType.String => $"STRING[{_stringBytes?.Length ?? 0}]",
         PackStreamType.List => $"LIST[{_listValue?.Count ?? 0}]",
         PackStreamType.Map => $"MAP[{_mapValue?.Count ?? 0}]",
+        PackStreamType.Struct => $"STRUCT[0x{_structValue?.Tag:X2},{_structValue?.Fields.Count ?? 0}]",
         PackStreamType.Null => "NULL",
         _ => "UNKNOWN"
     };
