@@ -51,10 +51,11 @@ internal class StringDecoder : ValueDecoderBase
         var length = marker switch
         {
             >= 0x80 and <= 0x8F => marker & 0x0F,
-            PackStreamMarker.String8 or PackStreamMarker.String16 or PackStreamMarker.String32 => 
-                    ReadSize(ref reader, GetIntSize(marker))
-            ,
-            _ => throw new InvalidOperationException($"Unknown marker byte: 0x{marker:X2}")
+            // 8/16/32-bit length indicator
+            PackStreamMarker.String8 or PackStreamMarker.String16 or PackStreamMarker.String32 => ReadSize(
+                ref reader,
+                GetIntSize(marker)),
+            _ => throw new InvalidOperationException($"Unknown string marker byte: 0x{marker:X2}")
         };
 
         var stringData = ReadExact(ref reader, length);

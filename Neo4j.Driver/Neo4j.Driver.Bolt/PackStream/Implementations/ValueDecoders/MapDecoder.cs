@@ -1,4 +1,4 @@
-﻿﻿// Copyright (c) "Neo4j"
+﻿// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -13,22 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Buffers;
-using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
-using Marker = Neo4j.Driver.Internal.IO.PackStream;
-using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
-
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-internal class NullDecoder : ValueDecoderBase
+public class MapDecoder
 {
-    public override byte[] HandledMarkerBytes => [Marker.Null];
-
-    public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
-    {
-        var reader = new SequenceReader<byte>(buffer);
-        ReadValidMarkerByte(ref reader);
-        return new ValueDecoderResult(PackStreamValue.Null(), 1);
-    }
+    
 }
-
