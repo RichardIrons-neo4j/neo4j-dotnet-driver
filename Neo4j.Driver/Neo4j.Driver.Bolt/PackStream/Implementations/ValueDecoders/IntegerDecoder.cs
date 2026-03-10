@@ -20,12 +20,8 @@ using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHe
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-public class IntegerDecoder : ValueDecoderBase
+public class IntegerDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
-    public IntegerDecoder(ILogger logger) : base(logger)
-    {
-    }
-
     public override byte[] HandledMarkerBytes =>
         [PackStreamMarker.Int8, PackStreamMarker.Int16, PackStreamMarker.Int32, PackStreamMarker.Int64];
 

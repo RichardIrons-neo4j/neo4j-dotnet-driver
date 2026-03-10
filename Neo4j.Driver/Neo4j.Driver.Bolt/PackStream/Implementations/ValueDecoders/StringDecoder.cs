@@ -27,14 +27,10 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// String16: marker 0xD1 + 2 byte big-endian length
 /// String32: marker 0xD2 + 4 byte big-endian length
 /// </summary>
-internal class StringDecoder : ValueDecoderBase
+internal class StringDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
     private static IntegerSize GetIntSize(byte marker) => (IntegerSize)(marker - PackStreamMarker.String8);
     private static readonly byte[] TinyStringMarkers = Enumerable.Range(0x80, 16).Select(i => (byte)i).ToArray();
-
-    public StringDecoder(ILogger logger) : base(logger)
-    {
-    }
 
     public override byte[] HandledMarkerBytes =>
     [

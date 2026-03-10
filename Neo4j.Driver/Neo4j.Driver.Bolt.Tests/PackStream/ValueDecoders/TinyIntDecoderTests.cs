@@ -22,7 +22,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
-internal class TinyIntDecoderTests : UnitTestBase<TinyIntDecoder>
+internal class TinyIntDecoderTests : DecoderTestsBase<TinyIntDecoder>
 {
     [Test]
     public void HandledMarkerBytes_IncludesPositiveAndNegativeTinyInts()

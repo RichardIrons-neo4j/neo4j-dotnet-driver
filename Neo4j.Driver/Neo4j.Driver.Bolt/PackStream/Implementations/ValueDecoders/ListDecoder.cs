@@ -28,14 +28,9 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// List16: marker 0xD5 + 2 byte big-endian count
 /// List32: marker 0xD6 + 4 byte big-endian count
 /// </summary>
-internal class ListDecoder : SequenceDecoderBase, IRecursiveValueDecoder
+internal class ListDecoder(ILogger logger) : SequenceDecoderBase(logger), IRecursiveValueDecoder
 {
     private IPackStreamDecoder? _recursionDecoder;
-
-    public ListDecoder(ILogger logger)
-        : base(logger)
-    {
-    }
 
     private static readonly byte[] TinyListMarkers = Enumerable.Range(0x90, 16).Select(i => (byte)i).ToArray();
 

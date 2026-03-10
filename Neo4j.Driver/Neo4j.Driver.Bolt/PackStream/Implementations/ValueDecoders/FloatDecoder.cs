@@ -24,12 +24,8 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// Decodes Float64 values from PackStream format.
 /// Float64 is a nine-byte encoding: marker byte 0xC1 followed by a big-endian IEEE 754 double-precision float.
 /// </summary>
-internal class FloatDecoder : ValueDecoderBase
+internal class FloatDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
-    public FloatDecoder(ILogger logger) : base(logger)
-    {
-    }
-
     public override byte[] HandledMarkerBytes => [PackStreamMarker.Float64];
 
     public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)

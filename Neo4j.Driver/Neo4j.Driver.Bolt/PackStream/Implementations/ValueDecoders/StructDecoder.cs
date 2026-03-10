@@ -28,14 +28,9 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// Struct16: marker 0xDD + 2 byte big-endian count
 /// Followed by tag byte then N field values.
 /// </summary>
-internal class StructDecoder : SequenceDecoderBase, IRecursiveValueDecoder
+internal class StructDecoder(ILogger logger) : SequenceDecoderBase(logger), IRecursiveValueDecoder
 {
     private IPackStreamDecoder? _recursionDecoder;
-
-    public StructDecoder(ILogger logger)
-        : base(logger)
-    {
-    }
 
     private static readonly byte[] TinyStructMarkers = Enumerable.Range(0xB0, 16).Select(i => (byte)i).ToArray();
 

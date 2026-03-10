@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
-internal class NullDecoderTests : UnitTestBase<NullDecoder>
+internal class NullDecoderTests : DecoderTestsBase<NullDecoder>
 {
     [Test]
     public void HandlesNullMarkerByte()

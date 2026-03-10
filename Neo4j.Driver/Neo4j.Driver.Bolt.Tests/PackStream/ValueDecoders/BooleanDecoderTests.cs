@@ -22,7 +22,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
-internal class BooleanDecoderTests : UnitTestBase<BooleanDecoder>
+internal class BooleanDecoderTests : DecoderTestsBase<BooleanDecoder>
 {
     [Test]
     public void HandlesTrueAndFalseMarkerBytes()
