@@ -42,15 +42,6 @@ internal class ListDecoder : SequenceDecoderBase, IRecursiveValueDecoder
     public override byte[] HandledMarkerBytes =>
         [..TinyListMarkers, PackStreamMarker.List8, PackStreamMarker.List16, PackStreamMarker.List32];
 
-    protected override bool IsMarkerByteHandled(byte markerByte)
-    {
-        return markerByte
-            is >= 0x90 and <= 0x9F
-            or PackStreamMarker.List8
-            or PackStreamMarker.List16
-            or PackStreamMarker.List32;
-    }
-
     private static IntegerSize GetIntSize(byte marker) => (IntegerSize)(marker - PackStreamMarker.List8);
 
     public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
@@ -64,7 +55,7 @@ internal class ListDecoder : SequenceDecoderBase, IRecursiveValueDecoder
 
         var itemCount = marker switch
         {
-            >= 0x90 and <= 0x9F => marker & 0x0F,
+            _ when (marker & 0xF0) == PackStreamMarker.TinyList => marker & 0x0F,
             PackStreamMarker.List8 or PackStreamMarker.List16 or PackStreamMarker.List32
                 => ReadSize(ref reader, GetIntSize(marker)),
             _ => throw new InvalidOperationException($"Unknown list marker byte: 0x{marker:X2}")

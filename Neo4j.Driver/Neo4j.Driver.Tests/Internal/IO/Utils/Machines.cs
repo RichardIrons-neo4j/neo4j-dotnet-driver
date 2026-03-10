@@ -16,7 +16,6 @@
 using System;
 using System.IO;
 using Neo4j.Driver.Internal.IO;
-using Neo4j.Driver.Internal.Protocol;
 
 namespace Neo4j.Driver.Tests.Internal.IO.Utils;
 

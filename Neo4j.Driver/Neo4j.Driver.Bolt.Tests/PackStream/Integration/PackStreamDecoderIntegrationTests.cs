@@ -15,7 +15,6 @@
 
 using System.Buffers;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.AutoMock;
 using Neo4j.Driver.Bolt.PackStream;
@@ -27,7 +26,6 @@ using Neo4j.Driver.Bolt.Transport.Abstractions;
 using NUnit.Framework;
 using Serilog;
 using Serilog.Extensions.Logging;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Neo4j.Driver.Bolt.Tests.PackStream.Integration;
 

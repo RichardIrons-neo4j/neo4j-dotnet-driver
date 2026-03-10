@@ -23,7 +23,6 @@ using Neo4j.Driver.Internal.IO;
 using Neo4j.Driver.Internal.Protocol;
 using Neo4j.Driver.Tests.Extensions;
 using Neo4j.Driver.Tests.Internal.IO.Utils;
-using Neo4j.Driver.Tests.TestUtil;
 using Xunit;
 
 namespace Neo4j.Driver.Tests.Internal.IO;

@@ -56,7 +56,7 @@ internal class StructDecoder : SequenceDecoderBase, IRecursiveValueDecoder
         var fieldCount = marker switch
         {
             // tiny struct
-            >= 0xB0 and <= 0xBF => marker & 0x0F,
+            _ when (marker & 0xF0) == PackStreamMarker.TinyStruct => marker & 0x0F,
             
             // 8 or 16-bit length indicator
             PackStreamMarker.Struct8 or PackStreamMarker.Struct16

@@ -14,7 +14,6 @@
 // limitations under the License.
 
 using System.Net;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Neo4j.Driver.Internal.Connector;

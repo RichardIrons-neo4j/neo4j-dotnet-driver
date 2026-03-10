@@ -17,7 +17,6 @@ using Moq.AutoMock;
 using NUnit.Framework;
 using Serilog;
 using Serilog.Extensions.Logging;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Neo4j.Driver.Bolt.Tests;
 
