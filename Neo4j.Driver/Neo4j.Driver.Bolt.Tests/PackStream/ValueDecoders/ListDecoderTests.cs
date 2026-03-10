@@ -32,7 +32,6 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
     [SetUp]
     public void SetUp()
     {
-        AutoMocker.Use<IPackStreamSizeReader>(new PackStreamSizeReader());
         Subject.SetRecursionDecoder(new MockPackStreamDecoder(Subject));
     }
     

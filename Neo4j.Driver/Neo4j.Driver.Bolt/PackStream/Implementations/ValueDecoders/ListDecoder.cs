@@ -30,13 +30,11 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// </summary>
 internal class ListDecoder : SequenceDecoderBase, IRecursiveValueDecoder
 {
-    private readonly IPackStreamSizeReader _sizeReader;
     private IPackStreamDecoder? _recursionDecoder;
 
-    public ListDecoder(IPackStreamSizeReader sizeReader, ILogger logger)
+    public ListDecoder(ILogger logger)
         : base(logger)
     {
-        _sizeReader = sizeReader ?? throw new ArgumentNullException(nameof(sizeReader));
     }
 
     private static readonly byte[] TinyListMarkers = Enumerable.Range(0x90, 16).Select(i => (byte)i).ToArray();

@@ -12,7 +12,6 @@ internal class BytesDecoderTests : UnitTestBase<BytesDecoder>
     [SetUp]
     public void SetUp()
     {
-        AutoMocker.Use<IPackStreamSizeReader>(new PackStreamSizeReader());
     }
 
     [Test]

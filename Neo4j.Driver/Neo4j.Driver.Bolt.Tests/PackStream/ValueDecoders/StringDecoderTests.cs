@@ -10,12 +10,6 @@ namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 [TestFixture]
 internal class StringDecoderTests : UnitTestBase<StringDecoder>
 {
-    [SetUp]
-    public void SetUp()
-    {
-        AutoMocker.Use<IPackStreamSizeReader>(new PackStreamSizeReader());
-    }
-
     [Test]
     public void HandlesAllStringMarkerBytes()
     {
