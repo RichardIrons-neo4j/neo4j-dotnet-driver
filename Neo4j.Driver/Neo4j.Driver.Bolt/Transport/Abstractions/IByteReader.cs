@@ -13,12 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Buffers;
 using Neo4j.Driver.Bolt.Transport.Types;
 
 namespace Neo4j.Driver.Bolt.Transport.Abstractions;
 
 /// <summary>
-/// Abstraction over a byte source for reading streaming data.
+/// Abstraction over a byte source for reading streaming data (e.g. <see cref="System.IO.Pipelines.PipeReader"/>).
 /// </summary>
 public interface IByteReader
 {
@@ -33,4 +34,11 @@ public interface IByteReader
     /// <param name="consumed">The position up to which data has been consumed.</param>
     /// <param name="examined">The position up to which data has been examined.</param>
     void AdvanceTo(SequencePosition consumed, SequencePosition examined);
+
+    /// <summary>
+    /// Reads exactly <paramref name="buffer"/>.Length bytes into <paramref name="buffer"/>.
+    /// Implementations must advance <see cref="AdvanceTo"/> so consumed bytes match what was copied out.
+    /// </summary>
+    /// <exception cref="EndOfStreamException">The stream ended before the buffer was filled.</exception>
+    ValueTask ReadExactlyAsync(Memory<byte> buffer, CancellationToken cancellationToken = default);
 }

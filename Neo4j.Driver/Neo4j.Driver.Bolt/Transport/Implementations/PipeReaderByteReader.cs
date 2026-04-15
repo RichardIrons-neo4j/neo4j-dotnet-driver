@@ -13,7 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Buffers;
 using System.IO.Pipelines;
+using Neo4j.Driver.Bolt.Extensions;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 using Neo4j.Driver.Bolt.Transport.Types;
 
@@ -45,5 +47,37 @@ public sealed class PipeReaderByteReader : IByteReader
     {
         _pipeReader.AdvanceTo(consumed, examined);
     }
-}
 
+    /// <inheritdoc />
+    public async ValueTask ReadExactlyAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        var filled = 0;
+        while (filled < buffer.Length)
+        {
+            var result = await _pipeReader.ReadAsync(cancellationToken).ConfigureAwait(false);
+            var resultBuf = result.Buffer;
+
+            if (resultBuf.IsEmpty)
+            {
+                AdvanceTo(resultBuf.Start, resultBuf.End);
+                ProtocolException.ThrowIf(
+                    result.IsCompleted,
+                    "Unexpected end of stream before required bytes were read.");
+
+                continue;
+            }
+
+            var bytesAvailable = (int)resultBuf.Length;
+            var bytesStillNeeded = buffer.Length - filled;
+            var copyLength = Math.Min(bytesAvailable, bytesStillNeeded);
+
+            var source = resultBuf.Slice(0, copyLength);
+            var dest = buffer.Span.Slice(filled, copyLength);
+            source.CopyTo(dest);
+
+            filled += copyLength;
+            var endOfCopiedBytes = resultBuf.GetPosition(copyLength, resultBuf.Start);
+            AdvanceTo(endOfCopiedBytes, endOfCopiedBytes);
+        }
+    }
+}
