@@ -21,6 +21,20 @@ public static class SequenceReaderExtensions
 {
     extension(SequenceReader<byte> sequenceReader) 
     {
+        public byte ReadByte()
+        {
+            return sequenceReader.TryRead(out byte value)
+                ? value
+                : throw new ProtocolException("Failed to read byte from memory buffer");
+        }
+
+        public byte PeekByte()
+        {
+            return sequenceReader.TryPeek(out byte value)
+                ? value
+                : throw new ProtocolException("Failed to peek byte from memory buffer");
+        }
+        
         public int ReadInt()
         {
             return sequenceReader.TryReadBigEndian(out int value)
