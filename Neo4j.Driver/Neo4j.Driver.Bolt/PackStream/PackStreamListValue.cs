@@ -1,0 +1,116 @@
+﻿// Copyright (c) "Neo4j"
+// Neo4j Sweden AB [https://neo4j.com]
+// 
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Buffers;
+using Neo4j.Driver.Bolt.PackStream.Abstractions;
+
+namespace Neo4j.Driver.Bolt.PackStream;
+
+/// <summary>
+/// A PackStream list value that supports allocation-free enumeration via foreach,
+/// or heap-allocated enumeration via ToEnumerable() for LINQ operations.
+/// </summary>
+public readonly struct PackStreamListValue
+{
+    private readonly ReadOnlySequence<byte> _itemsData;
+    private readonly int _itemCount;
+    private readonly IPackStreamDecoder _decoder;
+
+    internal PackStreamListValue(
+        ReadOnlySequence<byte> itemsData,
+        int itemCount,
+        IPackStreamDecoder decoder)
+    {
+        _itemsData = itemsData;
+        _itemCount = itemCount;
+        _decoder = decoder;
+    }
+
+    public int Count => _itemCount;
+
+    /// <summary>
+    /// Returns an allocation-free enumerator for use with foreach.
+    /// </summary>
+    public Enumerator GetEnumerator() => new(_itemsData, _itemCount, _decoder);
+
+    /// <summary>
+    /// Returns a heap-allocated IEnumerable for LINQ operations.
+    /// </summary>
+    public IEnumerable<PackStreamValue> ToEnumerable()
+    {
+        var remaining = _itemsData;
+        for (var i = 0; i < _itemCount; i++)
+        {
+            var result = _decoder.Decode(remaining);
+            var value = result.Value;
+            var consumed = result.BytesConsumed;
+            yield return value;
+            remaining = remaining.Slice(consumed);
+        }
+    }
+
+    public ref struct Enumerator
+    {
+        private readonly IPackStreamDecoder _decoder;
+        private SequenceReader<byte> _reader;
+        private int _remainingCount;
+        private PackStreamValue _current;
+
+        internal Enumerator(
+            ReadOnlySequence<byte> data,
+            int count,
+            IPackStreamDecoder decoder)
+        {
+            _reader = new SequenceReader<byte>(data);
+            _remainingCount = count;
+            _decoder = decoder ?? throw new ArgumentNullException(nameof(decoder));
+            _current = default;
+        }
+
+        public PackStreamValue Current => _current;
+
+        public bool MoveNext()
+        {
+            if (_remainingCount == 0)
+                return false;
+
+            if (_reader.Remaining == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Unexpected end of data: expected {_remainingCount} more list items but no data remains.");
+            }
+
+            var result = _decoder.Decode(_reader.UnreadSequence);
+
+            if (result.BytesConsumed == 0)
+            {
+                throw new InvalidOperationException(
+                    "Decoder returned zero bytes consumed, which would cause an infinite loop.");
+            }
+
+            if (result.BytesConsumed > _reader.Remaining)
+            {
+                throw new InvalidOperationException(
+                    $"Decoder consumed {result.BytesConsumed} bytes but only {_reader.Remaining} bytes remain.");
+            }
+
+            _current = result.Value;
+            _reader.Advance(result.BytesConsumed);
+            _remainingCount--;
+            return true;
+        }
+    }
+
+}

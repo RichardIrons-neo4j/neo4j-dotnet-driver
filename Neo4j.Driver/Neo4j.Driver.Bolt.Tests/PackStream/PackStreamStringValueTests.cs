@@ -22,14 +22,14 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream;
 
 [TestFixture]
-public class Utf8CharEnumeratorTests
+public class PackStreamStringValueTests
 {
     [Test]
     public void EnumeratesAsciiString()
     {
         var bytes = Encoding.UTF8.GetBytes("hello");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -45,7 +45,7 @@ public class Utf8CharEnumeratorTests
     public void EnumeratesEmptySequence()
     {
         var sequence = ReadOnlySequence<byte>.Empty;
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -62,7 +62,7 @@ public class Utf8CharEnumeratorTests
         // "café" - é is 2 bytes in UTF-8
         var bytes = Encoding.UTF8.GetBytes("café");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -80,7 +80,7 @@ public class Utf8CharEnumeratorTests
         // "日本" - each character is 3 bytes in UTF-8
         var bytes = Encoding.UTF8.GetBytes("日本");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -98,7 +98,7 @@ public class Utf8CharEnumeratorTests
         // "😀" - emoji is 4 bytes in UTF-8
         var bytes = Encoding.UTF8.GetBytes("😀");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -116,7 +116,7 @@ public class Utf8CharEnumeratorTests
         // Mix of 1, 2, 3, and 4 byte characters
         var bytes = Encoding.UTF8.GetBytes("a é 日 😀");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -137,7 +137,7 @@ public class Utf8CharEnumeratorTests
 
         Assert.Throws<InvalidOperationException>(() =>
         {
-            var enumerator = new Utf8CharEnumerator(sequence);
+            var enumerator = new PackStreamStringValue(sequence);
             foreach (var _ in enumerator) { }
         });
     }
@@ -154,7 +154,7 @@ public class Utf8CharEnumeratorTests
         var second = first.Append(segment2);
         var sequence = new ReadOnlySequence<byte>(first, 0, second, second.Memory.Length);
 
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -171,7 +171,7 @@ public class Utf8CharEnumeratorTests
     {
         var bytes = Encoding.UTF8.GetBytes("hello");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         enumerator.ToString().Should().Be("hello");
     }
@@ -180,7 +180,7 @@ public class Utf8CharEnumeratorTests
     public void ToStringReturnsEmptyStringForEmptySequence()
     {
         var sequence = ReadOnlySequence<byte>.Empty;
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         enumerator.ToString().Should().Be("");
     }
@@ -190,7 +190,7 @@ public class Utf8CharEnumeratorTests
     {
         var bytes = Encoding.UTF8.GetBytes("café");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         enumerator.ToString().Should().Be("café");
     }
@@ -200,7 +200,7 @@ public class Utf8CharEnumeratorTests
     {
         var bytes = Encoding.UTF8.GetBytes("a é 日 😀");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         enumerator.ToString().Should().Be("a é 日 😀");
     }
@@ -216,7 +216,7 @@ public class Utf8CharEnumeratorTests
         var second = first.Append(segment2);
         var sequence = new ReadOnlySequence<byte>(first, 0, second, second.Memory.Length);
 
-        var enumerator = new Utf8CharEnumerator(sequence);
+        var enumerator = new PackStreamStringValue(sequence);
 
         enumerator.ToString().Should().Be("café");
     }

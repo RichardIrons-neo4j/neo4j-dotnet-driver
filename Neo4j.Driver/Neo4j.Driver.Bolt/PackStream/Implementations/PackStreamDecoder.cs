@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.Extensions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
@@ -57,8 +58,24 @@ internal class PackStreamDecoder : IPackStreamDecoder
         }
     }
 
+    /// <inheritdoc />
+    public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
+    {
+        if (buffer.IsEmpty)
+            throw new InvalidOperationException("Buffer is empty. Cannot decode value.");
+
+        var markerByte = buffer.First.Span[0];
+
+        if (!_decoders.TryGetValue(markerByte, out var decoder))
+            throw new InvalidOperationException($"No decoder found for marker byte: 0x{markerByte:X2}");
+
+        return decoder.Decode(buffer);
+    }
+
+    /// <inheritdoc />
     public async IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount)
     {
+        // ...existing code...
         var processed = 0;
         var count = 0;
 

@@ -14,7 +14,6 @@
 // limitations under the License.
 
 using System.Buffers;
-using System.Buffers.Binary;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
@@ -25,8 +24,15 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// Bytes16: marker (0xCD) + 2 byte big-endian length + data
 /// Bytes32: marker (0xCE) + 4 byte big-endian length + data
 /// </summary>
-public class BytesDecoder : IValueDecoder
+internal class BytesDecoder : IValueDecoder
 {
+    private readonly IPackStreamSizeReader _sizeReader;
+
+    public BytesDecoder(IPackStreamSizeReader sizeReader)
+    {
+        _sizeReader = sizeReader ?? throw new ArgumentNullException(nameof(sizeReader));
+    }
+
     public byte[] HandledMarkerBytes => [PackStreamMarker.Bytes8, PackStreamMarker.Bytes16, PackStreamMarker.Bytes32];
 
     public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
@@ -40,9 +46,9 @@ public class BytesDecoder : IValueDecoder
 
         var (headerSize, length) = marker switch
         {
-            PackStreamMarker.Bytes8 => ReadBytes8Length(buffer),
-            PackStreamMarker.Bytes16 => ReadBytes16Length(buffer),
-            PackStreamMarker.Bytes32 => ReadBytes32Length(buffer),
+            PackStreamMarker.Bytes8 => _sizeReader.ReadSize8(buffer, "Bytes8"),
+            PackStreamMarker.Bytes16 => _sizeReader.ReadSize16(buffer, "Bytes16"),
+            PackStreamMarker.Bytes32 => _sizeReader.ReadSize32(buffer, "Bytes32"),
             _ => throw new InvalidOperationException($"Unknown marker byte: 0x{marker:X2}")
         };
 
@@ -56,63 +62,6 @@ public class BytesDecoder : IValueDecoder
         var value = PackStreamValue.Bytes(bytesData);
 
         return new ValueDecoderResult(value, totalLength);
-    }
-
-    private static (int headerSize, int length) ReadBytes8Length(ReadOnlySequence<byte> buffer)
-    {
-        if (buffer.Length < 2)
-        {
-            throw new InvalidOperationException("Buffer too short. Bytes8 requires at least 2 bytes for header.");
-        }
-
-        var lengthByte = buffer.Slice(1, 1).FirstSpan[0];
-        return (2, lengthByte);
-    }
-
-    private static (int headerSize, int length) ReadBytes16Length(ReadOnlySequence<byte> buffer)
-    {
-        if (buffer.Length < 3)
-        {
-            throw new InvalidOperationException("Buffer too short. Bytes16 requires at least 3 bytes for header.");
-        }
-
-        var lengthSlice = buffer.Slice(1, 2);
-        ushort length;
-        if (lengthSlice.IsSingleSegment)
-        {
-            length = BinaryPrimitives.ReadUInt16BigEndian(lengthSlice.FirstSpan);
-        }
-        else
-        {
-            Span<byte> lengthBytes = stackalloc byte[2];
-            lengthSlice.CopyTo(lengthBytes);
-            length = BinaryPrimitives.ReadUInt16BigEndian(lengthBytes);
-        }
-
-        return (3, length);
-    }
-
-    private static (int headerSize, int length) ReadBytes32Length(ReadOnlySequence<byte> buffer)
-    {
-        if (buffer.Length < 5)
-        {
-            throw new InvalidOperationException("Buffer too short. Bytes32 requires at least 5 bytes for header.");
-        }
-
-        var lengthSlice = buffer.Slice(1, 4);
-        int length;
-        if (lengthSlice.IsSingleSegment)
-        {
-            length = (int)BinaryPrimitives.ReadUInt32BigEndian(lengthSlice.FirstSpan);
-        }
-        else
-        {
-            Span<byte> lengthBytes = stackalloc byte[4];
-            lengthSlice.CopyTo(lengthBytes);
-            length = (int)BinaryPrimitives.ReadUInt32BigEndian(lengthBytes);
-        }
-
-        return (5, length);
     }
 }
 

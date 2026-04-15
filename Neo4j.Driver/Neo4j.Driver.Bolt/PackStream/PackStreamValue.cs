@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
+using Neo4j.Driver.Bolt.PackStream.Abstractions;
 
 namespace Neo4j.Driver.Bolt.PackStream;
 
@@ -25,6 +26,7 @@ public readonly struct PackStreamValue
     private readonly bool? _boolValue;
     private readonly ReadOnlySequence<byte>? _bytesValue;
     private readonly ReadOnlySequence<byte>? _stringBytes;
+    private readonly PackStreamListValue? _listValue;
 
     private PackStreamValue(
         PackStreamType type,
@@ -32,7 +34,8 @@ public readonly struct PackStreamValue
         double? floatValue = null,
         bool? boolValue = null,
         ReadOnlySequence<byte>? bytesValue = null,
-        ReadOnlySequence<byte>? stringBytes = null)
+        ReadOnlySequence<byte>? stringBytes = null,
+        PackStreamListValue? listValue = null)
     {
         _type = type;
         _intValue = intValue;
@@ -40,6 +43,7 @@ public readonly struct PackStreamValue
         _boolValue = boolValue;
         _bytesValue = bytesValue;
         _stringBytes = stringBytes;
+        _listValue = listValue;
     }
 
     public PackStreamType Type => _type;
@@ -51,27 +55,45 @@ public readonly struct PackStreamValue
     public static PackStreamValue Int(long value) => new(PackStreamType.Integer, intValue: value);
 
     // Float
-    public double FloatValue => _floatValue ?? throw new InvalidOperationException($"Cannot read FloatValue from {_type}");
+    public double FloatValue =>
+        _floatValue ?? throw new InvalidOperationException($"Cannot read FloatValue from {_type}");
+
     public static PackStreamValue Float(double value) => new(PackStreamType.Float, floatValue: value);
 
     // Boolean
-    public bool BooleanValue => _boolValue ?? throw new InvalidOperationException($"Cannot read BooleanValue from {_type}");
+    public bool BooleanValue =>
+        _boolValue ?? throw new InvalidOperationException($"Cannot read BooleanValue from {_type}");
+
     public static PackStreamValue Boolean(bool value) => new(PackStreamType.Boolean, boolValue: value);
 
     // Bytes
-    public ReadOnlySequence<byte> BytesValue => _bytesValue ?? throw new InvalidOperationException($"Cannot read BytesValue from {_type}");
+    public ReadOnlySequence<byte> BytesValue =>
+        _bytesValue ?? throw new InvalidOperationException($"Cannot read BytesValue from {_type}");
+
     public static PackStreamValue Bytes(ReadOnlySequence<byte> value) => new(PackStreamType.Bytes, bytesValue: value);
 
     // String
-    public Utf8CharEnumerator StringValue => _stringBytes.HasValue
-        ? new Utf8CharEnumerator(_stringBytes.Value)
+    public PackStreamStringValue StringValue => _stringBytes.HasValue
+        ? new PackStreamStringValue(_stringBytes.Value)
         : throw new InvalidOperationException($"Cannot read StringValue from {_type}");
-    public static PackStreamValue String(ReadOnlySequence<byte> utf8Bytes) => new(PackStreamType.String, stringBytes: utf8Bytes);
+
+    public static PackStreamValue String(ReadOnlySequence<byte> utf8Bytes) =>
+        new(PackStreamType.String, stringBytes: utf8Bytes);
+
+    // List
+    public PackStreamListValue ListValue =>
+        _listValue ?? throw new InvalidOperationException($"Cannot read ListValue from {_type}");
+
+    internal static PackStreamValue List(
+        ReadOnlySequence<byte> itemsData,
+        int itemCount,
+        IPackStreamDecoder decoder) =>
+        new(PackStreamType.List, listValue: new PackStreamListValue(itemsData, itemCount, decoder));
 
     // Null
     public static PackStreamValue Null() => new(PackStreamType.Null);
 
-    // TODO: List, Map, Struct
+    // TODO: Map, Struct
 
     public override string ToString() => _type switch
     {
@@ -80,8 +102,8 @@ public readonly struct PackStreamValue
         PackStreamType.Boolean => $"BOOL {_boolValue}",
         PackStreamType.Bytes => $"BYTES[{_bytesValue?.Length ?? 0}]",
         PackStreamType.String => $"STRING[{_stringBytes?.Length ?? 0}]",
+        PackStreamType.List => $"LIST[{_listValue?.Count ?? 0}]",
         PackStreamType.Null => "NULL",
         _ => "UNKNOWN"
     };
 }
-
