@@ -113,6 +113,51 @@ internal class MessageDecoderTests
     }
 
     [Test]
+    public void BoltMessageAsSuccessThrowsWhenKindIsNotSuccess()
+    {
+        var structView = CreateStructView(0x7E, 0, new StubPackStreamDecoder()); // Ignored
+        var message = DecodeMessage(CreateProvider(), structView);
+        message.Kind.Should().Be(MessageKind.Ignored);
+
+        var act = () => message.AsSuccess();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Ignored*not Success*");
+    }
+
+    [Test]
+    public void BoltMessageAsRecordThrowsWhenKindIsNotRecord()
+    {
+        var structView = CreateStructView(0x70, 1, new StubPackStreamDecoder());
+        var message = DecodeMessage(CreateProvider(), structView);
+
+        var act = () => message.AsRecord();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Success*not Record*");
+    }
+
+    [Test]
+    public void BoltMessageAsFailureThrowsWhenKindIsNotFailure()
+    {
+        var structView = CreateStructView(0x70, 1, new StubPackStreamDecoder());
+        var message = DecodeMessage(CreateProvider(), structView);
+
+        var act = () => message.AsFailure();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Success*not Failure*");
+    }
+
+    [Test]
+    public void BoltMessageAsIgnoredThrowsWhenKindIsNotIgnored()
+    {
+        var structView = CreateStructView(0x70, 1, new StubPackStreamDecoder());
+        var message = DecodeMessage(CreateProvider(), structView);
+
+        var act = () => message.AsIgnored();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Success*not Ignored*");
+    }
+
+    [Test]
     public void MessageDecoderProviderTryGetDecoderReturnsFalseForUnknownTag()
     {
         var provider = CreateProvider();
