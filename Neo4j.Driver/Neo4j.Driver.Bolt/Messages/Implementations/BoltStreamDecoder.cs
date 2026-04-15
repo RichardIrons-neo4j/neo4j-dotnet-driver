@@ -23,7 +23,7 @@ using Neo4j.Driver.Bolt.Transport.Abstractions;
 
 namespace Neo4j.Driver.Bolt.Messages.Implementations;
 
-internal sealed class BoltStreamDecoder
+internal class BoltStreamDecoder
 {
     private readonly IPackStreamDecoder _packStreamDecoder;
     private readonly IMessageDecoderProvider _messageDecoderProvider;

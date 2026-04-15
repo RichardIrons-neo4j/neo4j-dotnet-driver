@@ -23,7 +23,7 @@ using Neo4j.Driver.Bolt.PackStream.Abstractions;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations;
 
-internal sealed class PackStreamWriter(IBufferWriter<byte> writer) : IPackStreamWriter
+internal class PackStreamWriter(IBufferWriter<byte> writer) : IPackStreamWriter
 {
     private readonly IBufferWriter<byte> _writer = writer ?? throw new ArgumentNullException(nameof(writer));
 

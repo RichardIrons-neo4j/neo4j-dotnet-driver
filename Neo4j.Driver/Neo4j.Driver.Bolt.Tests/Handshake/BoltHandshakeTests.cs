@@ -13,19 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Buffers;
 using System.Buffers.Binary;
 using FluentAssertions;
+using Moq;
+using Moq.AutoMock;
+using Neo4j.Driver;
 using Neo4j.Driver.Bolt.Handshake;
+using Neo4j.Driver.Bolt.Tests;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
-using Neo4j.Driver.Bolt.Transport.Types;
 using NUnit.Framework;
 
 namespace Neo4j.Driver.Bolt.Tests.Handshake;
 
 [TestFixture]
-internal sealed class BoltHandshakeTests
+internal class BoltHandshakeTests : UnitTestBase<BoltHandshake>
 {
+    private IByteWriter Writer => AutoMocker.GetMock<IByteWriter>().Object;
+
+    private IByteReader Reader => AutoMocker.GetMock<IByteReader>().Object;
+
     [Test]
     public void DefaultClientOffers_HasExpectedLengthAndMagic()
     {
@@ -37,95 +43,73 @@ internal sealed class BoltHandshakeTests
     [Test]
     public async Task NegotiateAsync_LegacyServerResponse_ReturnsVersion()
     {
-        // Server agrees 5.8 — packed int layout (minor<<8)|major on the wire as big-endian int32.
-        var serverWord = new byte[4];
-        BinaryPrimitives.WriteInt32BigEndian(serverWord, (8 << 8) | 5);
+        var written = Arrange.HandshakeWithWriteCapture(AutoMocker, PackWord((8 << 8) | 5));
 
-        var writer = new RecordingByteWriter();
-        var reader = new ScriptedReadExactlyReader(serverWord);
-        var subject = new BoltHandshake();
-
-        var version = await subject.NegotiateAsync(writer, reader);
+        var version = await Subject.NegotiateAsync(Writer, Reader);
 
         version.Major.Should().Be(5);
         version.Minor.Should().Be(8);
-        writer.Written.Should().BeEquivalentTo(BoltHandshakeClientOffers.Default.ToArray());
+        written.Should().BeEquivalentTo(BoltHandshakeClientOffers.Default.ToArray());
     }
 
     [Test]
     public void NegotiateAsync_ManifestMarker_ThrowsNotImplementedException()
     {
-        var serverWord = new byte[4];
-        BinaryPrimitives.WriteInt32BigEndian(serverWord, (1 << 8) | BoltHandshakeVersion.ManifestSchemaMajor);
+        Arrange.FirstReadExactly(AutoMocker, PackWord((1 << 8) | BoltHandshakeVersion.ManifestSchemaMajor));
 
-        var writer = new RecordingByteWriter();
-        var reader = new ScriptedReadExactlyReader(serverWord);
-        var subject = new BoltHandshake();
+        var act = async () => await Subject.NegotiateAsync(Writer, Reader);
 
-        var act = async () => await subject.NegotiateAsync(writer, reader);
         act.Should().ThrowAsync<NotImplementedException>().WithMessage("*Manifest-style*");
     }
 
     [Test]
     public void NegotiateAsync_NoAgreement_ThrowsProtocolException()
     {
-        var serverWord = new byte[4];
-        BinaryPrimitives.WriteInt32BigEndian(serverWord, 0);
+        Arrange.FirstReadExactly(AutoMocker, PackWord(0));
 
-        var writer = new RecordingByteWriter();
-        var reader = new ScriptedReadExactlyReader(serverWord);
-        var subject = new BoltHandshake();
+        var act = async () => await Subject.NegotiateAsync(Writer, Reader);
 
-        var act = async () => await subject.NegotiateAsync(writer, reader);
         act.Should().ThrowAsync<ProtocolException>().WithMessage("*does not support*");
     }
 
     [Test]
     public void NegotiateAsync_HttpResponse_ThrowsNotSupportedException()
     {
-        var serverWord = new byte[] { 0x48, 0x54, 0x54, 0x50 }; // "HTTP"
+        Arrange.FirstReadExactly(AutoMocker, "HTTP"u8.ToArray());
 
-        var writer = new RecordingByteWriter();
-        var reader = new ScriptedReadExactlyReader(serverWord);
-        var subject = new BoltHandshake();
+        var act = async () => await Subject.NegotiateAsync(Writer, Reader);
 
-        var act = async () => await subject.NegotiateAsync(writer, reader);
         act.Should().ThrowAsync<NotSupportedException>().WithMessage("*http endpoint*");
     }
 
-    private sealed class RecordingByteWriter : IByteWriter
+    private static byte[] PackWord(int value)
     {
-        public List<byte> Written { get; } = [];
-
-        public ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
-        {
-            Written.AddRange(buffer.ToArray());
-            return ValueTask.CompletedTask;
-        }
+        var bytes = new byte[sizeof(int)];
+        BinaryPrimitives.WriteInt32BigEndian(bytes, value);
+        return bytes;
     }
 
-    /// <summary>
-    /// Satisfies handshake tests without simulating a full PipeReader loop.
-    /// </summary>
-    private sealed class ScriptedReadExactlyReader : IByteReader
+    /// <summary>Handshake I/O setup; writer stays AutoMocker’s default mock unless capture is required.</summary>
+    private static class Arrange
     {
-        private readonly Queue<byte[]> _reads;
-
-        public ScriptedReadExactlyReader(byte[] firstResponse) =>
-            _reads = new Queue<byte[]>([firstResponse]);
-
-        public ValueTask<ByteReadResult> ReadAsync(CancellationToken cancellationToken = default) =>
-            throw new InvalidOperationException("Tests use ReadExactlyAsync.");
-
-        public void AdvanceTo(SequencePosition consumed, SequencePosition examined) =>
-            throw new InvalidOperationException("Tests use ReadExactlyAsync.");
-
-        public ValueTask ReadExactlyAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        public static void FirstReadExactly(AutoMocker mocker, byte[] response)
         {
-            var chunk = _reads.Dequeue();
-            chunk.Length.Should().Be(buffer.Length);
-            chunk.CopyTo(buffer.Span);
-            return ValueTask.CompletedTask;
+            mocker.GetMock<IByteReader>()
+                .Setup(r => r.ReadExactlyAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Callback<Memory<byte>, CancellationToken>((dest, _) => response.AsSpan().CopyTo(dest.Span))
+                .Returns(ValueTask.CompletedTask);
+        }
+
+        /// <summary>Records payload sent by <see cref="BoltHandshake"/> (only test that asserts on writes).</summary>
+        public static List<byte> HandshakeWithWriteCapture(AutoMocker mocker, byte[] response)
+        {
+            var written = new List<byte>();
+            mocker.GetMock<IByteWriter>()
+                .Setup(w => w.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()))
+                .Callback<ReadOnlyMemory<byte>, CancellationToken>((data, _) => written.AddRange(data.ToArray()))
+                .Returns(ValueTask.CompletedTask);
+            FirstReadExactly(mocker, response);
+            return written;
         }
     }
 }

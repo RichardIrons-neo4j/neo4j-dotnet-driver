@@ -24,7 +24,7 @@ namespace Neo4j.Driver.Bolt.Transport.Implementations;
 /// <summary>
 /// Adapts a <see cref="PipeReader"/> to the <see cref="IByteReader"/> interface.
 /// </summary>
-public sealed class PipeReaderByteReader : IByteReader
+public class PipeReaderByteReader : IByteReader
 {
     private readonly PipeReader _pipeReader;
 

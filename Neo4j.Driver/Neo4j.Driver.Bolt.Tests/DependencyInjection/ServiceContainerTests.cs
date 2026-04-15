@@ -145,29 +145,29 @@ internal class ServiceContainerTests
     {
     }
 
-    private sealed class Widget : IWidget;
+    private class Widget : IWidget;
 
-    private sealed class OtherWidget : IWidget;
+    private class OtherWidget : IWidget;
 
     private interface IGadget
     {
     }
 
-    private sealed class Gadget : IGadget;
+    private class Gadget : IGadget;
 
-    private sealed class Root(IWidget widget, IGadget gadget)
+    private class Root(IWidget widget, IGadget gadget)
     {
         public IWidget Widget { get; } = widget;
         public IGadget Gadget { get; } = gadget;
     }
 
-    private sealed class TwoWidgets(IWidget first, IWidget second)
+    private class TwoWidgets(IWidget first, IWidget second)
     {
         public IWidget First { get; } = first;
         public IWidget Second { get; } = second;
     }
 
-    private sealed class RootWithWidgetAndSameInterface(IWidget widget, IWidget another)
+    private class RootWithWidgetAndSameInterface(IWidget widget, IWidget another)
     {
         public IWidget Widget { get; } = widget;
         public IWidget Another { get; } = another;
@@ -177,9 +177,9 @@ internal class ServiceContainerTests
     {
     }
 
-    private sealed class Dep : IDep;
+    private class Dep : IDep;
 
-    private sealed class Consumer(IDep dep)
+    private class Consumer(IDep dep)
     {
         public IDep Dep { get; } = dep;
     }
@@ -192,15 +192,15 @@ internal class ServiceContainerTests
     {
     }
 
-    private sealed class CircularA : ICircularA
+    private class CircularA : ICircularA
     {
         public CircularA(ICircularB b) => _ = b;
     }
 
-    private sealed class CircularB : ICircularB
+    private class CircularB : ICircularB
     {
         public CircularB(ICircularA a) => _ = a;
     }
 
-    private sealed class Leaf;
+    private class Leaf;
 }

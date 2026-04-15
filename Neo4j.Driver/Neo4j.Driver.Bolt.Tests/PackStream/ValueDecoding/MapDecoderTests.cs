@@ -353,7 +353,7 @@ internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
         values.Should().BeEquivalentTo([1, 2]);
     }
 
-    private sealed class MockPackStreamDecoder : IPackStreamDecoder
+    private class MockPackStreamDecoder : IPackStreamDecoder
     {
         private readonly IRecursiveValueDecoder _mapDecoder;
 
@@ -395,7 +395,7 @@ internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
     /// <summary>
     /// Mock that delegates both map and list markers so we can test map with list values.
     /// </summary>
-    private sealed class MockPackStreamDecoderForMapAndList : IPackStreamDecoder
+    private class MockPackStreamDecoderForMapAndList : IPackStreamDecoder
     {
         private readonly IRecursiveValueDecoder _mapDecoder;
         private readonly IRecursiveValueDecoder _listDecoder;

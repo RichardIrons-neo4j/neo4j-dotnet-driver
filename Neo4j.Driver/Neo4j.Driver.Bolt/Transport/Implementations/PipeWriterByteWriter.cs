@@ -21,7 +21,7 @@ namespace Neo4j.Driver.Bolt.Transport.Implementations;
 /// <summary>
 /// Adapts a <see cref="PipeWriter"/> to <see cref="IByteWriter"/> (e.g. paired with <see cref="PipeReaderByteReader"/>).
 /// </summary>
-public sealed class PipeWriterByteWriter : IByteWriter
+public class PipeWriterByteWriter : IByteWriter
 {
     private readonly PipeWriter _pipeWriter;
 

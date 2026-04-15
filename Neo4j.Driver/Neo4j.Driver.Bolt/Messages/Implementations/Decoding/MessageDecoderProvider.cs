@@ -18,7 +18,7 @@ using Neo4j.Driver.Bolt.Messages.Abstractions.Decoding;
 
 namespace Neo4j.Driver.Bolt.Messages.Implementations.Decoding;
 
-internal sealed class MessageDecoderProvider : IMessageDecoderProvider
+internal class MessageDecoderProvider : IMessageDecoderProvider
 {
     private readonly IReadOnlyDictionary<byte, IMessageDecoder> _decodersByTag;
 

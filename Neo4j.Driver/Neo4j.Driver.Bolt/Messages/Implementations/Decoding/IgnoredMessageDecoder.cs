@@ -20,7 +20,7 @@ using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
 namespace Neo4j.Driver.Bolt.Messages.Implementations.Decoding;
 
-internal sealed class IgnoredMessageDecoder(ILogger logger) : IMessageDecoder
+internal class IgnoredMessageDecoder(ILogger logger) : IMessageDecoder
 {
     public byte HandledTag => (byte)MessageKind.Ignored;
 

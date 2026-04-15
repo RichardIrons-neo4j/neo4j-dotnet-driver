@@ -339,7 +339,7 @@ internal class MessageDecoderTests
         return new PackStreamStructView(tag, emptyList);
     }
 
-    private sealed class StubPackStreamDecoder : IPackStreamDecoder
+    private class StubPackStreamDecoder : IPackStreamDecoder
     {
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer) =>
             new(PackStreamValueView.Null(), buffer.IsEmpty ? 0 : 1);

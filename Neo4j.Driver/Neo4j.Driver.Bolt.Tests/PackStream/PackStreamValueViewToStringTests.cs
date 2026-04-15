@@ -90,7 +90,7 @@ internal class PackStreamValueViewToStringTests
         view.ToString().Should().Contain("STRUCT[0x70,1]");
     }
 
-    private sealed class StubDecoder : IPackStreamDecoder
+    private class StubDecoder : IPackStreamDecoder
     {
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer) =>
             new(PackStreamValueView.Null(), buffer.IsEmpty ? 0 : 1);

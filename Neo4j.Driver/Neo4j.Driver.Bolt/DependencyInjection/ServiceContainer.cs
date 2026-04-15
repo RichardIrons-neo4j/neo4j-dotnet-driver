@@ -27,7 +27,7 @@ namespace Neo4j.Driver.Bolt.DependencyInjection;
 /// and <see cref="Resolve{T}"/> with constructor injection. Several implementations for one service: plain
 /// <c>Resolve&lt;T&gt;</c> uses the last registration; <c>IEnumerable&lt;T&gt;</c> returns all in order.
 /// </summary>
-public sealed class ServiceContainer : IServiceResolver
+public class ServiceContainer : IServiceResolver
 {
     private readonly Dictionary<Type, List<Type>> _implementationsByService = new();
     private readonly Dictionary<Type, object> _instances = new();

@@ -23,7 +23,7 @@ namespace Neo4j.Driver.Bolt.Handshake;
 /// Default Bolt socket handshake orchestration. Legacy completion path is implemented; manifest follow-up
 /// (see <c>BoltHandshaker</c> in Neo4j.Driver) remains TODO here.
 /// </summary>
-internal sealed class BoltHandshake : IBoltHandshake
+internal class BoltHandshake : IBoltHandshake
 {
     private const string NoAgreedVersion =
         "The Neo4j server does not support any of the protocol versions supported by this client. " +

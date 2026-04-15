@@ -22,7 +22,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.Transport;
 
 [TestFixture]
-internal sealed class PipeReaderByteReaderReadExactlyTests
+internal class PipeReaderByteReaderReadExactlyTests
 {
     [Test]
     public async Task ReadExactlyAsync_SingleRead_FillsBuffer()

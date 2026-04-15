@@ -29,7 +29,7 @@ namespace Neo4j.Driver.Bolt.Tests.Messages;
 /// and Bolt message decoders so <see cref="BoltStreamDecoder"/> can read framed Bolt traffic.
 /// </summary>
 [TestFixture]
-internal sealed class BoltStreamDecoderAutoRegistrationTests
+internal class BoltStreamDecoderAutoRegistrationTests
 {
     [Test]
     public async Task RegisterTypesFromThisAssembly_ResolvesBoltStreamDecoder_DecodesFramedSuccessMessage()

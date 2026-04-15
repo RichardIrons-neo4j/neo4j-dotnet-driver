@@ -56,7 +56,7 @@ internal class BoltStreamDecoderTests
         return new YieldingPackStreamDecoder(values);
     }
 
-    private sealed class YieldingPackStreamDecoder : IPackStreamDecoder
+    private class YieldingPackStreamDecoder : IPackStreamDecoder
     {
         private readonly PackStreamValueView[] _values;
 
@@ -181,7 +181,7 @@ internal class BoltStreamDecoderTests
         act.Should().Throw<ArgumentNullException>();
     }
 
-    private sealed class StubPackStreamDecoder : IPackStreamDecoder
+    private class StubPackStreamDecoder : IPackStreamDecoder
     {
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer) =>
             new(PackStreamValueView.Null(), buffer.IsEmpty ? 0 : 1);

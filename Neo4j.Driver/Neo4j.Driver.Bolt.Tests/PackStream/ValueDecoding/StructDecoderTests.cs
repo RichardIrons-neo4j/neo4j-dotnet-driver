@@ -275,7 +275,7 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
         sum.Should().Be(6);
     }
 
-    private sealed class MockPackStreamDecoder : IPackStreamDecoder
+    private class MockPackStreamDecoder : IPackStreamDecoder
     {
         private readonly IRecursiveValueDecoder _structDecoder;
 

@@ -25,11 +25,9 @@ namespace Neo4j.Driver.Bolt.Handshake;
 internal static class BoltHandshakeClientOffers
 {
     /// <summary>Magic “GO GO BOLT” marker (<c>0x6060B017</c>).</summary>
-    public const int GoGoBolt = unchecked((int)0x6060B017);
+    public const int GoGoBolt = 0x6060B017;
 
-    private static readonly byte[] DefaultOffers = BuildDefaultOffers();
-
-    public static ReadOnlyMemory<byte> Default => DefaultOffers;
+    public static ReadOnlyMemory<byte> Default { get; } = BuildDefaultOffers();
 
     private static byte[] BuildDefaultOffers()
     {
