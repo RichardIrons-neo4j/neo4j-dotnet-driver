@@ -101,10 +101,9 @@ public class ChunkAssembler : IChunkAssembler
         // Need header?
         if (seqReader.Remaining < sizeof(short))
         {
-            if (readResultIsCompleted)
-            {
-                throw new ProtocolException("Reached end of stream while reading message header");
-            }
+            ProtocolException.ThrowIf(
+                readResultIsCompleted,
+                () => new("Reached end of stream while reading message header"));
 
             _logger.LogTrace("Not enough data to read message header, waiting for more data");
             return false;
@@ -127,10 +126,10 @@ public class ChunkAssembler : IChunkAssembler
             return false;
         }
 
-        if (!seqReader.TryReadExact(messageSize, out message))
-        {
-            throw new ProtocolException("Unexpected read failure while reading message content");
-        }
+        var readMessage = seqReader.TryReadExact(messageSize, out message);
+        ProtocolException.ThrowIf(
+            !readMessage,
+            () => new("Unexpected read failure while reading message content"));
 
         // message is complete, yield it
         _logger.LogDebug("Read complete message of size {MessageSize} bytes", message.Length);
