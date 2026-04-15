@@ -21,11 +21,11 @@ namespace Neo4j.Driver.Bolt.Messages.Abstractions;
 /// <summary>
 /// Discriminated union for a decoded Bolt response message.
 /// </summary>
-public readonly struct BoltMessage
+public readonly struct BoltResponseMessage
 {
     private readonly PackStreamStructView _payload;
 
-    internal BoltMessage(MessageKind kind, PackStreamStructView payload)
+    internal BoltResponseMessage(MessageKind kind, PackStreamStructView payload)
     {
         Kind = kind;
         _payload = payload;

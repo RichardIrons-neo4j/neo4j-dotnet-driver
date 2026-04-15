@@ -25,7 +25,7 @@ internal interface IMessageDecoder
     byte HandledTag { get; }
 
     /// <summary>
-    /// Decodes the struct payload into a <see cref="BoltMessage"/>.
+    /// Decodes the struct payload into a <see cref="BoltResponseMessage"/>.
     /// </summary>
-    BoltMessage Decode(PackStreamStructView structView);
+    BoltResponseMessage Decode(PackStreamStructView structView);
 }

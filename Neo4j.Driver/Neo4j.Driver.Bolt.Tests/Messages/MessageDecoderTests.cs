@@ -322,7 +322,7 @@ internal class MessageDecoderTests
         ]);
     }
 
-    private static BoltMessage DecodeMessage(IMessageDecoderProvider provider, PackStreamStructView structView)
+    private static BoltResponseMessage DecodeMessage(IMessageDecoderProvider provider, PackStreamStructView structView)
     {
         if (!provider.TryGetDecoder(structView.Tag, out var decoder))
         {

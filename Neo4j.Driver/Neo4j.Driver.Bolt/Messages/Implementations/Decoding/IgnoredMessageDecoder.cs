@@ -24,9 +24,9 @@ internal sealed class IgnoredMessageDecoder(ILogger logger) : IMessageDecoder
 {
     public byte HandledTag => (byte)MessageKind.Ignored;
 
-    public BoltMessage Decode(PackStreamStructView structView)
+    public BoltResponseMessage Decode(PackStreamStructView structView)
     {
         logger.LogDebug("Decoding IGNORED message");
-        return new BoltMessage(MessageKind.Ignored, structView);
+        return new BoltResponseMessage(MessageKind.Ignored, structView);
     }
 }

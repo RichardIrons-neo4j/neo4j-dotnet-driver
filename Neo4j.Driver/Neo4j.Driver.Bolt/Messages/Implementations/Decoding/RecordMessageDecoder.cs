@@ -24,9 +24,9 @@ internal sealed class RecordMessageDecoder(ILogger logger) : IMessageDecoder
 {
     public byte HandledTag => (byte)MessageKind.Record;
 
-    public BoltMessage Decode(PackStreamStructView structView)
+    public BoltResponseMessage Decode(PackStreamStructView structView)
     {
         logger.LogDebug("Decoding RECORD message");
-        return new BoltMessage(MessageKind.Record, structView);
+        return new BoltResponseMessage(MessageKind.Record, structView);
     }
 }

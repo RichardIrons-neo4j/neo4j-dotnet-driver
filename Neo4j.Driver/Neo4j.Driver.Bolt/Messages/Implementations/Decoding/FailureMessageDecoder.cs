@@ -24,9 +24,9 @@ internal sealed class FailureMessageDecoder(ILogger logger) : IMessageDecoder
 {
     public byte HandledTag => (byte)MessageKind.Failure;
 
-    public BoltMessage Decode(PackStreamStructView structView)
+    public BoltResponseMessage Decode(PackStreamStructView structView)
     {
         logger.LogDebug("Decoding FAILURE message");
-        return new BoltMessage(MessageKind.Failure, structView);
+        return new BoltResponseMessage(MessageKind.Failure, structView);
     }
 }

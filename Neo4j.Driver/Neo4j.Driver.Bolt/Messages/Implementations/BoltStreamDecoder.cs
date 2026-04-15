@@ -42,7 +42,7 @@ internal sealed class BoltStreamDecoder
     /// <summary>
     /// Reads Bolt messages from the byte stream. Each yielded value is a struct decoded as a Bolt message.
     /// </summary>
-    public async IAsyncEnumerable<BoltMessage> ReadMessagesAsync(
+    public async IAsyncEnumerable<BoltResponseMessage> ReadMessagesAsync(
         IByteReader byteReader,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
