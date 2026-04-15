@@ -17,7 +17,7 @@ using System.Buffers;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Marker = Neo4j.Driver.Internal.IO.PackStream;
 
-namespace Neo4j.Driver.Bolt.PackStream.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
 public class BooleanDecoder : IValueDecoder
 {
@@ -26,18 +26,22 @@ public class BooleanDecoder : IValueDecoder
         return markerByte is Marker.True or Marker.False;
     }
 
-    public PackStreamValue Decode(ReadOnlySequence<byte> buffer)
+    public byte[] HandledMarkerBytes => [Marker.True, Marker.False];
+
+    public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
         if(buffer.IsEmpty)
         {
             throw new InvalidOperationException("Buffer is empty. Cannot decode boolean value.");
         }
 
-        return buffer.FirstSpan[0] switch
+        var value = buffer.FirstSpan[0] switch
         {
             Marker.True => PackStreamValue.Boolean(true),
             Marker.False => PackStreamValue.Boolean(false),
             _ => throw new InvalidOperationException($"Unknown marker byte: 0x{buffer.FirstSpan[0]:X2}")
         };
+        
+        return new ValueDecoderResult(value, 1);
     }
 }

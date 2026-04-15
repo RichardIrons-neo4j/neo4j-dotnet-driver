@@ -20,11 +20,8 @@ using Marker = Neo4j.Driver.Internal.IO.PackStream;
 
 namespace Neo4j.Driver.Bolt.PackStream;
 
-public readonly ref struct PackStreamValue
+public readonly struct PackStreamValue
 {
-    private readonly SequenceReader<byte> _sequenceReader;
-    private readonly byte _markerByte;
-
     internal PackStreamValue(
         sbyte? tinyIntValue = null,
         sbyte? int8Value = null,
@@ -174,6 +171,11 @@ public readonly ref struct PackStreamStringValue
     public uint Size { get; }
 
     public ReadOnlySequence<byte> Utf8EncodedChars => _seqReader.UnreadSequence;
+
+    public override string ToString()
+    {
+        throw new NotImplementedException();
+    }
 }
 
 public readonly ref struct PackStreamKeyValuePair(PackStreamStringValue key, PackStreamValue value)

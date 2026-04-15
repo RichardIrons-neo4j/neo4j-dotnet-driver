@@ -14,44 +14,57 @@
 // limitations under the License.
 
 using System.Buffers;
+using System.Collections.Concurrent;
+using System.IO.Pipelines;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
-using Neo4j.Driver.Internal.IO;
-using Marker = Neo4j.Driver.Internal.IO.PackStream;
+using Neo4j.Driver.Bolt.Transport.Abstractions;
 
-namespace Neo4j.Driver.Bolt.PackStream;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations;
 
 internal class PackStreamDecoder : IPackStreamDecoder
 {
-    private readonly IValueDecoder[] _decoders;
+    private readonly IChunkAssembler _chunkAssembler;
+    private readonly Dictionary<byte, IValueDecoder> _decoders = new();
 
-    public PackStreamDecoder(IValueDecoder[] decoders)
+    public PackStreamDecoder(IValueDecoder[] decoders, IChunkAssembler chunkAssembler)
     {
-        _decoders = decoders;
+        _chunkAssembler = chunkAssembler ?? throw new ArgumentNullException(nameof(chunkAssembler));
+        foreach (var decoder in decoders)
+        {
+            foreach (var markerByte in decoder.HandledMarkerBytes)
+            {
+                _decoders[markerByte] = decoder;
+            }
+        }
     }
 
-    public IEnumerable<PackStreamValue> Decode(ReadOnlySequence<byte> buffer, int valueCount)
+    public async IAsyncEnumerable<PackStreamValue> Decode(PipeReader pipeReader, int valueCount)
     {
         var processed = 0;
         var count = 0;
-        while (processed < buffer.Length && count < valueCount)
+
+        await foreach (var buffer in _chunkAssembler.ReadMessagesAsync(pipeReader))
         {
-            var decoded = DecodeInternal(buffer.Slice(processed));
-            count++;
-            yield return decoded;
+            while (processed < buffer.Length && count < valueCount)
+            {
+                var remaining = buffer.Slice(processed);
+                var markerByte = remaining.First.Span[0];
+
+                if (!_decoders.TryGetValue(markerByte, out var decoder))
+                {
+                    throw new InvalidOperationException($"No decoder found for marker byte: 0x{markerByte:X2}");
+                }
+
+                var decoderResult = decoder.Decode(remaining);
+                processed += decoderResult.BytesConsumed;
+                count++;
+                yield return decoderResult.Value;
+            }
         }
 
         if (count < valueCount)
         {
             throw new InvalidOperationException($"Expected {valueCount} values, but only got {count}.");
         }
-    }
-    
-    private PackStreamValue DecodeInternal(ReadOnlySequence<byte> sequence)
-    {
-        var markerByte = sequence.FirstSpan[0];
-        var decoder = _decoders.FirstOrDefault(d => d.CanDecode(markerByte));
-        return decoder != null 
-            ? decoder.Decode(sequence) 
-            : throw new InvalidOperationException($"No decoder found for marker byte: 0x{markerByte:X2}");
     }
 }

@@ -13,18 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Buffers;
+using FluentAssertions;
+using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+namespace Neo4j.Driver.Bolt.Tests.PackStream;
 
-public readonly ref struct ValueDecoderResult(PackStreamValue value, int bytesConsumed)
+public class ValueDecoderTests
 {
-    public PackStreamValue Value { get; } = value;
-    public int BytesConsumed { get; } = bytesConsumed;
-}
 
-public interface IValueDecoder
-{
-    byte[] HandledMarkerBytes { get; }
-    ValueDecoderResult Decode(ReadOnlySequence<byte> buffer);
 }

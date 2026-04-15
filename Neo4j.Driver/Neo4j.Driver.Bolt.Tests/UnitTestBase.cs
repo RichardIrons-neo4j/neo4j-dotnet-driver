@@ -13,18 +13,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Buffers;
+using Microsoft.Extensions.Logging;
+using Moq.AutoMock;
+using Neo4j.Driver.Bolt.Tests.TestHelpers;
+using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+namespace Neo4j.Driver.Bolt.Tests;
 
-public readonly ref struct ValueDecoderResult(PackStreamValue value, int bytesConsumed)
+[TestFixture]
+public class UnitTestBase<T> where T : class
 {
-    public PackStreamValue Value { get; } = value;
-    public int BytesConsumed { get; } = bytesConsumed;
-}
+    protected AutoMocker AutoMocker = new();
+    protected T Subject;
+    protected ILogger Logger { get; private set; }
 
-public interface IValueDecoder
-{
-    byte[] HandledMarkerBytes { get; }
-    ValueDecoderResult Decode(ReadOnlySequence<byte> buffer);
+    public UnitTestBase()
+    {
+        Subject = null!;
+    }
+    
+    [SetUp]
+    private void SetUp()
+    {
+        Subject = AutoMocker.CreateInstance<T>();
+        Logger = new ConsoleLogger();
+        AutoMocker.Use(Logger);
+    }
 }

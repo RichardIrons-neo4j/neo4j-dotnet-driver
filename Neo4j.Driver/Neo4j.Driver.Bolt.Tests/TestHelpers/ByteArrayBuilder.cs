@@ -49,7 +49,7 @@ public class ByteArrayBuilder : IEnumerable<byte>
     {
     }
 
-    internal ByteArrayBuilder(ByteArrayBuilder? previous, IEnumerable<byte> bytes)
+    private ByteArrayBuilder(ByteArrayBuilder? previous, IEnumerable<byte> bytes)
     {
         IEnumerable<byte> prepend = previous ?? Enumerable.Empty<byte>();
         Bytes = prepend.Concat(bytes).ToArray();
