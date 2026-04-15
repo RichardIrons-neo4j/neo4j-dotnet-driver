@@ -20,14 +20,9 @@ using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHe
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-public abstract class ValueDecoderBase : IValueDecoder
+public abstract class ValueDecoderBase(ILogger logger) : IValueDecoder
 {
-    protected readonly ILogger Logger;
-
-    protected ValueDecoderBase(ILogger logger)
-    {
-        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    protected readonly ILogger Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public abstract byte[] HandledMarkerBytes { get; }
 
@@ -41,7 +36,7 @@ public abstract class ValueDecoderBase : IValueDecoder
         Long = 3,
     }
 
-    protected virtual bool IsMarkerByteHandled(byte markerByte) => HandledMarkerBytes.Contains(markerByte);
+    public virtual bool IsMarkerByteHandled(byte markerByte) => HandledMarkerBytes.Contains(markerByte);
 
     protected byte ReadValidMarkerByte(ref SequenceReader<byte> reader)
     {

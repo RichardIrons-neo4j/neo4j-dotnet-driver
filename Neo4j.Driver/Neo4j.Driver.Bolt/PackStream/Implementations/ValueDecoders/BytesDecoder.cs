@@ -26,12 +26,8 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// Bytes16: marker (0xCD) + 2 byte big-endian length + data
 /// Bytes32: marker (0xCE) + 4 byte big-endian length + data
 /// </summary>
-internal class BytesDecoder : ValueDecoderBase
+internal class BytesDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
-    public BytesDecoder(ILogger logger) : base(logger)
-    {
-    }
-
     public override byte[] HandledMarkerBytes =>
         [PackStreamMarker.Bytes8, PackStreamMarker.Bytes16, PackStreamMarker.Bytes32];
 

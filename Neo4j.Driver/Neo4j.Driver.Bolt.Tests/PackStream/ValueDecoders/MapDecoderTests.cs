@@ -27,7 +27,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
-internal class MapDecoderTests : UnitTestBase<MapDecoder>
+internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
 {
     [SetUp]
     public void SetUp()

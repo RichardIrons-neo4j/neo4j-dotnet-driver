@@ -22,7 +22,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
-internal class IntegerDecoderTests : UnitTestBase<IntegerDecoder>
+internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
 {
     [Test]
     public void HandledMarkerBytes_IncludesInt8Int16Int32Int64()

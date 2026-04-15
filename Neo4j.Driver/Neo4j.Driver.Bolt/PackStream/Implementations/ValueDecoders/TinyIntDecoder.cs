@@ -19,7 +19,7 @@ using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-public class TinyIntDecoder : ValueDecoderBase
+public class TinyIntDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
     private static readonly IEnumerable<byte> PositiveTinyIntMarkers =
         Enumerable.Range(0x00, 0x80).Select(i => (byte)i).ToArray();
@@ -27,16 +27,12 @@ public class TinyIntDecoder : ValueDecoderBase
     private static readonly IEnumerable<byte> NegativeTinyIntMarkers =
         Enumerable.Range(0xF0, 0x10).Select(i => (byte)i).ToArray();
 
-    public TinyIntDecoder(ILogger logger) : base(logger)
-    {
-    }
-
     public override byte[] HandledMarkerBytes => [..PositiveTinyIntMarkers, ..NegativeTinyIntMarkers];
-    
-    protected override bool IsMarkerByteHandled(byte markerByte)
+
+    public override bool IsMarkerByteHandled(byte markerByte)
     {
-        var highNibble = (markerByte & 0xF0);
-        return highNibble is 0 or 0xF0;
+        var highNibble = (markerByte & 0xF0) >> 4;
+        return highNibble is < 0x8 or 0xF;
     }
 
     public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)

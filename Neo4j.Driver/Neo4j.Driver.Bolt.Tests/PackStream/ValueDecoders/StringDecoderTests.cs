@@ -8,7 +8,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
-internal class StringDecoderTests : UnitTestBase<StringDecoder>
+internal class StringDecoderTests : DecoderTestsBase<StringDecoder>
 {
     [Test]
     public void HandlesAllStringMarkerBytes()

@@ -19,12 +19,8 @@ using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-internal class BooleanDecoder : ValueDecoderBase
+internal class BooleanDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
-    public BooleanDecoder(ILogger logger) : base(logger)
-    {
-    }
-
     public override byte[] HandledMarkerBytes => [PackStreamMarker.True, PackStreamMarker.False];
 
     public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)

@@ -24,13 +24,8 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// Provides a single-pass <see cref="DecodePayload"/> that advances the reader and returns
 /// the payload as a <see cref="ReadOnlySequence{T}"/>.
 /// </summary>
-internal abstract class SequenceDecoderBase : ValueDecoderBase
+internal abstract class SequenceDecoderBase(ILogger logger) : ValueDecoderBase(logger)
 {
-    protected SequenceDecoderBase(ILogger logger)
-        : base(logger)
-    {
-    }
-
     /// <summary>
     /// Decodes <paramref name="valueCount"/> PackStream values from the reader's current position,
     /// advancing the reader, and returns the slice of the buffer containing those values.

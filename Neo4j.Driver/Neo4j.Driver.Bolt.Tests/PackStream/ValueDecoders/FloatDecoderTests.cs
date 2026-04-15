@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
-internal class FloatDecoderTests : UnitTestBase<FloatDecoder>
+internal class FloatDecoderTests : DecoderTestsBase<FloatDecoder>
 {
     [Test]
     public void HandlesFloat64MarkerByte()

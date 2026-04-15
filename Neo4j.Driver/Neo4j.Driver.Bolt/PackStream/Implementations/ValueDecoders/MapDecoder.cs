@@ -29,21 +29,16 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// Map32: marker 0xDA + 4 byte big-endian count
 /// Payload is [key, value, key, value, ...] for each entry.
 /// </summary>
-internal class MapDecoder : SequenceDecoderBase, IRecursiveValueDecoder
+internal class MapDecoder(ILogger logger) : SequenceDecoderBase(logger), IRecursiveValueDecoder
 {
     private IPackStreamDecoder? _recursionDecoder;
-
-    public MapDecoder(ILogger logger)
-        : base(logger)
-    {
-    }
 
     private static readonly byte[] TinyMapMarkers = Enumerable.Range(0xA0, 16).Select(i => (byte)i).ToArray();
 
     public override byte[] HandledMarkerBytes =>
         [..TinyMapMarkers, PackStreamMarker.Map8, PackStreamMarker.Map16, PackStreamMarker.Map32];
 
-    protected override bool IsMarkerByteHandled(byte markerByte)
+    public override bool IsMarkerByteHandled(byte markerByte)
     {
         return (markerByte & 0xF0) == PackStreamMarker.TinyMap
             || markerByte is PackStreamMarker.Map8 or PackStreamMarker.Map16 or PackStreamMarker.Map32;
