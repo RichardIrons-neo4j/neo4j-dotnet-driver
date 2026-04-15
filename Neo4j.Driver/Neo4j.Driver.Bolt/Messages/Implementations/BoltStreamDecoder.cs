@@ -19,7 +19,6 @@ using Neo4j.Driver.Bolt.Messages.Abstractions;
 using Neo4j.Driver.Bolt.Messages.Abstractions.Decoding;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
-using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 
 namespace Neo4j.Driver.Bolt.Messages.Implementations;

@@ -15,6 +15,7 @@
 
 using System.Buffers;
 using FluentAssertions;
+using Neo4j.Driver;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using NUnit.Framework;
@@ -240,7 +241,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     {
         var buffer = ReadOnlySequence<byte>.Empty;
         Action act = () => Subject.Decode(buffer);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
@@ -256,7 +257,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int8]);
         Action act = () => Subject.Decode(buffer);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
@@ -264,7 +265,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int16, 0x00]);
         Action act = () => Subject.Decode(buffer);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
@@ -272,7 +273,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int32, 0x00, 0x00, 0x00]);
         Action act = () => Subject.Decode(buffer);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
@@ -281,7 +282,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
         var buffer = new ReadOnlySequence<byte>(
             [PackStreamMarker.Int64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         Action act = () => Subject.Decode(buffer);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     #endregion

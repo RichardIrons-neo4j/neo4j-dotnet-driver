@@ -17,6 +17,7 @@ using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
+using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.SequenceReaderHelper;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;

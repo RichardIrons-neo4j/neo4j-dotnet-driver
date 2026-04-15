@@ -1,5 +1,6 @@
-﻿using System.Buffers;
+using System.Buffers;
 using FluentAssertions;
+using Neo4j.Driver;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
@@ -95,7 +96,7 @@ internal class StringDecoderTests : DecoderTestsBase<StringDecoder>
     {
         Action act = () => Subject.Decode(ReadOnlySequence<byte>.Empty);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
@@ -103,7 +104,7 @@ internal class StringDecoderTests : DecoderTestsBase<StringDecoder>
     {
         Action act = () => Subject.Decode(new ReadOnlySequence<byte>([0x85, 0x68, 0x69])); // Says 5 bytes, only 2
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]

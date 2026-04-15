@@ -19,6 +19,8 @@ using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.Extensions;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 
+using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.SequenceReaderHelper;
+
 namespace Neo4j.Driver.Bolt.Transport.Implementations;
 
 public class ChunkAssembler : IChunkAssembler
@@ -110,10 +112,7 @@ public class ChunkAssembler : IChunkAssembler
         }
 
         _logger.LogTrace("Reading message header");
-        var readMsgSize = seqReader.TryReadBigEndian(out short messageSize);
-        ProtocolException.ThrowIf(
-            !readMsgSize,
-            () => new("Unexpected read failure while reading message header"));
+        var messageSize = ReadShortBigEndian(ref seqReader);
 
         // Need body?
         if (seqReader.Remaining < messageSize)
@@ -126,10 +125,7 @@ public class ChunkAssembler : IChunkAssembler
             return false;
         }
 
-        var readMessage = seqReader.TryReadExact(messageSize, out message);
-        ProtocolException.ThrowIf(
-            !readMessage,
-            () => new("Unexpected read failure while reading message content"));
+        message = ReadExact(ref seqReader, messageSize);
 
         // message is complete, yield it
         _logger.LogDebug("Read complete message of size {MessageSize} bytes", message.Length);

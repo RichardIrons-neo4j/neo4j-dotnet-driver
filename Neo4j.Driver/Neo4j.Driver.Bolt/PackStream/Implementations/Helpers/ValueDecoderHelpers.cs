@@ -1,12 +1,12 @@
 ﻿// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,7 +14,6 @@
 // limitations under the License.
 
 using System.Buffers;
-using System.Buffers.Binary;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.Helpers;
@@ -25,15 +24,9 @@ public static class ValueDecoderHelpers
     {
         return integerSize switch
         {
-            // TryRead succeeded
-            ValueDecoderBase.IntegerSize.Byte when reader.TryRead(out var b) => b,
-            ValueDecoderBase.IntegerSize.Short when reader.TryReadBigEndian(out short s) => (ushort)s,
-            ValueDecoderBase.IntegerSize.Int when reader.TryReadBigEndian(out int i) => i,
-
-            // TryRead failed
-            ValueDecoderBase.IntegerSize.Byte or ValueDecoderBase.IntegerSize.Short or ValueDecoderBase.IntegerSize.Int
-                => throw new InvalidOperationException("Buffer too short to read length."),
-
+            ValueDecoderBase.IntegerSize.Byte => SequenceReaderHelper.ReadByte(ref reader),
+            ValueDecoderBase.IntegerSize.Short => (ushort)SequenceReaderHelper.ReadShortBigEndian(ref reader),
+            ValueDecoderBase.IntegerSize.Int => SequenceReaderHelper.ReadIntBigEndian(ref reader),
             _ => throw new ArgumentOutOfRangeException(nameof(integerSize), integerSize, null)
         };
     }
@@ -42,16 +35,10 @@ public static class ValueDecoderHelpers
     {
         return integerSize switch
         {
-            // TryRead succeeded
-            ValueDecoderBase.IntegerSize.Byte when reader.TryRead(out var b) => (sbyte)b,
-            ValueDecoderBase.IntegerSize.Short when reader.TryReadBigEndian(out short s) => s,
-            ValueDecoderBase.IntegerSize.Int when reader.TryReadBigEndian(out int i) => i,
-            ValueDecoderBase.IntegerSize.Long when reader.TryReadBigEndian(out long l) => l,
-
-            // TryRead failed
-            ValueDecoderBase.IntegerSize.Byte or ValueDecoderBase.IntegerSize.Short or ValueDecoderBase.IntegerSize.Int or ValueDecoderBase.IntegerSize.Long
-                => throw new InvalidOperationException("Buffer too short to read length."),
-
+            ValueDecoderBase.IntegerSize.Byte => (sbyte)SequenceReaderHelper.ReadByte(ref reader),
+            ValueDecoderBase.IntegerSize.Short => SequenceReaderHelper.ReadShortBigEndian(ref reader),
+            ValueDecoderBase.IntegerSize.Int => SequenceReaderHelper.ReadIntBigEndian(ref reader),
+            ValueDecoderBase.IntegerSize.Long => SequenceReaderHelper.ReadLongBigEndian(ref reader),
             _ => throw new ArgumentOutOfRangeException(nameof(integerSize), integerSize, null)
         };
     }
@@ -60,7 +47,7 @@ public static class ValueDecoderHelpers
     {
         if (buffer.IsEmpty)
         {
-            throw new InvalidOperationException("Buffer is empty.");
+            throw new ProtocolException("Buffer is empty.");
         }
     }
 
@@ -68,36 +55,7 @@ public static class ValueDecoderHelpers
     {
         if (reader.End)
         {
-            throw new InvalidOperationException("Unexpected end of buffer.");
-        }
-    }
-
-    public static byte ReadByte(ref SequenceReader<byte> reader)
-    {
-        return reader.TryRead(out var b)
-            ? b
-            : throw new InvalidOperationException("Buffer too short to read byte.");
-    }
-
-    public static ReadOnlySequence<byte> ReadExact(ref SequenceReader<byte> reader, int count)
-    {
-        return reader.TryReadExact(count, out var data)
-            ? data
-            : throw new InvalidOperationException($"Buffer too short to read {count} bytes.");
-    }
-
-    public static double ReadDouble(ref SequenceReader<byte> reader)
-    {
-        var buffer = ReadExact(ref reader, 8);
-        if (buffer.IsSingleSegment)
-        {
-            return BinaryPrimitives.ReadDoubleBigEndian(buffer.FirstSpan);
-        }
-        else
-        {
-            Span<byte> temp = stackalloc byte[8];
-            buffer.CopyTo(temp);
-            return BinaryPrimitives.ReadDoubleBigEndian(temp);
+            throw new ProtocolException("Unexpected end of buffer.");
         }
     }
 }

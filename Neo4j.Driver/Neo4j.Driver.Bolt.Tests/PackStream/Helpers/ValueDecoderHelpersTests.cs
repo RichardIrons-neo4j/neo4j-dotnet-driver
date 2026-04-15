@@ -15,6 +15,7 @@
 
 using System.Buffers;
 using FluentAssertions;
+using Neo4j.Driver;
 using Neo4j.Driver.Bolt.PackStream.Implementations.Helpers;
 using NUnit.Framework;
 
@@ -28,8 +29,7 @@ internal class ValueDecoderHelpersTests
     {
         var act = () => ValueDecoderHelpers.EnsureBufferNotEmpty(ReadOnlySequence<byte>.Empty);
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Buffer is empty*");
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]

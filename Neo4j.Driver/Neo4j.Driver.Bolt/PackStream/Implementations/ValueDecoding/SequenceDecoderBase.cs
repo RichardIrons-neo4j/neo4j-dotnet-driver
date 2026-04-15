@@ -42,7 +42,7 @@ internal abstract class SequenceDecoderBase(ILogger logger) : ValueDecoderBase(l
         {
             if (reader.UnreadSequence.IsEmpty)
             {
-                throw new InvalidOperationException(
+                throw new ProtocolException(
                     $"Unexpected end of data: expected {valueCount} items but only found {i}.");
             }
 

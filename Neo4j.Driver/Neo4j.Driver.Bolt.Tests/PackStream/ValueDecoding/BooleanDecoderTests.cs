@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -15,6 +15,7 @@
 
 using System.Buffers;
 using FluentAssertions;
+using Neo4j.Driver;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using NUnit.Framework;
@@ -59,7 +60,7 @@ internal class BooleanDecoderTests : DecoderTestsBase<BooleanDecoder>
 
         Action act = () => Subject.Decode(buffer);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]

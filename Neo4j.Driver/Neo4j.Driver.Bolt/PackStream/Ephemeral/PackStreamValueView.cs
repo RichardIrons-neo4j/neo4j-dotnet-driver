@@ -14,7 +14,6 @@
 // limitations under the License.
 
 using System.Buffers;
-using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 
 namespace Neo4j.Driver.Bolt.PackStream.Ephemeral;

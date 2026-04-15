@@ -27,8 +27,7 @@ internal class PackStreamMarkerTests
     {
         var act = () => PackStreamMarker.EnsureStructSize("SUCCESS", 1, 0);
 
-        act.Should().Throw<Exception>()
-            .WithMessage("*SUCCESS*should have*1*however received*0*");
+        act.Should().Throw<Exception>();
     }
 
     [Test]

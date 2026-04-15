@@ -1,5 +1,6 @@
-﻿using System.Buffers;
+using System.Buffers;
 using FluentAssertions;
+using Neo4j.Driver;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using NUnit.Framework;
@@ -33,7 +34,7 @@ internal class NullDecoderTests : DecoderTestsBase<NullDecoder>
 
         Action act = () => Subject.Decode(buffer);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]

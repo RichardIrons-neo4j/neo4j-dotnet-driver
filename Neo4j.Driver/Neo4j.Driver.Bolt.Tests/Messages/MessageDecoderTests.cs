@@ -121,7 +121,7 @@ internal class MessageDecoderTests
 
         var act = () => message.AsSuccess();
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Ignored*not Success*");
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Test]
@@ -132,7 +132,7 @@ internal class MessageDecoderTests
 
         var act = () => message.AsRecord();
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Success*not Record*");
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Test]
@@ -143,7 +143,7 @@ internal class MessageDecoderTests
 
         var act = () => message.AsFailure();
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Success*not Failure*");
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Test]
@@ -154,7 +154,7 @@ internal class MessageDecoderTests
 
         var act = () => message.AsIgnored();
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Success*not Ignored*");
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Test]

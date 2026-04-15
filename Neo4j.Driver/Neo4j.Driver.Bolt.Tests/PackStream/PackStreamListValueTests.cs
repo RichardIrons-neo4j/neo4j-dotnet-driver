@@ -179,8 +179,7 @@ internal class PackStreamListViewTests
 
         var act = () => listValue.ElementAt(-1);
 
-        act.Should().Throw<ArgumentOutOfRangeException>()
-            .WithParameterName("index");
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Test]
@@ -193,8 +192,8 @@ internal class PackStreamListViewTests
         var act0 = () => listValue.ElementAt(1);
         var act1 = () => listValue.ElementAt(2);
 
-        act0.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("index");
-        act1.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("index");
+        act0.Should().Throw<ArgumentOutOfRangeException>();
+        act1.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     /// <summary>

@@ -16,6 +16,7 @@
 using System.Buffers;
 using System.Text;
 using FluentAssertions;
+using Neo4j.Driver;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
@@ -218,7 +219,7 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
     {
         Action act = () => Subject.Decode(ReadOnlySequence<byte>.Empty);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
@@ -236,7 +237,7 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
 
         Action act = () => Subject.Decode(buffer);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
@@ -247,7 +248,7 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
 
         Action act = () => Subject.Decode(buffer);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
@@ -258,7 +259,7 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
 
         Action act = () => Subject.Decode(buffer);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<ProtocolException>();
     }
 
     [Test]
