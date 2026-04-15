@@ -46,6 +46,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Neo4j.Driver.Tests.Integration")]
 [assembly: InternalsVisibleTo("Neo4j.Driver.Tests.SimpleDriver")]
 [assembly: InternalsVisibleTo("Neo4j.Driver.Tests.TestBackend")]
+[assembly: InternalsVisibleTo("Neo4j.Driver.Bolt")]
 // Required for Moq to function in Unit Tests
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 #endif

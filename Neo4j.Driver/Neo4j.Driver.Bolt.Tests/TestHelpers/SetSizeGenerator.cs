@@ -32,7 +32,9 @@ public static class SetSizeGenerator
     {
         var current = new int[parts];
         foreach (var r in Recurse(target, parts, 0, current))
+        {
             yield return r;
+        }
     }
 
     private static IEnumerable<int[]> Recurse(int remaining, int slotsLeft, int index, int[] current)
@@ -49,7 +51,9 @@ public static class SetSizeGenerator
         {
             current[index] = v;
             foreach (var r in Recurse(remaining - v, slotsLeft - 1, index + 1, current))
+            {
                 yield return r;
+            }
         }
     }
 
@@ -62,25 +66,27 @@ public static class SetSizeGenerator
 
         public bool Equals(int[]? x, int[]? y)
         {
-            if (ReferenceEquals(x, y)) return true;
-            if (x is null || y is null) return false;
-            if (x.Length != y.Length) return false;
+            if (ReferenceEquals(x, y))
+            {
+                return true;
+            }
 
-            for (int i = 0; i < x.Length; i++)
-                if (x[i] != y[i])
-                    return false;
+            if (x is null || y is null)
+            {
+                return false;
+            }
 
-            return true;
+            if (x.Length != y.Length)
+            {
+                return false;
+            }
+
+            return !x.Where((t, i) => t != y[i]).Any();
         }
 
         public int GetHashCode(int[] obj)
         {
-            unchecked
-            {
-                int h = 17;
-                foreach (var v in obj) h = h * 31 + v;
-                return h;
-            }
+            return obj.Aggregate(0, HashCode.Combine);
         }
     }
 }
