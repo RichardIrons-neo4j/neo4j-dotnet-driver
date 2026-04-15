@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
+using System.Text;
 using FluentAssertions;
 using Neo4j.Driver.Bolt.PackStream.Implementations;
 using NUnit.Framework;
@@ -36,69 +37,69 @@ internal class PackStreamWriterTests
         Encode(w => w.WriteNull()).Should().Equal(0xC0);
     }
 
-    [Test]
-    public void WriteBooleanMatchesSpec()
+    [TestCase(true, 0xC3)]
+    [TestCase(false, 0xC2)]
+    public void WriteBooleanEncodesMarker(bool value, byte expected)
     {
-        Encode(w => w.WriteBoolean(true)).Should().Equal(0xC3);
-        Encode(w => w.WriteBoolean(false)).Should().Equal(0xC2);
+        Encode(w => w.WriteBoolean(value)).Should().Equal(expected);
     }
 
-    [Test]
-    public void WriteIntegerTinyMatchesSpec()
+    [TestCase(0L, new byte[] { 0x00 })]
+    [TestCase(1L, new byte[] { 0x01 })]
+    [TestCase(42L, new byte[] { 0x2A })]
+    [TestCase(100L, new byte[] { 0x64 })]
+    [TestCase(127L, new byte[] { 0x7F })]
+    [TestCase(-1L, new byte[] { 0xFF })]
+    [TestCase(-16L, new byte[] { 0xF0 })]
+    [TestCase(-17L, new byte[] { 0xC8, 0xEF })]
+    [TestCase(-128L, new byte[] { 0xC8, 0x80 })]
+    [TestCase(128L, new byte[] { 0xC9, 0x00, 0x80 })]
+    [TestCase(200L, new byte[] { 0xC9, 0x00, 0xC8 })]
+    [TestCase(-100L, new byte[] { 0xC8, 0x9C })]
+    [TestCase(-200L, new byte[] { 0xC9, 0xFF, 0x38 })]
+    [TestCase(32_767L, new byte[] { 0xC9, 0x7F, 0xFF })]
+    [TestCase(-32_768L, new byte[] { 0xC9, 0x80, 0x00 })]
+    [TestCase(40_000L, new byte[] { 0xCA, 0x00, 0x00, 0x9C, 0x40 })]
+    [TestCase(50_000L, new byte[] { 0xCA, 0x00, 0x00, 0xC3, 0x50 })]
+    [TestCase(int.MaxValue, new byte[] { 0xCA, 0x7F, 0xFF, 0xFF, 0xFF })]
+    [TestCase(int.MinValue, new byte[] { 0xCA, 0x80, 0x00, 0x00, 0x00 })]
+    [TestCase(10_000_000_000L, new byte[] { 0xCB, 0x00, 0x00, 0x00, 0x02, 0x54, 0x0B, 0xE4, 0x00 })]
+    public void WriteIntegerEncodesExpectedBytes(long value, byte[] expected)
     {
-        Encode(w => w.WriteInteger(0)).Should().Equal(0x00);
-        Encode(w => w.WriteInteger(42)).Should().Equal(0x2A);
-        Encode(w => w.WriteInteger(-1)).Should().Equal(0xFF);
+        Encode(w => w.WriteInteger(value)).Should().Equal(expected);
     }
 
-    [Test]
-    public void WriteIntegerInt8MatchesSpec()
+    [TestCase(0.0, new byte[] { 0xC1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })]
+    [TestCase(1.0, new byte[] { 0xC1, 0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })]
+    [TestCase(-1.0, new byte[] { 0xC1, 0xBF, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })]
+    [TestCase(2.5, new byte[] { 0xC1, 0x40, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })]
+    public void WriteFloat64EncodesBigEndianIeee754(double value, byte[] expected)
     {
-        Encode(w => w.WriteInteger(-17)).Should().Equal(0xC8, 0xEF);
+        Encode(w => w.WriteFloat64(value)).Should().Equal(expected);
     }
 
-    [Test]
-    public void WriteIntegerInt16MatchesSpec()
+    [TestCase("", new byte[] { 0x80 })]
+    [TestCase("a", new byte[] { 0x81, (byte)'a' })]
+    [TestCase("hi", new byte[] { 0x82, (byte)'h', (byte)'i' })]
+    [TestCase("hello", new byte[] { 0x85, (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o' })]
+    public void WriteStringTinyEncodesLengthAndUtf8(string value, byte[] expected)
     {
-        Encode(w => w.WriteInteger(200)).Should().Equal(0xC9, 0x00, 0xC8);
+        Encode(w => w.WriteString(value)).Should().Equal(expected);
     }
 
-    [Test]
-    public void WriteIntegerInt32MatchesSpec()
+    [TestCase("ab", new byte[] { 0x82, (byte)'a', (byte)'b' })]
+    [TestCase("x", new byte[] { 0x81, (byte)'x' })]
+    public void WriteUtf8StringMatchesWriteStringForAscii(string ascii, byte[] expected)
     {
-        Encode(w => w.WriteInteger(40000)).Should().Equal(0xCA, 0x00, 0x00, 0x9C, 0x40);
+        Encode(w => w.WriteUtf8String(Encoding.UTF8.GetBytes(ascii))).Should().Equal(expected);
     }
 
-    [Test]
-    public void WriteIntegerInt64MatchesSpec()
+    [TestCase(new byte[0], new byte[] { 0xCC, 0x00 })]
+    [TestCase(new byte[] { 0xFF }, new byte[] { 0xCC, 0x01, 0xFF })]
+    [TestCase(new byte[] { 0xAA, 0xBB }, new byte[] { 0xCC, 0x02, 0xAA, 0xBB })]
+    public void WriteBytesEncodesLengthPrefix(byte[] payload, byte[] expected)
     {
-        Encode(w => w.WriteInteger(10_000_000_000L))
-            .Should()
-            .Equal(0xCB, 0x00, 0x00, 0x00, 0x02, 0x54, 0x0B, 0xE4, 0x00);
-    }
-
-    [Test]
-    public void WriteFloat64MatchesSpec()
-    {
-        Encode(w => w.WriteFloat64(0.0)).Should().Equal(0xC1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-    }
-
-    [Test]
-    public void WriteStringTinyMatchesSpec()
-    {
-        Encode(w => w.WriteString("hi")).Should().Equal(0x82, (byte)'h', (byte)'i');
-    }
-
-    [Test]
-    public void WriteUtf8StringMatchesSpec()
-    {
-        Encode(w => w.WriteUtf8String("ab"u8)).Should().Equal(0x82, (byte)'a', (byte)'b');
-    }
-
-    [Test]
-    public void WriteBytesTinyMatchesSpec()
-    {
-        Encode(w => w.WriteBytes([0xAA, 0xBB])).Should().Equal(0xCC, 0x02, 0xAA, 0xBB);
+        Encode(w => w.WriteBytes(payload)).Should().Equal(expected);
     }
 
     [Test]
