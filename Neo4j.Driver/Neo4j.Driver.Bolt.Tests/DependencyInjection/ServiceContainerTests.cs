@@ -14,7 +14,10 @@
 // limitations under the License.
 
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Neo4j.Driver.Bolt.DependencyInjection;
+using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using NUnit.Framework;
 
 namespace Neo4j.Driver.Bolt.Tests.DependencyInjection;
@@ -103,11 +106,61 @@ internal class ServiceContainerTests
         leaf.Should().NotBeNull();
     }
 
+    [Test]
+    public void Resolve_MultipleImplementationsSameInterface_ThrowsInvalidOperationException()
+    {
+        var container = new ServiceContainer()
+            .Register<IWidget, Widget>()
+            .Register<IWidget, OtherWidget>();
+
+        var act = () => container.Resolve<IWidget>();
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Multiple implementations*");
+    }
+
+    [Test]
+    public void Resolve_IEnumerable_ReturnsAllImplementationsInRegistrationOrder()
+    {
+        var container = new ServiceContainer()
+            .Register<IWidget, Widget>()
+            .Register<IWidget, OtherWidget>();
+
+        var all = container.Resolve<IEnumerable<IWidget>>().ToList();
+        all.Should().HaveCount(2);
+        all[0].Should().BeOfType<Widget>();
+        all[1].Should().BeOfType<OtherWidget>();
+    }
+
+    [Test]
+    public void Resolve_Array_ReturnsAllImplementationsInRegistrationOrder()
+    {
+        var container = new ServiceContainer()
+            .Register<IWidget, Widget>()
+            .Register<IWidget, OtherWidget>();
+
+        var all = container.Resolve<IWidget[]>();
+        all.Should().HaveCount(2);
+        all[0].Should().BeOfType<Widget>();
+        all[1].Should().BeOfType<OtherWidget>();
+    }
+
+    [Test]
+    public void RegisterTypesFromThisAssembly_ResolvesValueDecoderProvider()
+    {
+        var container = new ServiceContainer()
+            .RegisterInstance<ILogger>(Mock.Of<ILogger>())
+            .RegisterTypesFromThisAssembly();
+
+        var provider = container.Resolve<ValueDecoderProvider>();
+        provider.Should().NotBeNull();
+    }
+
     private interface IWidget
     {
     }
 
     private sealed class Widget : IWidget;
+
+    private sealed class OtherWidget : IWidget;
 
     private interface IGadget
     {
