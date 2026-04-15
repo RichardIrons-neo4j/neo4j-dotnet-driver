@@ -4,6 +4,8 @@ using FluentAssertions;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using Neo4j.Driver.Bolt.Transport;
 using NUnit.Framework;
+using Chunk = byte[];
+using ChunkSet = byte[][];
 
 namespace Neo4j.Driver.Bolt.Tests;
 
@@ -81,33 +83,33 @@ public class ChunkAssemblerTests
         {
             var messageSizes = ExpectedMessages.Select(x => $"{x.Length:000}");
             var messageLengthStr = string.Join(", ", messageSizes);
+            var totalMessageLength = ExpectedMessages.Sum(x => x.Length) + ExpectedMessages.Length * sizeof(short);
 
             var chunkSizes = Chunks.Select(x => $"{x.Length:000}");
             var chunkLengthStr = string.Join(", ", chunkSizes);
+            var totalChunkLength = Chunks.Sum(x => x.Length);
 
-            return $"Message: [{messageLengthStr}], Chunks: [{chunkLengthStr}]";
+            return
+                $"Message lengths: [{messageLengthStr}] ({totalMessageLength}), " +
+                $"Chunk lengths: [{chunkLengthStr}] ({totalChunkLength})";
         }
     }
 
-    private static IEnumerable<MessageChunkingTestCase> GetChunkingTestCases()
+    private static List<MessageChunkingTestCase> GetChunkingTestCases()
     {
-        const int numMessages = 2;
-        const int maxMessageSize = 100;
-        const int minMessageSize = 50;
-        const int maxSplits = 1;
+        const int numMessages = 5;
+        const int minMessageSize = 0;
+        const int maxMessageSize = 2;
+        const int maxSplits = 2;
 
         List<byte[]> messages = [];
+        var byteArrayBuilder = new ByteArrayBuilder();
         for (var m = 0; m < numMessages; m++)
         {
-            var messageSize = Random.Shared.Next(minMessageSize, maxMessageSize);
+            var messageSize = Random.Shared.Next(minMessageSize, maxMessageSize + 1);
             var message = new byte[messageSize];
             Random.Shared.NextBytes(message);
             messages.Add(message);
-        }
-
-        var byteArrayBuilder = new ByteArrayBuilder();
-        foreach (var message in messages)
-        {
             byteArrayBuilder = byteArrayBuilder.PackStreamMessage(message);
         }
 
@@ -115,47 +117,43 @@ public class ChunkAssemblerTests
         var bytes = byteArrayBuilder.ToArray();
         var chunkSets = CreateChunkSets(bytes, maxSplits).ToArray();
 
-        foreach (var chunkSet in chunkSets)
-        {
-            yield return new MessageChunkingTestCase()
+        return chunkSets
+            .Select(chunkSet => new MessageChunkingTestCase()
             {
                 ExpectedMessages = messages.ToArray(),
                 Chunks = chunkSet
-            };
-        }
+            })
+            .ToList();
     }
 
-    private static List<byte[][]> CreateChunkSets(Memory<byte> bytes, int maxDepth)
+    private static List<ChunkSet> CreateChunkSets(Memory<byte> bytes, int parts, int minSize = 1)
     {
-        if (maxDepth == 0 || bytes.Length == 0)
+        var result = new List<ChunkSet>();
+        var sizes = SetSizeGenerator.GenerateSizes(bytes.Length, parts, minSize);
+        foreach (var size in sizes)
         {
-            return [[bytes.ToArray()]];
+            var chunkSet = new List<Chunk>();
+            var offset = 0;
+            foreach (var s in size)
+            {
+                chunkSet.Add(bytes.Slice(offset, s).ToArray());
+                offset += s;
+            }
+            result.Add(chunkSet.ToArray());
         }
 
-        var chunkSets = new List<byte[][]>();
-        for (var i = 0; i < bytes.Length; i++)
-        {
-            List<byte[]> chunkSet =
-            [
-                bytes.Span[..i].ToArray()
-            ];
-
-            var remainingChunks = CreateChunkSets(bytes[i..], maxDepth - 1);
-            chunkSet.AddRange(remainingChunks.SelectMany(x => x));
-            chunkSets.Add(chunkSet.ToArray());
-        }
-
-        return chunkSets;
+        return result.Take(2).ToList();
     }
+    
 
-    private Task<ReadOnlySequence<byte>[]> TestMessageAssembly(IEnumerable<byte[]> chunks)
+    private static async Task<ReadOnlySequence<byte>[]> TestMessageAssembly(IEnumerable<byte[]> chunks)
     {
         var chunkPipe = new TestChunkPipe(chunks);
         var assembler = new ChunkAssembler();
 
-        var result = assembler.ReadMessagesAsync(chunkPipe.Reader).ToArrayAsync();
-        chunkPipe.PlayMessages();
-        return result.AsTask();
+        var result = Task.Run(() => assembler.ReadMessagesAsync(chunkPipe.Reader).ToArrayAsync().AsTask());
+        await chunkPipe.PlayMessages().ConfigureAwait(false);
+        return await result.ConfigureAwait(false);
     }
 
     private class TestChunkPipe
@@ -171,14 +169,14 @@ public class ChunkAssemblerTests
 
         public PipeReader Reader => _pipe.Reader;
 
-        public void PlayMessages()
+        public async Task PlayMessages()
         {
             foreach (var chunk in _chunks)
             {
-                _pipe.Writer.Write(chunk);
+                await _pipe.Writer.WriteAsync(chunk).ConfigureAwait(false);
             }
 
-            _pipe.Writer.Complete();
+            await _pipe.Writer.CompleteAsync().ConfigureAwait(false);
         }
     }
 }

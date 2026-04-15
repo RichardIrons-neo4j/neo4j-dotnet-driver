@@ -27,56 +27,72 @@ public class ChunkAssembler : IChunkAssembler
     {
         var unread = ReadOnlySequence<byte>.Empty;
         var allConsumed = false;
-        
-        while (!allConsumed)
+        SequencePosition consumed = default;
+        SequencePosition examined = default;
+        var advance = false;
+        try
         {
-            short bytesNeeded = 0;
-            var readResult = await pipeReader.ReadAsync(cancellationToken).ConfigureAwait(false);
-            var buffer = ConcatSequences(unread, readResult.Buffer);
-            var seqReader = new SequenceReader<byte>(buffer);
-            var message = ReadOnlySequence<byte>.Empty;
-            
-            do
+            while (!allConsumed)
             {
-                if (bytesNeeded == 0)
+                if (advance)
                 {
-                    // if not enough remaining, break for next read
-                    if (seqReader.Remaining >= sizeof(short))
+                    pipeReader.AdvanceTo(consumed, examined);
+                }
+
+                short bytesNeeded = 0;
+                var readResult = await pipeReader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                var buffer = readResult.Buffer;
+                var seqReader = new SequenceReader<byte>(buffer);
+                var message = ReadOnlySequence<byte>.Empty;
+
+                do
+                {
+                    if (bytesNeeded == 0)
                     {
-                        if (!seqReader.TryReadBigEndian(out bytesNeeded))
+                        // if not enough remaining, break for next read
+                        if (seqReader.Remaining >= sizeof(short))
                         {
-                            throw new ProtocolException(
-                                $"Failed to read chunk header, expected {sizeof(short)} bytes " +
-                                $"but only {seqReader.Remaining} available.");
+                            if (!seqReader.TryReadBigEndian(out bytesNeeded))
+                            {
+                                throw new ProtocolException(
+                                    $"Failed to read chunk header, expected {sizeof(short)} bytes " +
+                                    $"but only {seqReader.Remaining} available.");
+                            }
                         }
-                        
                     }
-                }
 
-                // if no more bytes, break and read again
-                if (seqReader.Remaining < bytesNeeded)
+                    // if no more bytes, break and read again
+                    if (seqReader.Remaining < bytesNeeded)
+                    {
+                        break;
+                    }
+
+                    var bytesToRead = (short)Math.Min(seqReader.Remaining, bytesNeeded);
+                    if (!seqReader.TryReadExact(bytesToRead, out message))
+                    {
+                        throw new ProtocolException(
+                            $"Failed to read chunk header, expected {sizeof(short)} bytes " +
+                            $"but only {seqReader.Remaining} available.");
+                    }
+
+                    bytesNeeded -= bytesToRead;
+                } while (bytesNeeded > 0);
+
+                examined = buffer.End;
+
+                if (!message.IsEmpty)
                 {
-                    break;
+                    yield return message;
+                    consumed = buffer.GetPosition(sizeof(short) + message.Length);
                 }
 
-                var bytesToRead = (short)Math.Min(seqReader.Remaining, bytesNeeded);
-                if (!seqReader.TryReadExact(bytesToRead, out message))
-                {
-                    throw new ProtocolException(
-                        $"Failed to read chunk header, expected {sizeof(short)} bytes " +
-                        $"but only {seqReader.Remaining} available.");
-                }
-
-                bytesNeeded -= bytesToRead;
-                
-                unread = seqReader.UnreadSequence;
-            } while (bytesNeeded > 0);
-
-            var consumed = buffer.GetPosition(seqReader.Consumed);
-            pipeReader.AdvanceTo(consumed);
-            
-            allConsumed = readResult.IsCompleted && unread.IsEmpty;
-            yield return message;
+                advance = true;
+                allConsumed = readResult.IsCompleted && consumed.Equals(buffer.End);
+            }
+        }
+        finally
+        {
+           await pipeReader.CompleteAsync().ConfigureAwait(false);
         }
     }
 
