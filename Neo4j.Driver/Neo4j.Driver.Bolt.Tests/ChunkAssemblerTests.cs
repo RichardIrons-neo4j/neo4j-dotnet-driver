@@ -2,6 +2,7 @@ using System.Buffers;
 using System.IO.Pipelines;
 using FluentAssertions;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
+using Neo4j.Driver.Bolt.Transport.Abstractions;
 using Neo4j.Driver.Bolt.Transport.Implementations;
 using NUnit.Framework;
 
@@ -10,6 +11,12 @@ namespace Neo4j.Driver.Bolt.Tests;
 [TestFixture]
 public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
 {
+    private static IByteReader CreateByteReader(ReadOnlySequence<byte> sequence)
+        => new PipeReaderByteReader(PipeReader.Create(sequence));
+
+    private static IByteReader CreateByteReader(byte[] bytes)
+        => CreateByteReader(new ReadOnlySequence<byte>(bytes));
+
     [Test]
     public async Task AssemblesCorrectlyFormedMessage()
     {
@@ -20,8 +27,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9 // the message payload
         ];
 
-        var sequence = new ReadOnlySequence<byte>(bytes);
-        var reader = PipeReader.Create(sequence);
+        var reader = CreateByteReader(bytes);
         byte[] expectedBytes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         // Act
@@ -62,7 +68,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     public async Task ThrowsOnIncompleteHeader()
     {
         byte[] bytes = [0x00]; // Only 1 byte of header
-        var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
+        var reader = CreateByteReader(bytes);
         
         var act = async () =>  await Subject.ReadMessagesAsync(reader).ToListAsync();
 
@@ -74,7 +80,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     {
         // Header says 10 bytes, only 2 provided
         byte[] bytes = [0x00, 0x0A, 0x01, 0x02];
-        var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
+        var reader = CreateByteReader(bytes);
     
         var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync();
     
@@ -85,7 +91,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     public async Task HandlesZeroLengthMessage()
     {
         byte[] bytes = [0x00, 0x00]; // Message size = 0
-        var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
+        var reader = CreateByteReader(bytes);
     
         var messages = await Subject.ReadMessagesAsync(reader).ToListAsync();
     
@@ -96,7 +102,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     [Test]
     public async Task HandlesEmptyPipe()
     {
-        var reader = PipeReader.Create(new ReadOnlySequence<byte>([]));
+        var reader = CreateByteReader([]);
     
         var messages = await Subject.ReadMessagesAsync(reader).ToListAsync();
     
@@ -107,9 +113,10 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     public async Task ThrowsOnCancellation()
     {
         var pipe = new Pipe();
+        var reader = new PipeReaderByteReader(pipe.Reader);
         using var cts = new CancellationTokenSource();
     
-        var readTask = Subject.ReadMessagesAsync(pipe.Reader, cts.Token).ToListAsync();
+        var readTask = Subject.ReadMessagesAsync(reader, cts.Token).ToListAsync();
     
         // Cancel before any data arrives
         cts.Cancel();
@@ -128,7 +135,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
             0x00, 0x02, 0xAA, 0xBB, // Complete message (2 bytes)
             0x00, 0x05, 0x01        // Incomplete message (header says 5, only 1 provided)
         ];
-        var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
+        var reader = CreateByteReader(bytes);
     
         var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync();
     
@@ -251,7 +258,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
             _pipe = new Pipe();
         }
 
-        public PipeReader Reader => _pipe.Reader;
+        public IByteReader Reader => new PipeReaderByteReader(_pipe.Reader);
 
         public async Task PlayMessages()
         {

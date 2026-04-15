@@ -14,7 +14,6 @@
 // limitations under the License.
 
 using System.Buffers;
-using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
@@ -31,7 +30,7 @@ public class ChunkAssembler : IChunkAssembler
     }
 
     public async IAsyncEnumerable<ReadOnlySequence<byte>> ReadMessagesAsync(
-        PipeReader pipeReader,
+        IByteReader byteReader,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         SequencePosition? pendingConsumed = null;
@@ -43,18 +42,18 @@ public class ChunkAssembler : IChunkAssembler
         {
             if (pendingConsumed.HasValue)
             {
-                _logger.LogDebug("Advancing pipe reader past previous message");
-                pipeReader.AdvanceTo(pendingConsumed.Value, buffer.End);
+                _logger.LogDebug("Advancing byte reader past previous message");
+                byteReader.AdvanceTo(pendingConsumed.Value, buffer.End);
                 pendingConsumed = null;
             }
 
-            _logger.LogTrace("Reading from pipe");
-            var readResult = await pipeReader.ReadAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogTrace("Reading from byte reader");
+            var readResult = await byteReader.ReadAsync(cancellationToken).ConfigureAwait(false);
             buffer = readResult.Buffer;
 
             if (buffer.IsEmpty && readResult.IsCompleted)
             {
-                _logger.LogDebug("Pipe reader completed without any data");
+                _logger.LogDebug("Byte reader completed without any data");
                 break;
             }
 
@@ -74,18 +73,18 @@ public class ChunkAssembler : IChunkAssembler
 
             if (!readResult.IsCompleted)
             {
-                _logger.LogTrace("Pipe reader not completed yet, waiting for more data");
+                _logger.LogTrace("Byte reader not completed yet, waiting for more data");
                 continue;
             }
 
-            _logger.LogDebug("Pipe reader completed");
+            _logger.LogDebug("Byte reader completed");
             break;
         }
 
         if (pendingConsumed.HasValue)
         {
-            _logger.LogTrace("Advancing pipe reader past final message");
-            pipeReader.AdvanceTo(pendingConsumed.Value, buffer.End);
+            _logger.LogTrace("Advancing byte reader past final message");
+            byteReader.AdvanceTo(pendingConsumed.Value, buffer.End);
         }
     }
 

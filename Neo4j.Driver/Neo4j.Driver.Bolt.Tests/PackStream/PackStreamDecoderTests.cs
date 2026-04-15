@@ -14,7 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
-using System.IO.Pipelines;
+using Moq;
 using NUnit.Framework;
 using FluentAssertions;
 using Neo4j.Driver.Bolt.PackStream;
@@ -30,7 +30,7 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
     public async Task DecodesSingleValue()
     {
         byte[] packStreamMessage = [0x01, 0x69, 0xEF];
-        var pipe = new Pipe();
+        var byteReader = new Mock<IByteReader>();
 
         var dummyDecoder = new MockDecoder(
             [0x01],
@@ -43,10 +43,10 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
         ReadOnlySequence<byte>[] messages = [new(packStreamMessage)];
         var chunkAssembler = AutoMocker.GetMock<IChunkAssembler>();
         chunkAssembler
-            .Setup(x => x.ReadMessagesAsync(pipe.Reader, CancellationToken.None))
+            .Setup(x => x.ReadMessagesAsync(byteReader.Object, CancellationToken.None))
             .Returns(messages.ToAsyncEnumerable());
 
-        var result = await Subject.Decode(pipe.Reader, 1).ToListAsync();
+        var result = await Subject.Decode(byteReader.Object, 1).ToListAsync();
         result.Should().HaveCount(1);
         result.First().Should().Be(PackStreamValue.Int(-123));
     }
@@ -72,12 +72,12 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
 
         var messages = packStreamMessages.Select(kvp => new ReadOnlySequence<byte>(kvp.Key)).ToArray();
         var chunkAssembler = AutoMocker.GetMock<IChunkAssembler>();
-        var pipe = new Pipe();
+        var byteReader = new Mock<IByteReader>();
         chunkAssembler
-            .Setup(x => x.ReadMessagesAsync(pipe.Reader, CancellationToken.None))
+            .Setup(x => x.ReadMessagesAsync(byteReader.Object, CancellationToken.None))
             .Returns(messages.ToAsyncEnumerable());
 
-        var result = await Subject.Decode(pipe.Reader, 3).ToListAsync();
+        var result = await Subject.Decode(byteReader.Object, 3).ToListAsync();
         result.Should().HaveCount(3);
         result.Should().BeEquivalentTo(packStreamMessages.Values);
     }

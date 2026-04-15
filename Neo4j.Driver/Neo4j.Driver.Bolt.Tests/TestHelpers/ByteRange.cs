@@ -26,7 +26,7 @@ public class ByteRange : IEnumerable<byte>
     {
         foreach (var range in ranges)
         {
-            if (range.End.Value is > 255 or < 0)
+            if (range.End.Value is > 256 or < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(ranges), "Range end must be between 0 and 255.");
             }
