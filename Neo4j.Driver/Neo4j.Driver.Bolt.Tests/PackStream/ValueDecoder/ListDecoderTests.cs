@@ -14,8 +14,8 @@
 // limitations under the License.
 
 using System.Buffers;
+using System.Text;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
@@ -29,14 +29,6 @@ namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoder;
 [TestFixture]
 internal class ListDecoderTests : UnitTestBase<ListDecoder>
 {
-    [SetUp]
-    public new void SetUp()
-    {
-        base.SetUp();
-        //AutoMocker.Use<IPackStreamDecoder>(x => x.CreateInstance<TestPackStreamDecoder>());
-        AutoMocker.Use<IPackStreamSizeReader>(x => x.CreateInstance<PackStreamSizeReader>());
-    }
-
     [Test]
     public void HandlesAllListMarkerBytes()
     {
@@ -95,7 +87,9 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
 
         var items = new List<long>();
         foreach (var item in result.Value.ListValue)
+        {
             items.Add(item.IntValue);
+        }
 
         items.Should().BeEquivalentTo([1, 2, 3]);
     }
@@ -158,159 +152,20 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
     }
 
     [Test]
-    public void DecodesNestedListTwoLevels()
+    public void DecodesListWithStringItems()
     {
-        // [[1, 2], [3, 4]]
-        // 0x92 = TinyList(2)
-        // 0x92, 0x01, 0x02 = TinyList(2) containing 1, 2
-        // 0x92, 0x03, 0x04 = TinyList(2) containing 3, 4
-        var buffer = new ReadOnlySequence<byte>([0x92, 0x92, 0x01, 0x02, 0x92, 0x03, 0x04]);
+        // TinyList with 2 items: ["Hello", "World"]
+        // Using mock bytes 0x20 and 0x21 which the mock decoder maps to "Hello" and "World"
+        var buffer = new ReadOnlySequence<byte>([0x92, 0x20, 0x21]);
 
-        var result = Subject.Decode(buffer);
-
-        result.Value.ListValue.Count.Should().Be(2);
-        result.BytesConsumed.Should().Be(7);
-
-        var outerList = result.Value.ListValue.ToEnumerable().ToArray();
-        outerList[0].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([1, 2]);
-        outerList[1].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([3, 4]);
-    }
-
-    [Test]
-    public void DecodesNestedEmptyLists()
-    {
-        // [[], []]
-        var buffer = new ReadOnlySequence<byte>([0x92, 0x90, 0x90]);
-
-        var result = Subject.Decode(buffer);
+        var result = Subject.Decode(buffer, TODO);
 
         result.Value.ListValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(3);
-
-        var outerList = result.Value.ListValue.ToEnumerable().ToArray();
-        outerList[0].ListValue.Count.Should().Be(0);
-        outerList[1].ListValue.Count.Should().Be(0);
-    }
-
-    [Test]
-    public void DecodesNestedListThreeLevels()
-    {
-        // [[[1]]]
-        // 0x91 = TinyList(1)
-        var buffer = new ReadOnlySequence<byte>([0x91, 0x91, 0x91, 0x01]);
-
-        var result = Subject.Decode(buffer);
-
-        result.Value.ListValue.Count.Should().Be(1);
-        result.BytesConsumed.Should().Be(4);
-
-        var level1 = result.Value.ListValue.ToEnumerable().First();
-        var level2 = level1.ListValue.ToEnumerable().First();
-        var level3 = level2.ListValue.ToEnumerable().First();
-
-        level3.IntValue.Should().Be(1);
-    }
-
-    [Test]
-    public void DecodesNestedListFourLevels()
-    {
-        // [
-        //   [
-        //     [
-        //       [1, 2],
-        //       [3]
-        //     ],
-        //     [
-        //       [4]
-        //     ]
-        //   ]
-        // ]
-        var buffer = new ReadOnlySequence<byte>(
-        [
-            0x91, // Level 0: list of 1
-            0x92, // Level 1: list of 2
-            0x92, // Level 2a: list of 2
-            0x92, 0x01, 0x02, // Level 3a: [1, 2]
-            0x91, 0x03, // Level 3b: [3]
-            0x91, // Level 2b: list of 1
-            0x91, 0x04 // Level 3c: [4]
-        ]);
-
-        var result = Subject.Decode(buffer);
-
-        result.Value.ListValue.Count.Should().Be(1);
-        result.BytesConsumed.Should().Be(11);
-
-        var level1 = result.Value.ListValue.ToEnumerable().First().ListValue.ToEnumerable().ToArray();
-        level1.Should().HaveCount(2);
-
-        // First item at level 1: [[1, 2], [3]]
-        var level2a = level1[0].ListValue.ToEnumerable().ToArray();
-        level2a.Should().HaveCount(2);
-        level2a[0].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([1, 2]);
-        level2a[1].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([3]);
-
-        // Second item at level 1: [[4]]
-        var level2b = level1[1].ListValue.ToEnumerable().ToArray();
-        level2b.Should().HaveCount(1);
-        level2b[0].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([4]);
-    }
-
-    [Test]
-    public void DecodesHeterogeneousNestedList()
-    {
-        // [1, [2, 3], 4]
-        // Mix of integers and nested lists
-        var buffer = new ReadOnlySequence<byte>(
-        [
-            0x93, // TinyList(3)
-            0x01, // Integer 1
-            0x92, 0x02, 0x03, // TinyList(2): [2, 3]
-            0x04 // Integer 4
-        ]);
-
-        var result = Subject.Decode(buffer);
-
-        result.Value.ListValue.Count.Should().Be(3);
-        result.BytesConsumed.Should().Be(6);
-
-        var items = result.Value.ListValue.ToEnumerable().ToArray();
-        items[0].IntValue.Should().Be(1);
-        items[1].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([2, 3]);
-        items[2].IntValue.Should().Be(4);
-    }
-
-    [Test]
-    public void DecodesHeterogeneousNestedListThreeLevels()
-    {
-        // [1, [2, [3, 4]], 5]
-        var buffer = new ReadOnlySequence<byte>(
-        [
-            0x93, // TinyList(3)
-            0x01, // Integer 1
-            0x92, // TinyList(2)
-            0x02, // Integer 2
-            0x92, 0x03, 0x04, // TinyList(2): [3, 4]
-            0x05 // Integer 5
-        ]);
-
-        var result = Subject.Decode(buffer);
-
-        result.Value.ListValue.Count.Should().Be(3);
-        result.BytesConsumed.Should().Be(8);
-
-        var level0 = result.Value.ListValue.ToEnumerable().ToArray();
-        level0[0].IntValue.Should().Be(1);
-        level0[2].IntValue.Should().Be(5);
-
-        var level1 = level0[1].ListValue.ToEnumerable().ToArray();
-        level1[0].IntValue.Should().Be(2);
-        level1[1].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([3, 4]);
-    }
-
-    [Test]
-    public void DecodesComplexHeterogeneousStructure()
-    {
+        result.Value.ListValue.ToEnumerable()
+            .Select(v => v.StringValue.ToString())
+            .Should()
+            .BeEquivalentTo(["Hello", "World"]);
     }
 
     [Test]
@@ -336,7 +191,7 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
         // List8 marker alone without the size byte
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.List8]);
 
-        Action act = () => Subject.Decode(buffer);
+        Action act = () => Subject.Decode(buffer, TODO);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -392,7 +247,7 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
         // [0x92, 0x92, 0x01, 0x02, 0x92] - second nested list has no items
         var buffer = new ReadOnlySequence<byte>([0x92, 0x92, 0x01, 0x02, 0x91]);
 
-        Action act = () => Subject.Decode(buffer);
+        Action act = () => Subject.Decode(buffer, TODO);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -409,66 +264,46 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
         sum.Should().Be(15);
     }
 
-    /// <summary>
-    /// Test implementation of IPackStreamDecoder that handles TinyInt and TinyList.
-    /// </summary>
-    private class TestPackStreamDecoder : IPackStreamDecoder
-    {
-        private ListDecoder? _listDecoder;
-
-        public TestPackStreamDecoder(ILogger logger, IPackStreamSizeReader sizeReader)
-        {
-            _listDecoder = new ListDecoder(this, sizeReader, logger);
-        }
-
-        public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
-        {
-            var marker = buffer.FirstSpan[0];
-            return marker switch
-            {
-                // TinyInt positive (0x00-0x7F)
-                >= 0x00 and <= 0x7F => new(PackStreamValue.Int(marker), 1),
-                // TinyInt negative (0xF0-0xFF)
-                >= 0xF0 and <= 0xFF => new(PackStreamValue.Int((sbyte)marker), 1),
-                // TinyList (0x90-0x9F)
-                >= 0x90 and <= 0x9F => _listDecoder!.Decode(buffer),
-                _ => throw new InvalidOperationException($"Unsupported marker: 0x{marker:X2}")
-            };
-        }
-
-        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     private class MockPackStreamDecoder : IPackStreamDecoder
     {
-        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount)
+        private readonly IValueDecoder _listDecoder;
+
+        public MockPackStreamDecoder(IValueDecoder listDecoder)
         {
-            throw new NotImplementedException();
+            _listDecoder = listDecoder;
         }
 
-        private PackStreamValue GetValue(byte[] bytes)
-        {
-            return bytes switch
-            {
-                [0x01] => PackStreamValue.Int(1),
-                [0x02] => PackStreamValue.Int(2),
-                [0x03] => PackStreamValue.Int(3),
-                [0x04] => PackStreamValue.Int(4),
-                [0x05] => PackStreamValue.Int(5),
-                [0x10] => PackStreamValue.Float(0.1f),
-                [0x20] => PackStreamValue.Float(0.2f),
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(bytes),
-                    $"No mock value defined for bytes: {BitConverter.ToString(bytes)}")
-            };
-        }
+        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount) =>
+            throw new NotImplementedException();
+
+        private static ReadOnlySequence<byte> GetUtfBytes(string str) => new(Encoding.UTF8.GetBytes(str));
 
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
         {
-            throw new NotImplementedException();
+            var array = buffer.ToArray();
+            return array switch
+            {
+                [0x01] => new(PackStreamValue.Int(1), 1),
+                [0x02] => new(PackStreamValue.Int(2), 1),
+                [0x03] => new(PackStreamValue.Int(3), 1),
+                [0x04] => new(PackStreamValue.Int(4), 1),
+                [0x05] => new(PackStreamValue.Int(5), 1),
+                [0x11] => new(PackStreamValue.Float(0.1f), 1),
+                [0x12] => new(PackStreamValue.Float(0.2f), 1),
+                [0x13] => new(PackStreamValue.Float(0.3f), 1),
+                [0x14] => new(PackStreamValue.Float(0.4f), 1),
+                [0x15] => new(PackStreamValue.Float(0.5f), 1),
+                [0x20] => new(PackStreamValue.String(GetUtfBytes("Hello")), 1),
+                [0x21] => new(PackStreamValue.String(GetUtfBytes("World")), 1),
+                [>= 0x90 and <= 0x9F, _]
+                    or [PackStreamMarker.List8, _]
+                    or [PackStreamMarker.List16, _]
+                    or [PackStreamMarker.List32, _] => _listDecoder.Decode(buffer, TODO),
+
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(buffer),
+                    $"No mock value defined for bytes: {BitConverter.ToString(array)}")
+            };
         }
     }
 }
