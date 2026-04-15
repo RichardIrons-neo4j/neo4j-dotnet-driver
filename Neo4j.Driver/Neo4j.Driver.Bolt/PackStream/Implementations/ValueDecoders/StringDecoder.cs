@@ -29,14 +29,11 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// </summary>
 internal class StringDecoder : ValueDecoderBase
 {
-    private readonly IPackStreamSizeReader _sizeReader;
-
     private static IntegerSize GetIntSize(byte marker) => (IntegerSize)(marker - PackStreamMarker.String8);
     private static readonly byte[] TinyStringMarkers = Enumerable.Range(0x80, 16).Select(i => (byte)i).ToArray();
 
-    public StringDecoder(IPackStreamSizeReader sizeReader, ILogger logger) : base(logger)
+    public StringDecoder(ILogger logger) : base(logger)
     {
-        _sizeReader = sizeReader ?? throw new ArgumentNullException(nameof(sizeReader));
     }
 
     public override byte[] HandledMarkerBytes =>

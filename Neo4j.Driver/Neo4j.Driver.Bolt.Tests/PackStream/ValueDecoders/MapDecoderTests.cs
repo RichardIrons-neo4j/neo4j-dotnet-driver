@@ -130,7 +130,7 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
         for (var i = 0; i < 15; i++)
         {
             bytes.Add(0x20); // key "Hello"
-            bytes.Add((byte)i);
+            bytes.Add((byte)(i % 5 + 1));
         }
 
         var buffer = new ReadOnlySequence<byte>(bytes.ToArray());
@@ -141,11 +141,11 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
 
         var entries = result.Value.MapValue.ToEnumerable().ToList();
         entries.Should().HaveCount(15);
-        for (var index = 0; index < entries.Count; index++)
+        for (var i = 0; i < entries.Count; i++)
         {
-            var entry = entries[index];
+            var entry = entries[i];
             entry.Key.StringValue.ToString().Should().Be("Hello");
-            entry.Value.IntValue.Should().Be(index);
+            entry.Value.IntValue.Should().Be((byte)(i % 5 + 1));
         }
     }
 
@@ -165,7 +165,7 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
 
         entries.Should().HaveCount(2);
         entries.Should().ContainKey("Hello").WhoseValue.Should().Be(5);
-        entries.Should().ContainKey("World").WhoseValue.Should().Be(6);
+        entries.Should().ContainKey("World").WhoseValue.Should().Be(3);
     }
 
     [Test]
@@ -271,7 +271,7 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
         // Map 1 entry: key "Hello" (0x20), value list [1, 2] (0x92 0x01 0x02)
         // Mock delegates map markers to MapDecoder and list markers to ListDecoder.
         var logger = AutoMocker.Get<Microsoft.Extensions.Logging.ILogger>();
-        var listDecoder = new ListDecoder(new PackStreamSizeReader(), logger);
+        var listDecoder = new ListDecoder(logger);
         var combinedMock = new MockPackStreamDecoderForMapAndList(Subject, listDecoder);
         Subject.SetRecursionDecoder(combinedMock);
         listDecoder.SetRecursionDecoder(combinedMock);
