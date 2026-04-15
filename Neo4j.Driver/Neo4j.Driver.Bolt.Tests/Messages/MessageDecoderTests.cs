@@ -153,8 +153,10 @@ internal class MessageDecoderTests
         metadata[0].Value.Type.Should().Be(PackStreamType.String);
         metadata[0].Value.StringValue.ToString().Should().Be("Neo4j/5.0");
 
-        var dict = success.Metadata.ToEnumerable().ToDictionary(kv => kv.Key.StringValue.ToString(), kv => kv.Value);
-        dict.Should().ContainKey("server").WhoseValue.StringValue.ToString().Should().Be("Neo4j/5.0");
+        var dict = success.Metadata.ToEnumerable()
+            .ToDictionary(kv => kv.Key.StringValue.ToString(), kv => kv.Value.StringValue.ToString());
+
+        dict.Should().Contain("server", "Neo4j/5.0");
     }
 
     [Test]
@@ -212,8 +214,8 @@ internal class MessageDecoderTests
         var failure = message.AsFailure();
         failure.Metadata.Count.Should().Be(2);
         var metadata = failure.Metadata.ToEnumerable()
-            .Select(kv => (Key: kv.Key.StringValue.ToString(), Value: kv.Value.StringValue.ToString()))
-            .ToDictionary(x => x.Key, x => x.Value);
+            .ToDictionary(x => x.Key.StringValue.ToString(), x => x.Value.StringValue.ToString());
+
         metadata.Should().Contain("code", "X");
         metadata.Should().Contain("message", "Y");
     }
@@ -233,6 +235,7 @@ internal class MessageDecoderTests
             new MapDecoder(Logger),
             new StructDecoder(Logger),
         };
+
         var provider = new ValueDecoderProvider(decoders, Logger);
         return new PackStreamDecoder(decoders, Mock.Of<IChunkAssembler>(), provider, Logger);
     }

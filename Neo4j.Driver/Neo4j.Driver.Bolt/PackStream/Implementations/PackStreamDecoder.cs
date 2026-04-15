@@ -64,7 +64,7 @@ internal class PackStreamDecoder : IPackStreamDecoder
         var count = 0;
 
         _logger.LogDebug("Beginning PackStream decode from stream (expecting {ValueCount} values)", valueCount);
-        await foreach (var buffer in _chunkAssembler.ReadMessagesAsync(byteReader))
+        await foreach (var buffer in _chunkAssembler.ReadMessagesAsync(byteReader).ConfigureAwait(false))
         {
             _logger.LogTrace("Processing message chunk ({Bytes} bytes)", buffer.Length);
             var bufferPosition = 0;
