@@ -45,11 +45,8 @@ internal class MapDecoder : SequenceDecoderBase, IRecursiveValueDecoder
 
     protected override bool IsMarkerByteHandled(byte markerByte)
     {
-        return markerByte
-            is >= 0xA0 and <= 0xAF
-            or PackStreamMarker.Map8
-            or PackStreamMarker.Map16
-            or PackStreamMarker.Map32;
+        return (markerByte & 0xF0) == PackStreamMarker.TinyMap
+            || markerByte is PackStreamMarker.Map8 or PackStreamMarker.Map16 or PackStreamMarker.Map32;
     }
 
     private static IntegerSize GetIntSize(byte marker) => (IntegerSize)(marker - PackStreamMarker.Map8);
@@ -65,9 +62,11 @@ internal class MapDecoder : SequenceDecoderBase, IRecursiveValueDecoder
 
         var entryCount = marker switch
         {
-            >= 0xA0 and <= 0xAF => marker & 0x0F,
+            _ when (marker & 0xF0) == PackStreamMarker.TinyMap => marker & 0x0F, 
+            
             PackStreamMarker.Map8 or PackStreamMarker.Map16 or PackStreamMarker.Map32
                 => ReadSize(ref reader, GetIntSize(marker)),
+            
             _ => throw new InvalidOperationException($"Unknown map marker byte: 0x{marker:X2}")
         };
 

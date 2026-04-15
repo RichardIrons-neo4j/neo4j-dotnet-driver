@@ -14,7 +14,6 @@
 // limitations under the License.
 
 using System.Buffers;
-using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;

@@ -53,7 +53,7 @@ public abstract class ValueDecoderBase : IValueDecoder
 
     protected void EnsureMarkerByteValid(byte markerByte)
     {
-        if (!HandledMarkerBytes.Contains(markerByte))
+        if (!IsMarkerByteHandled(markerByte))
         {
             throw new InvalidOperationException($"Unknown marker byte: 0x{markerByte:X2}");
         }

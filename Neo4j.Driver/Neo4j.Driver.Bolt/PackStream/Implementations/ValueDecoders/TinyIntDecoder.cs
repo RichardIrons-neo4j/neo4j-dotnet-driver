@@ -32,7 +32,12 @@ public class TinyIntDecoder : ValueDecoderBase
     }
 
     public override byte[] HandledMarkerBytes => [..PositiveTinyIntMarkers, ..NegativeTinyIntMarkers];
-
+    
+    protected override bool IsMarkerByteHandled(byte markerByte)
+    {
+        var highNibble = (markerByte & 0xF0);
+        return highNibble is 0 or 0xF0;
+    }
 
     public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
