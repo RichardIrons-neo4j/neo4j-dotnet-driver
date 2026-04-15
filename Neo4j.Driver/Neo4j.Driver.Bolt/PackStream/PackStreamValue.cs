@@ -27,6 +27,7 @@ public readonly struct PackStreamValue
     private readonly ReadOnlySequence<byte>? _bytesValue;
     private readonly ReadOnlySequence<byte>? _stringBytes;
     private readonly PackStreamListValue? _listValue;
+    private readonly PackStreamMapValue? _mapValue;
 
     private PackStreamValue(
         PackStreamType type,
@@ -35,7 +36,8 @@ public readonly struct PackStreamValue
         bool? boolValue = null,
         ReadOnlySequence<byte>? bytesValue = null,
         ReadOnlySequence<byte>? stringBytes = null,
-        PackStreamListValue? listValue = null)
+        PackStreamListValue? listValue = null,
+        PackStreamMapValue? mapValue = null)
     {
         _type = type;
         _intValue = intValue;
@@ -44,6 +46,7 @@ public readonly struct PackStreamValue
         _bytesValue = bytesValue;
         _stringBytes = stringBytes;
         _listValue = listValue;
+        _mapValue = mapValue;
     }
 
     public PackStreamType Type => _type;
@@ -90,10 +93,20 @@ public readonly struct PackStreamValue
         IPackStreamDecoder decoder) =>
         new(PackStreamType.List, listValue: new PackStreamListValue(itemsData, itemCount, decoder));
 
+    // Map
+    public PackStreamMapValue MapValue =>
+        _mapValue ?? throw new InvalidOperationException($"Cannot read MapValue from {_type}");
+
+    internal static PackStreamValue Map(
+        ReadOnlySequence<byte> entriesData,
+        int entryCount,
+        IPackStreamDecoder decoder) =>
+        new(PackStreamType.Map, mapValue: new PackStreamMapValue(entriesData, entryCount, decoder));
+
     // Null
     public static PackStreamValue Null() => new(PackStreamType.Null);
 
-    // TODO: Map, Struct
+    // TODO: Struct
 
     public override string ToString() => _type switch
     {
@@ -103,6 +116,7 @@ public readonly struct PackStreamValue
         PackStreamType.Bytes => $"BYTES[{_bytesValue?.Length ?? 0}]",
         PackStreamType.String => $"STRING[{_stringBytes?.Length ?? 0}]",
         PackStreamType.List => $"LIST[{_listValue?.Count ?? 0}]",
+        PackStreamType.Map => $"MAP[{_mapValue?.Count ?? 0}]",
         PackStreamType.Null => "NULL",
         _ => "UNKNOWN"
     };

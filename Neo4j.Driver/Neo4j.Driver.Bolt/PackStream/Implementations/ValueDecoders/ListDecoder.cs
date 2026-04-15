@@ -1,12 +1,12 @@
 // Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,16 +28,15 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// List16: marker 0xD5 + 2 byte big-endian count
 /// List32: marker 0xD6 + 4 byte big-endian count
 /// </summary>
-internal class ListDecoder : ValueDecoderBase, IRecursiveValueDecoder
+internal class ListDecoder : SequenceDecoderBase, IRecursiveValueDecoder
 {
     private readonly IPackStreamSizeReader _sizeReader;
-    private readonly ILogger _logger;
     private IPackStreamDecoder? _recursionDecoder;
 
     public ListDecoder(IPackStreamSizeReader sizeReader, ILogger logger)
+        : base(logger)
     {
         _sizeReader = sizeReader ?? throw new ArgumentNullException(nameof(sizeReader));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private static readonly byte[] TinyListMarkers = Enumerable.Range(0x90, 16).Select(i => (byte)i).ToArray();
@@ -47,7 +46,7 @@ internal class ListDecoder : ValueDecoderBase, IRecursiveValueDecoder
 
     protected override bool IsMarkerByteHandled(byte markerByte)
     {
-        return markerByte 
+        return markerByte
             is >= 0x90 and <= 0x9F
             or PackStreamMarker.List8
             or PackStreamMarker.List16
@@ -63,7 +62,7 @@ internal class ListDecoder : ValueDecoderBase, IRecursiveValueDecoder
         var reader = new SequenceReader<byte>(buffer);
         var marker = ReadValidMarkerByte(ref reader);
 
-        _logger.LogDebug("Decoding list with marker 0x{Marker:X2}", marker);
+        Logger?.LogDebug("Decoding list with marker 0x{Marker:X2}", marker);
 
         var itemCount = marker switch
         {
@@ -73,54 +72,16 @@ internal class ListDecoder : ValueDecoderBase, IRecursiveValueDecoder
             _ => throw new InvalidOperationException($"Unknown list marker byte: 0x{marker:X2}")
         };
 
-        _logger.LogDebug("List header: {ItemCount} items", itemCount);
+        Logger?.LogDebug("List header: {ItemCount} items", itemCount);
 
-        var itemsStartOffset = (int)reader.Consumed;
-        var totalItemBytes = 0;
+        var listItemsData = DecodePayload(ref reader, itemCount, _recursionDecoder);
 
-        for (var i = 0; i < itemCount; i++)
-        {
-            if (reader.UnreadSequence.IsEmpty)
-            {
-                throw new InvalidOperationException(
-                    $"Unexpected end of data: expected {itemCount} list items but only found {i}.");
-            }
-
-            if (_logger.IsEnabled(LogLevel.Trace))
-            {
-                var nextByte = reader.UnreadSequence.FirstSpan[0];
-                _logger.LogTrace(
-                    "Decoding list item {Index}/{Count}, next marker: 0x{Marker:X2}",
-                    i + 1,
-                    itemCount,
-                    nextByte);
-            }
-
-            var result = _recursionDecoder.Decode(reader.UnreadSequence);
-            var bytesConsumed = result.BytesConsumed;
-
-            if (bytesConsumed == 0)
-            {
-                throw new InvalidOperationException("Decoder returned zero bytes consumed.");
-            }
-
-            if (bytesConsumed > reader.Remaining)
-            {
-                throw new InvalidOperationException(
-                    $"Decoder reports consuming {bytesConsumed} bytes but only {reader.Remaining} bytes remain.");
-            }
-
-            totalItemBytes += bytesConsumed;
-            reader.Advance(bytesConsumed);
-        }
-
-        var listItemsData = buffer.Slice(itemsStartOffset, totalItemBytes);
         var value = PackStreamValue.List(
             listItemsData,
             itemCount,
             _recursionDecoder);
 
-        _logger.LogDebug("Decoded list: {ItemCount} items, {TotalBytes} total bytes", itemCount, totalItemBytes);
+        Logger?.LogDebug("Decoded list: {ItemCount} items, {TotalBytes} total bytes", itemCount, listItemsData.Length);
 
         return new ValueDecoderResult(value, (int)reader.Consumed);
     }
