@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.Extensions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations;
@@ -59,7 +60,7 @@ internal class PackStreamDecoder : IPackStreamDecoder
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount)
+    public async IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount)
     {
         var processed = 0;
         var count = 0;

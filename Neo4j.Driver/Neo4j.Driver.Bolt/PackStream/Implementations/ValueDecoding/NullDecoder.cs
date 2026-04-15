@@ -13,16 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Neo4j.Driver.Bolt.PackStream;
+using System.Buffers;
+using Microsoft.Extensions.Logging;
+using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
-public readonly struct PackStreamStructValue
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
+
+internal class NullDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
-    public byte Tag { get; }
-    public PackStreamListValue Fields { get; }
+    public override byte[] HandledMarkerBytes => [PackStreamMarker.Null];
 
-    internal PackStreamStructValue(byte tag, PackStreamListValue fields)
+    public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
-        Tag = tag;
-        Fields = fields;
+        var reader = new SequenceReader<byte>(buffer);
+        ReadValidMarkerByte(ref reader);
+        return new ValueDecoderResult(PackStreamValueView.Null(), 1);
     }
 }
+

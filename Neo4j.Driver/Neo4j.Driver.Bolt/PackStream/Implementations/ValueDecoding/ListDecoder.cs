@@ -17,9 +17,10 @@ using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
-namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 /// <summary>
 /// Decodes List values from PackStream format.
@@ -60,7 +61,7 @@ internal class ListDecoder(ILogger logger) : SequenceDecoderBase(logger), IRecur
 
         var listItemsData = DecodePayload(ref reader, itemCount, _recursionDecoder);
 
-        var value = PackStreamValue.List(
+        var value = PackStreamValueView.List(
             listItemsData,
             itemCount,
             _recursionDecoder);

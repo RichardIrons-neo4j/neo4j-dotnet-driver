@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -16,8 +16,9 @@
 using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
-namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 public class TinyIntDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
@@ -46,7 +47,7 @@ public class TinyIntDecoder(ILogger logger) : ValueDecoderBase(logger)
             _ => throw new InvalidOperationException($"Unknown marker byte: 0x{marker:X2}")
         };
             
-        return new ValueDecoderResult(PackStreamValue.Integer(value), 1);
+        return new ValueDecoderResult(PackStreamValueView.Integer(value), 1);
     }
     
 }

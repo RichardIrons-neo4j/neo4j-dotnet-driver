@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -15,6 +15,7 @@
 
 using System.Buffers;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 
 namespace Neo4j.Driver.Bolt.PackStream.Abstractions;
@@ -24,7 +25,7 @@ internal interface IPackStreamDecoder
     /// <summary>
     /// Decodes values asynchronously from a byte reader.
     /// </summary>
-    IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount);
+    IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount);
 
     /// <summary>
     /// Decodes a single value synchronously from an already-buffered sequence.

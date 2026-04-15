@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -16,20 +16,20 @@
 using System.Buffers;
 using System.Text;
 using FluentAssertions;
-using Neo4j.Driver.Bolt.PackStream;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using NUnit.Framework;
 
 namespace Neo4j.Driver.Bolt.Tests.PackStream;
 
 [TestFixture]
-public class PackStreamStringValueTests
+public class PackStreamStringViewTests
 {
     [Test]
     public void EnumeratesAsciiString()
     {
         var bytes = Encoding.UTF8.GetBytes("hello");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -45,7 +45,7 @@ public class PackStreamStringValueTests
     public void EnumeratesEmptySequence()
     {
         var sequence = ReadOnlySequence<byte>.Empty;
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -62,7 +62,7 @@ public class PackStreamStringValueTests
         // "café" - é is 2 bytes in UTF-8
         var bytes = Encoding.UTF8.GetBytes("café");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -80,7 +80,7 @@ public class PackStreamStringValueTests
         // "日本" - each character is 3 bytes in UTF-8
         var bytes = Encoding.UTF8.GetBytes("日本");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -98,7 +98,7 @@ public class PackStreamStringValueTests
         // "😀" - emoji is 4 bytes in UTF-8
         var bytes = Encoding.UTF8.GetBytes("😀");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -116,7 +116,7 @@ public class PackStreamStringValueTests
         // Mix of 1, 2, 3, and 4 byte characters
         var bytes = Encoding.UTF8.GetBytes("a é 日 😀");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -137,7 +137,7 @@ public class PackStreamStringValueTests
 
         Assert.Throws<InvalidOperationException>(() =>
         {
-            var enumerator = new PackStreamStringValue(sequence);
+            var enumerator = new PackStreamStringView(sequence);
             foreach (var _ in enumerator) { }
         });
     }
@@ -154,7 +154,7 @@ public class PackStreamStringValueTests
         var second = first.Append(segment2);
         var sequence = new ReadOnlySequence<byte>(first, 0, second, second.Memory.Length);
 
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         var result = new List<Rune>();
         foreach (var rune in enumerator)
@@ -171,7 +171,7 @@ public class PackStreamStringValueTests
     {
         var bytes = Encoding.UTF8.GetBytes("hello");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         enumerator.ToString().Should().Be("hello");
     }
@@ -180,7 +180,7 @@ public class PackStreamStringValueTests
     public void ToStringReturnsEmptyStringForEmptySequence()
     {
         var sequence = ReadOnlySequence<byte>.Empty;
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         enumerator.ToString().Should().Be("");
     }
@@ -190,7 +190,7 @@ public class PackStreamStringValueTests
     {
         var bytes = Encoding.UTF8.GetBytes("café");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         enumerator.ToString().Should().Be("café");
     }
@@ -200,7 +200,7 @@ public class PackStreamStringValueTests
     {
         var bytes = Encoding.UTF8.GetBytes("a é 日 😀");
         var sequence = new ReadOnlySequence<byte>(bytes);
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         enumerator.ToString().Should().Be("a é 日 😀");
     }
@@ -216,7 +216,7 @@ public class PackStreamStringValueTests
         var second = first.Append(segment2);
         var sequence = new ReadOnlySequence<byte>(first, 0, second, second.Memory.Length);
 
-        var enumerator = new PackStreamStringValue(sequence);
+        var enumerator = new PackStreamStringView(sequence);
 
         enumerator.ToString().Should().Be("café");
     }

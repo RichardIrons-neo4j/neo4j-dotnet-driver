@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -16,9 +16,10 @@
 using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
-namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 /// <summary>
 /// Decodes Bytes values from PackStream format.
@@ -40,7 +41,7 @@ internal class BytesDecoder(ILogger logger) : ValueDecoderBase(logger)
         var intSize = GetIntSize(marker);
         var length = ReadSize(ref reader, intSize);
         var bytesData = ReadExact(ref reader, length);
-        var value = PackStreamValue.Bytes(bytesData);
+        var value = PackStreamValueView.Bytes(bytesData);
         return new ValueDecoderResult(value, (int)reader.Consumed);
     }
 }

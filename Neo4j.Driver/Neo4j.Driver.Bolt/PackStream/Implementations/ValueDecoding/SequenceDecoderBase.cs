@@ -17,7 +17,7 @@ using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 
-namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 /// <summary>
 /// Base for decoders that read a sequence of nested PackStream values (e.g. List, Map).

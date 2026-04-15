@@ -19,12 +19,13 @@ using FluentAssertions;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
-using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
+using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
+namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoding;
 
 [TestFixture]
 internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
@@ -217,7 +218,7 @@ internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
 
         var entries = result.Value.MapValue.ToEnumerable().ToDictionary(e => e.Key.StringValue.ToString(), e => e.Value);
         entries.Should().HaveCount(2);
-        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(PackStreamValue.Integer(1));
+        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(PackStreamValueView.Integer(1));
         entries["World"].FloatValue.Should().BeApproximately(0.1f, 0.00001f);
     }
 
@@ -360,7 +361,7 @@ internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
             _mapDecoder.SetRecursionDecoder(this);
         }
 
-        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
             throw new NotImplementedException();
 
         private static ReadOnlySequence<byte> GetUtfBytes(string str) => new(Encoding.UTF8.GetBytes(str));
@@ -371,15 +372,15 @@ internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
             var marker = array[0];
             return marker switch
             {
-                0x01 => new ValueDecoderResult(PackStreamValue.Integer(1), 1),
-                0x02 => new ValueDecoderResult(PackStreamValue.Integer(2), 1),
-                0x03 => new ValueDecoderResult(PackStreamValue.Integer(3), 1),
-                0x04 => new ValueDecoderResult(PackStreamValue.Integer(4), 1),
-                0x05 => new ValueDecoderResult(PackStreamValue.Integer(5), 1),
-                0x11 => new ValueDecoderResult(PackStreamValue.Float(0.1f), 1),
-                0x12 => new ValueDecoderResult(PackStreamValue.Float(0.2f), 1),
-                0x20 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("Hello")), 1),
-                0x21 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("World")), 1),
+                0x01 => new ValueDecoderResult(PackStreamValueView.Integer(1), 1),
+                0x02 => new ValueDecoderResult(PackStreamValueView.Integer(2), 1),
+                0x03 => new ValueDecoderResult(PackStreamValueView.Integer(3), 1),
+                0x04 => new ValueDecoderResult(PackStreamValueView.Integer(4), 1),
+                0x05 => new ValueDecoderResult(PackStreamValueView.Integer(5), 1),
+                0x11 => new ValueDecoderResult(PackStreamValueView.Float(0.1f), 1),
+                0x12 => new ValueDecoderResult(PackStreamValueView.Float(0.2f), 1),
+                0x20 => new ValueDecoderResult(PackStreamValueView.String(GetUtfBytes("Hello")), 1),
+                0x21 => new ValueDecoderResult(PackStreamValueView.String(GetUtfBytes("World")), 1),
                 >= 0xA0 and <= 0xAF or PackStreamMarker.Map8 or PackStreamMarker.Map16 or PackStreamMarker.Map32
                     => _mapDecoder.Decode(buffer),
                 _ => throw new ArgumentOutOfRangeException(
@@ -407,7 +408,7 @@ internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
             _listDecoder.SetRecursionDecoder(this);
         }
 
-        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
             throw new NotImplementedException();
 
         private static ReadOnlySequence<byte> GetUtfBytes(string str) => new(Encoding.UTF8.GetBytes(str));
@@ -418,10 +419,10 @@ internal class MapDecoderTests : DecoderTestsBase<MapDecoder>
             var marker = array[0];
             return marker switch
             {
-                0x01 => new ValueDecoderResult(PackStreamValue.Integer(1), 1),
-                0x02 => new ValueDecoderResult(PackStreamValue.Integer(2), 1),
-                0x20 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("Hello")), 1),
-                0x21 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("World")), 1),
+                0x01 => new ValueDecoderResult(PackStreamValueView.Integer(1), 1),
+                0x02 => new ValueDecoderResult(PackStreamValueView.Integer(2), 1),
+                0x20 => new ValueDecoderResult(PackStreamValueView.String(GetUtfBytes("Hello")), 1),
+                0x21 => new ValueDecoderResult(PackStreamValueView.String(GetUtfBytes("World")), 1),
                 >= 0xA0 and <= 0xAF or PackStreamMarker.Map8 or PackStreamMarker.Map16 or PackStreamMarker.Map32
                     => _mapDecoder.Decode(buffer),
                 >= 0x90 and <= 0x9F or PackStreamMarker.List8 or PackStreamMarker.List16 or PackStreamMarker.List32

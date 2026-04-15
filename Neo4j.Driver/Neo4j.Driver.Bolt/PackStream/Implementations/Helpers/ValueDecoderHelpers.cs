@@ -15,7 +15,7 @@
 
 using System.Buffers;
 using System.Buffers.Binary;
-using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.Helpers;
 

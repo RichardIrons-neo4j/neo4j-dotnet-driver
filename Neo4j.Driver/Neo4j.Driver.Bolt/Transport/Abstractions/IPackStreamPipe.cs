@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -13,11 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Neo4j.Driver.Bolt.PackStream;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
 namespace Neo4j.Driver.Bolt.Transport.Abstractions;
 
 public interface IPackStreamPipe
 {
-    IAsyncEnumerable<PackStreamValue> ReadAsync();
+    IAsyncEnumerable<PackStreamValueView> ReadAsync();
 }

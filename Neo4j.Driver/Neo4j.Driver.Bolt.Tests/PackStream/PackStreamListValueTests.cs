@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -17,6 +17,7 @@ using System.Buffers;
 using FluentAssertions;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 using NUnit.Framework;
@@ -24,13 +25,13 @@ using NUnit.Framework;
 namespace Neo4j.Driver.Bolt.Tests.PackStream;
 
 [TestFixture]
-internal class PackStreamListValueTests
+internal class PackStreamListViewTests
 {
     [Test]
     public void CountReturnsItemCount()
     {
         var decoder = new SingleByteIntDecoder();
-        var listValue = new PackStreamListValue(
+        var listValue = new PackStreamListView(
             ReadOnlySequence<byte>.Empty,
             5,
             decoder);
@@ -42,7 +43,7 @@ internal class PackStreamListValueTests
     public void CountReturnsZeroForEmptyList()
     {
         var decoder = new SingleByteIntDecoder();
-        var listValue = new PackStreamListValue(
+        var listValue = new PackStreamListView(
             ReadOnlySequence<byte>.Empty,
             0,
             decoder);
@@ -55,7 +56,7 @@ internal class PackStreamListValueTests
     {
         var decoder = new SingleByteIntDecoder();
         var data = new ReadOnlySequence<byte>([0x01, 0x02, 0x03]);
-        var listValue = new PackStreamListValue(data, 3, decoder);
+        var listValue = new PackStreamListView(data, 3, decoder);
 
         var items = new List<long>();
         foreach (var item in listValue)
@@ -70,12 +71,12 @@ internal class PackStreamListValueTests
     public void ForeachOnEmptyListYieldsNoItems()
     {
         var decoder = new SingleByteIntDecoder();
-        var listValue = new PackStreamListValue(
+        var listValue = new PackStreamListView(
             ReadOnlySequence<byte>.Empty,
             0,
             decoder);
 
-        var items = new List<PackStreamValue>();
+        var items = new List<PackStreamValueView>();
         foreach (var item in listValue)
         {
             items.Add(item);
@@ -89,7 +90,7 @@ internal class PackStreamListValueTests
     {
         var decoder = new SingleByteIntDecoder();
         var data = new ReadOnlySequence<byte>([0x01, 0x02]);
-        var listValue = new PackStreamListValue(data, 2, decoder);
+        var listValue = new PackStreamListView(data, 2, decoder);
 
         var firstPass = new List<long>();
         foreach (var item in listValue)
@@ -112,7 +113,7 @@ internal class PackStreamListValueTests
     {
         var decoder = new SingleByteIntDecoder();
         var data = new ReadOnlySequence<byte>([0x01, 0x02, 0x03]);
-        var listValue = new PackStreamListValue(data, 3, decoder);
+        var listValue = new PackStreamListView(data, 3, decoder);
 
         var items = listValue.ToEnumerable().Select(v => v.IntValue).ToList();
 
@@ -124,7 +125,7 @@ internal class PackStreamListValueTests
     {
         var decoder = new SingleByteIntDecoder();
         var data = new ReadOnlySequence<byte>([0x01, 0x02, 0x03, 0x04, 0x05]);
-        var listValue = new PackStreamListValue(data, 5, decoder);
+        var listValue = new PackStreamListView(data, 5, decoder);
 
         var sum = listValue.ToEnumerable().Sum(v => v.IntValue);
         var filtered = listValue.ToEnumerable().Where(v => v.IntValue > 2).Select(v => v.IntValue).ToList();
@@ -137,7 +138,7 @@ internal class PackStreamListValueTests
     public void ToEnumerableOnEmptyListReturnsEmptyEnumerable()
     {
         var decoder = new SingleByteIntDecoder();
-        var listValue = new PackStreamListValue(
+        var listValue = new PackStreamListView(
             ReadOnlySequence<byte>.Empty,
             0,
             decoder);
@@ -150,7 +151,7 @@ internal class PackStreamListValueTests
     {
         var decoder = new SingleByteIntDecoder();
         var data = new ReadOnlySequence<byte>([0x01, 0x02]);
-        var listValue = new PackStreamListValue(data, 2, decoder);
+        var listValue = new PackStreamListView(data, 2, decoder);
 
         var firstPass = listValue.ToEnumerable().Select(v => v.IntValue).ToList();
         var secondPass = listValue.ToEnumerable().Select(v => v.IntValue).ToList();
@@ -167,10 +168,10 @@ internal class PackStreamListValueTests
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
         {
             var value = buffer.FirstSpan[0];
-            return new ValueDecoderResult(PackStreamValue.Integer(value), 1);
+            return new ValueDecoderResult(PackStreamValueView.Integer(value), 1);
         }
 
-        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
             throw new NotImplementedException();
     }
 
@@ -180,9 +181,9 @@ internal class PackStreamListValueTests
     private class ZeroBytesConsumedDecoder : IPackStreamDecoder
     {
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer) =>
-            new(PackStreamValue.Integer(1), 0);
+            new(PackStreamValueView.Integer(1), 0);
 
-        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
             throw new NotImplementedException();
     }
 
@@ -192,9 +193,9 @@ internal class PackStreamListValueTests
     private class ExcessiveBytesConsumedDecoder : IPackStreamDecoder
     {
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer) =>
-            new(PackStreamValue.Integer(1), 100);
+            new(PackStreamValueView.Integer(1), 100);
 
-        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
             throw new NotImplementedException();
     }
 }

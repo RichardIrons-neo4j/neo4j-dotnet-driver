@@ -17,9 +17,10 @@ using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
-namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 /// <summary>
 /// Decodes Map (Dictionary) values from PackStream format.
@@ -69,7 +70,7 @@ internal class MapDecoder(ILogger logger) : SequenceDecoderBase(logger), IRecurs
 
         var entriesData = DecodePayload(ref reader, 2 * entryCount, _recursionDecoder);
 
-        var value = PackStreamValue.Map(
+        var value = PackStreamValueView.Map(
             entriesData,
             entryCount,
             _recursionDecoder);

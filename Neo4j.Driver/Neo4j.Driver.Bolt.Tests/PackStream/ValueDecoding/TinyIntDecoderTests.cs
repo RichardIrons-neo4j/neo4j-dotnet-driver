@@ -15,11 +15,11 @@
 
 using System.Buffers;
 using FluentAssertions;
-using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
+namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoding;
 
 [TestFixture]
 internal class TinyIntDecoderTests : DecoderTestsBase<TinyIntDecoder>

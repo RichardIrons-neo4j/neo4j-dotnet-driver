@@ -17,9 +17,10 @@ using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
-namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 /// <summary>
 /// Decodes Structure values from PackStream format.
@@ -65,8 +66,8 @@ internal class StructDecoder(ILogger logger) : SequenceDecoderBase(logger), IRec
         Logger.LogDebug("Struct header: tag 0x{Tag:X2}, {FieldCount} fields", tag, fieldCount);
 
         var fieldsData = DecodePayload(ref reader, fieldCount, _recursionDecoder);
-        var fields = new PackStreamListValue(fieldsData, fieldCount, _recursionDecoder);
-        var value = PackStreamValue.Struct(new PackStreamStructValue(tag, fields));
+        var fields = new PackStreamListView(fieldsData, fieldCount, _recursionDecoder);
+        var value = PackStreamValueView.Struct(new PackStreamStructView(tag, fields));
 
         Logger.LogDebug("Decoded struct: tag 0x{Tag:X2}, {FieldCount} fields", tag, fieldCount);
 

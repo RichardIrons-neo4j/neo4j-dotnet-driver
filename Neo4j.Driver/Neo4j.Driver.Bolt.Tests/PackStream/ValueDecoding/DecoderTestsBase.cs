@@ -13,13 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using FluentAssertions;
-using Neo4j.Driver.Bolt.PackStream.Abstractions;
-using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
-using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
+namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoding;
 
 internal abstract class DecoderTestsBase<T> : UnitTestBase<T> where T : ValueDecoderBase
 {

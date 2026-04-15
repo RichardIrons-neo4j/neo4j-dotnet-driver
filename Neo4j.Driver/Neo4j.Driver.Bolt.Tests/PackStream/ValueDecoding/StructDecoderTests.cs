@@ -19,12 +19,13 @@ using FluentAssertions;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
-using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
+using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
+namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoding;
 
 [TestFixture]
 internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
@@ -111,7 +112,7 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
 
         var result = Subject.Decode(buffer);
 
-        var fields = new List<PackStreamValue>();
+        var fields = new List<PackStreamValueView>();
         foreach (var f in result.Value.StructValue.Fields)
         {
             fields.Add(f);
@@ -282,7 +283,7 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
             _structDecoder.SetRecursionDecoder(this);
         }
 
-        public IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
             throw new NotImplementedException();
 
         private static ReadOnlySequence<byte> GetUtfBytes(string str) => new(Encoding.UTF8.GetBytes(str));
@@ -293,15 +294,15 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
             var marker = array[0];
             return marker switch
             {
-                0x01 => new ValueDecoderResult(PackStreamValue.Integer(1), 1),
-                0x02 => new ValueDecoderResult(PackStreamValue.Integer(2), 1),
-                0x03 => new ValueDecoderResult(PackStreamValue.Integer(3), 1),
-                0x04 => new ValueDecoderResult(PackStreamValue.Integer(4), 1),
-                0x05 => new ValueDecoderResult(PackStreamValue.Integer(5), 1),
-                0x11 => new ValueDecoderResult(PackStreamValue.Float(0.1f), 1),
-                0x12 => new ValueDecoderResult(PackStreamValue.Float(0.2f), 1),
-                0x20 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("Hello")), 1),
-                0x21 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("World")), 1),
+                0x01 => new ValueDecoderResult(PackStreamValueView.Integer(1), 1),
+                0x02 => new ValueDecoderResult(PackStreamValueView.Integer(2), 1),
+                0x03 => new ValueDecoderResult(PackStreamValueView.Integer(3), 1),
+                0x04 => new ValueDecoderResult(PackStreamValueView.Integer(4), 1),
+                0x05 => new ValueDecoderResult(PackStreamValueView.Integer(5), 1),
+                0x11 => new ValueDecoderResult(PackStreamValueView.Float(0.1f), 1),
+                0x12 => new ValueDecoderResult(PackStreamValueView.Float(0.2f), 1),
+                0x20 => new ValueDecoderResult(PackStreamValueView.String(GetUtfBytes("Hello")), 1),
+                0x21 => new ValueDecoderResult(PackStreamValueView.String(GetUtfBytes("World")), 1),
                 >= 0xB0 and <= 0xBF or PackStreamMarker.Struct8 or PackStreamMarker.Struct16
                     => _structDecoder.Decode(buffer),
                 _ => throw new ArgumentOutOfRangeException(

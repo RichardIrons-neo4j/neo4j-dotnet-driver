@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
-namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
 public abstract class ValueDecoderBase(ILogger logger) : IValueDecoder
 {

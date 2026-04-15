@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -16,25 +16,24 @@
 using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Ephemeral;
+using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
-namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
+namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 
-internal class BooleanDecoder(ILogger logger) : ValueDecoderBase(logger)
+/// <summary>
+/// Decodes Float64 values from PackStream format.
+/// Float64 is a nine-byte encoding: marker byte 0xC1 followed by a big-endian IEEE 754 double-precision float.
+/// </summary>
+internal class FloatDecoder(ILogger logger) : ValueDecoderBase(logger)
 {
-    public override byte[] HandledMarkerBytes => [PackStreamMarker.True, PackStreamMarker.False];
+    public override byte[] HandledMarkerBytes => [PackStreamMarker.Float64];
 
     public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
         var reader = new SequenceReader<byte>(buffer);
-        var marker = ReadValidMarkerByte(ref reader);
-        
-        var value = marker switch
-        {
-            PackStreamMarker.True => PackStreamValue.Boolean(true),
-            PackStreamMarker.False => PackStreamValue.Boolean(false),
-            _ => throw new InvalidOperationException($"Unknown marker byte: 0x{buffer.FirstSpan[0]:X2}")
-        };
-        
-        return new ValueDecoderResult(value, (int)reader.Consumed);
+        ReadValidMarkerByte(ref reader);
+        var value = ReadDouble(ref reader);
+        return new ValueDecoderResult(PackStreamValueView.Float(value), (int)reader.Consumed);
     }
 }
