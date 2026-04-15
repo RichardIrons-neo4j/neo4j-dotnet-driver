@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using FluentAssertions;
-using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 using Neo4j.Driver.Bolt.Transport.Implementations;
 using NUnit.Framework;
@@ -142,90 +141,87 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         await act.Should().ThrowAsync<ProtocolException>().ConfigureAwait(false);
     }
 
-    [TestCaseSource(nameof(GetChunkingTestCases))]
-    public async Task CorrectlyAssemblesMessagesWithMultipleChunks(MessageChunkingTestCase testCase)
+    [Test]
+    public async Task AssemblesMessageWhenHeaderSplitAcrossTwoChunks()
     {
-        // Act
-        var messages = await TestMessageAssembly(testCase.Chunks).ConfigureAwait(false);
-
-        // Assert
-        messages.Should().HaveCount(testCase.ExpectedMessages.Length);
-        for (var i = 0; i < testCase.ExpectedMessages.Length; i++)
-        {
-            messages[i].ToArray().Should().BeEquivalentTo(testCase.ExpectedMessages[i]);
-        }
+        // First chunk: only the first byte of the 2-byte length; second chunk: rest of header + body.
+        // Message body is 2 bytes: 0xAA, 0xBB.
+        byte[][] chunks =
+        [
+            [0x00],                    // first byte of length (big-endian 0x0002)
+            [0x02, 0xAA, 0xBB],        // second byte of length + full body
+        ];
+        var messages = await TestMessageAssembly(chunks).ConfigureAwait(false);
+        messages.Should().HaveCount(1);
+        messages[0].Should().BeEquivalentTo([0xAA, 0xBB]);
     }
 
-    private static List<MessageChunkingTestCase> GetChunkingTestCases()
+    [Test]
+    public async Task AssemblesTwoMessagesWhenBoundaryFallsInSecondMessageBody()
     {
-        const int numMessages = 5;
-        const int minMessageSize = 0;
-        const int maxMessageSize = 5;
-        const int maxSplits = 3;
-        const int minChunkSize = 5;
-
-        List<byte[]> messages = [];
-        var byteArrayBuilder = new ByteArrayBuilder();
-        for (var m = 0; m < numMessages; m++)
-        {
-            var messageSize = Random.Shared.Next(minMessageSize, maxMessageSize + 1);
-            var message = new byte[messageSize];
-            Random.Shared.NextBytes(message);
-            messages.Add(message);
-            byteArrayBuilder = byteArrayBuilder.PackStreamMessage(message);
-        }
-
-        // now we have a long byte array with all the messages packed in it
-        var bytes = byteArrayBuilder.ToArray();
-        var chunkSets = CreateChunkSets(bytes, maxSplits, minChunkSize).ToArray();
-
-        return chunkSets
-            .Select(chunkSet => new MessageChunkingTestCase()
-            {
-                ExpectedMessages = messages.ToArray(),
-                Chunks = chunkSet
-            })
-            .ToList();
+        // Message 1: body [0xA1]. Message 2: body [0xB1, 0xB2].
+        // Chunk 1: full message 1 + length header of message 2 + first byte of message 2 body.
+        // Chunk 2: second byte of message 2 body.
+        byte[][] chunks =
+        [
+            [0x00, 0x01, 0xA1, 0x00, 0x02, 0xB1],  // msg1 + msg2 header + 1 byte of msg2 body
+            [0xB2],
+        ];
+        var messages = await TestMessageAssembly(chunks).ConfigureAwait(false);
+        messages.Should().HaveCount(2);
+        messages[0].Should().BeEquivalentTo([0xA1]);
+        messages[1].Should().BeEquivalentTo([0xB1, 0xB2]);
     }
 
-    public class MessageChunkingTestCase
+    [Test]
+    public async Task AssemblesOneMessageWhenReceivedOneBytePerChunk()
     {
-        public required byte[][] Chunks { get; init; }
-        public required byte[][] ExpectedMessages { get; init; }
-
-        public override string ToString()
-        {
-            var messageSizes = ExpectedMessages.Select(x => $"{x.Length:000}");
-            var messageLengthStr = string.Join(", ", messageSizes);
-            var totalMessageLength = ExpectedMessages.Sum(x => x.Length) + ExpectedMessages.Length * sizeof(short);
-
-            var chunkSizes = Chunks.Select(x => $"{x.Length:000}");
-            var chunkLengthStr = string.Join(", ", chunkSizes);
-            var totalChunkLength = Chunks.Sum(x => x.Length);
-
-            return
-                $"Message lengths: [{messageLengthStr}] ({totalMessageLength}), " +
-                $"Chunk lengths: [{chunkLengthStr}] ({totalChunkLength})";
-        }
+        // Message: 2-byte body. Each of the 4 bytes (header + body) arrives in its own chunk.
+        byte[][] chunks =
+        [
+            [0x00],
+            [0x02],
+            [0x11],
+            [0x22],
+        ];
+        var messages = await TestMessageAssembly(chunks).ConfigureAwait(false);
+        messages.Should().HaveCount(1);
+        messages[0].Should().BeEquivalentTo([0x11, 0x22]);
     }
 
-    private static List<byte[][]> CreateChunkSets(Memory<byte> bytes, int parts, int minSize = 1)
+    [Test]
+    public async Task AssemblesThreeMessagesWithBoundariesInDifferentPlaces()
     {
-        var result = new List<byte[][]>();
-        var sizes = SetSizeGenerator.GenerateSizes(bytes.Length, parts, minSize);
-        foreach (var size in sizes)
-        {
-            var chunkSet = new List<byte[]>();
-            var offset = 0;
-            foreach (var s in size)
-            {
-                chunkSet.Add(bytes.Slice(offset, s).ToArray());
-                offset += s;
-            }
-            result.Add(chunkSet.ToArray());
-        }
+        // Message 1: body [0x01]. Message 2: body [0x02, 0x03]. Message 3: body [0x04].
+        // Chunk 1: msg1 + msg2 length + first byte of msg2 body.
+        // Chunk 2: second byte of msg2 body + full msg3.
+        byte[][] chunks =
+        [
+            [0x00, 0x01, 0x01, 0x00, 0x02, 0x02],  // msg1 + msg2 header + 1 byte
+            [0x03, 0x00, 0x01, 0x04],              // rest of msg2 + msg3
+        ];
+        var messages = await TestMessageAssembly(chunks).ConfigureAwait(false);
+        messages.Should().HaveCount(3);
+        messages[0].Should().BeEquivalentTo([0x01]);
+        messages[1].Should().BeEquivalentTo([0x02, 0x03]);
+        messages[2].Should().BeEquivalentTo([0x04]);
+    }
 
-        return result;
+    [Test]
+    public async Task AssemblesZeroLengthMessageThenNormalMessageSplitAcrossChunks()
+    {
+        // Message 1: zero-length body. Message 2: body [0xFF].
+        // Chunk 1: full zero-length message + first byte of second message's length.
+        // Chunk 2: second byte of length + body.
+        byte[][] chunks =
+        [
+            [0x00, 0x00, 0x00],       // msg1 (0x00,0x00) + first byte of msg2 length
+            [0x01, 0xFF],              // second byte of length + body
+        ];
+        var messages = await TestMessageAssembly(chunks).ConfigureAwait(false);
+        messages.Should().HaveCount(2);
+        messages[0].Should().BeEmpty();
+        messages[1].Should().BeEquivalentTo([0xFF]);
     }
 
     private async Task<byte[][]> TestMessageAssembly(IEnumerable<byte[]> chunks)
