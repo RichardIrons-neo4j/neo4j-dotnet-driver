@@ -53,10 +53,28 @@ public readonly struct PackStreamListValue
         var remaining = _itemsData;
         for (var i = 0; i < _itemCount; i++)
         {
+            if (remaining.IsEmpty)
+            {
+                throw new InvalidOperationException(
+                    $"Unexpected end of data: expected {_itemCount} list items but only found {i}.");
+            }
+
             var result = _decoder.Decode(remaining);
-            var value = result.Value;
+
             var consumed = result.BytesConsumed;
-            yield return value;
+            if (consumed == 0)
+            {
+                throw new InvalidOperationException(
+                    "Decoder returned zero bytes consumed.");
+            }
+
+            if (consumed > remaining.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Decoder reports consuming {consumed} bytes but only {remaining.Length} bytes remain.");
+            }
+
+            yield return result.Value;
             remaining = remaining.Slice(consumed);
         }
     }

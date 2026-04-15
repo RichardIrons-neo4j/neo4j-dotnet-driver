@@ -21,7 +21,6 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Neo4j.Driver.Bolt.Tests;
 
-[TestFixture]
 public class UnitTestBase<T> where T : class
 {
     protected AutoMocker AutoMocker = new();
