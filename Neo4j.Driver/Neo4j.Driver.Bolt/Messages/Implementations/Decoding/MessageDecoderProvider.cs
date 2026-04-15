@@ -14,11 +14,11 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using Neo4j.Driver.Bolt.Messages;
+using Neo4j.Driver.Bolt.Messages.Abstractions;
+using Neo4j.Driver.Bolt.Messages.Abstractions.Decoding;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
-namespace Neo4j.Driver.Bolt.Messages.Decoding;
+namespace Neo4j.Driver.Bolt.Messages.Implementations.Decoding;
 
 internal sealed class MessageDecoderProvider
 {

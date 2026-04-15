@@ -14,18 +14,19 @@
 // limitations under the License.
 
 using Microsoft.Extensions.Logging;
-using Neo4j.Driver.Bolt.Messages;
+using Neo4j.Driver.Bolt.Messages.Abstractions;
+using Neo4j.Driver.Bolt.Messages.Abstractions.Decoding;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
-namespace Neo4j.Driver.Bolt.Messages.Decoding;
+namespace Neo4j.Driver.Bolt.Messages.Implementations.Decoding;
 
-internal sealed class FailureMessageDecoder(ILogger logger) : IMessageDecoder
+internal sealed class SuccessMessageDecoder(ILogger logger) : IMessageDecoder
 {
-    public byte HandledTag => (byte)MessageKind.Failure;
+    public byte HandledTag => (byte)MessageKind.Success;
 
     public BoltMessage Decode(PackStreamStructView structView)
     {
-        logger.LogDebug("Decoding FAILURE message");
-        return new BoltMessage(MessageKind.Failure, structView);
+        logger.LogDebug("Decoding SUCCESS message");
+        return new BoltMessage(MessageKind.Success, structView);
     }
 }

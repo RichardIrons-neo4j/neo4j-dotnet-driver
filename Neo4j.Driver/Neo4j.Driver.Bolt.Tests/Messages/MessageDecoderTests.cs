@@ -17,8 +17,8 @@ using System.Buffers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Neo4j.Driver.Bolt.Messages;
-using Neo4j.Driver.Bolt.Messages.Decoding;
+using Neo4j.Driver.Bolt.Messages.Abstractions;
+using Neo4j.Driver.Bolt.Messages.Implementations.Decoding;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
@@ -154,7 +154,7 @@ internal class MessageDecoderTests
         metadata[0].Value.StringValue.ToString().Should().Be("Neo4j/5.0");
 
         var dict = success.Metadata.ToEnumerable().ToDictionary(kv => kv.Key.StringValue.ToString(), kv => kv.Value);
-        dict.Should().ContainKey("server").WhoseValue.Should().Be("Neo4j/5.0");
+        dict.Should().ContainKey("server").WhoseValue.StringValue.ToString().Should().Be("Neo4j/5.0");
     }
 
     [Test]
