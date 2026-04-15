@@ -176,7 +176,7 @@ internal sealed class Driver : IInternalDriver
 
     public async Task<bool> VerifyAuthenticationAsync(IAuthToken authToken)
     {
-        var session = AsyncSession(x => x.WithAuthToken(authToken).WithDatabase("system")) as AsyncSession;
+        var session = (AsyncSession)AsyncSession(x => x.WithAuthToken(authToken).WithDatabase("system"));
         await using (session.ConfigureAwait(false))
         {
             return await session.VerifyConnectivityAsync().ConfigureAwait(false);
@@ -284,7 +284,7 @@ internal sealed class Driver : IInternalDriver
             {
                 RoutingControl.Readers => AccessMode.Read,
                 RoutingControl.Writers => AccessMode.Write,
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(nameof(config), "Invalid routing control")
             });
     }
 
