@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
+using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 
@@ -30,11 +31,13 @@ internal class ListDecoder : IValueDecoder
 {
     private readonly IPackStreamDecoder _decoder;
     private readonly IPackStreamSizeReader _sizeReader;
+    private readonly ILogger _logger;
 
-    public ListDecoder(IPackStreamDecoder decoder, IPackStreamSizeReader sizeReader)
+    public ListDecoder(IPackStreamDecoder decoder, IPackStreamSizeReader sizeReader, ILogger logger)
     {
         _decoder = decoder ?? throw new ArgumentNullException(nameof(decoder));
         _sizeReader = sizeReader ?? throw new ArgumentNullException(nameof(sizeReader));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private static readonly byte[] TinyListMarkers = Enumerable.Range(0x90, 16).Select(i => (byte)i).ToArray();
@@ -49,6 +52,8 @@ internal class ListDecoder : IValueDecoder
 
         var marker = buffer.FirstSpan[0];
 
+        _logger.LogDebug("Decoding list with marker 0x{Marker:X2}", marker);
+
         var (headerSize, itemCount) = marker switch
         {
             >= 0x90 and <= 0x9F => (1, marker & 0x0F),
@@ -58,7 +63,14 @@ internal class ListDecoder : IValueDecoder
             _ => throw new InvalidOperationException($"Unknown list marker byte: 0x{marker:X2}")
         };
 
-        // Calculate total bytes by decoding each item (but not materializing values)
+        _logger.LogDebug("List header: {HeaderSize} bytes, {ItemCount} items", headerSize, itemCount);
+
+        if (_logger.IsEnabled(LogLevel.Trace))
+        {
+            var headerBytes = buffer.Slice(0, headerSize).ToArray();
+            _logger.LogTrace("List header bytes: {HeaderBytes}", BitConverter.ToString(headerBytes));
+        }
+
         var itemsData = buffer.Slice(headerSize);
         var totalItemBytes = CalculateTotalItemBytes(itemsData, itemCount);
 
@@ -66,6 +78,8 @@ internal class ListDecoder : IValueDecoder
             buffer.Slice(headerSize, totalItemBytes),
             itemCount,
             _decoder);
+
+        _logger.LogDebug("Decoded list: {ItemCount} items, {TotalBytes} total bytes", itemCount, headerSize + totalItemBytes);
 
         return new ValueDecoderResult(value, headerSize + totalItemBytes);
     }
@@ -83,12 +97,17 @@ internal class ListDecoder : IValueDecoder
                     $"Unexpected end of data: expected {itemCount} list items but only found {i}.");
             }
 
+            if (_logger.IsEnabled(LogLevel.Trace))
+            {
+                var nextByte = remaining.FirstSpan[0];
+                _logger.LogTrace("Decoding list item {Index}/{Count}, next marker: 0x{Marker:X2}", i + 1, itemCount, nextByte);
+            }
+
             var result = _decoder.Decode(remaining);
 
             if (result.BytesConsumed == 0)
             {
-                throw new InvalidOperationException(
-                    "Decoder returned zero bytes consumed.");
+                throw new InvalidOperationException("Decoder returned zero bytes consumed.");
             }
 
             if (result.BytesConsumed > remaining.Length)
@@ -104,6 +123,3 @@ internal class ListDecoder : IValueDecoder
         return totalBytes;
     }
 }
-
-
-
