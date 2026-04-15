@@ -66,8 +66,6 @@ internal class MapDecoder(ILogger logger) : SequenceDecoderBase(logger), IRecurs
             _ => throw new InvalidOperationException($"Unknown map marker byte: 0x{marker:X2}")
         };
 
-        Logger.LogDebug("Map header: {EntryCount} entries", entryCount);
-
         var entriesData = DecodePayload(ref reader, 2 * entryCount, _recursionDecoder);
 
         var value = PackStreamValueView.Map(

@@ -46,7 +46,8 @@ public class TinyIntDecoder(ILogger logger) : ValueDecoderBase(logger)
             >= 0xF0 => marker - 256, // negative tiny int
             _ => throw new InvalidOperationException($"Unknown marker byte: 0x{marker:X2}")
         };
-            
+
+        Logger.LogDebug("Decoded tiny int {Value} (1 byte)", value);
         return new ValueDecoderResult(PackStreamValueView.Integer(value), 1);
     }
     

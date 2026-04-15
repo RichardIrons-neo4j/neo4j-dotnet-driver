@@ -50,6 +50,7 @@ public abstract class ValueDecoderBase(ILogger logger) : IValueDecoder
     {
         if (!IsMarkerByteHandled(markerByte))
         {
+            Logger.LogTrace("Unknown marker byte 0x{Marker:X2}", markerByte);
             throw new InvalidOperationException($"Unknown marker byte: 0x{markerByte:X2}");
         }
     }

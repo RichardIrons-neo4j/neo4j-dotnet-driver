@@ -55,7 +55,9 @@ internal class StringDecoder(ILogger logger) : ValueDecoderBase(logger)
         };
 
         var stringData = ReadExact(ref reader, length);
+        var consumed = (int)reader.Consumed;
+        Logger.LogDebug("Decoded string length {Length} ({BytesConsumed} bytes)", length, consumed);
         var value = PackStreamValueView.String(stringData);
-        return new ValueDecoderResult(value, (int)reader.Consumed);
+        return new ValueDecoderResult(value, consumed);
     }
 }

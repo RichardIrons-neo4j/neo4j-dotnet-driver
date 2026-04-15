@@ -57,8 +57,6 @@ internal class ListDecoder(ILogger logger) : SequenceDecoderBase(logger), IRecur
             _ => throw new InvalidOperationException($"Unknown list marker byte: 0x{marker:X2}")
         };
 
-        Logger.LogDebug("List header: {ItemCount} items", itemCount);
-
         var listItemsData = DecodePayload(ref reader, itemCount, _recursionDecoder);
 
         var value = PackStreamValueView.List(

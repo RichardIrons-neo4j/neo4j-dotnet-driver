@@ -15,7 +15,6 @@
 
 using System.Buffers;
 using Microsoft.Extensions.Logging;
-using Neo4j.Driver.Bolt.Extensions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
@@ -62,24 +61,25 @@ internal class PackStreamDecoder : IPackStreamDecoder
     /// <inheritdoc />
     public async IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount)
     {
-        var processed = 0;
         var count = 0;
 
-        _logger.LogDebug("Beginning PackStream decoding loop");
+        _logger.LogDebug("Beginning PackStream decode from stream (expecting {ValueCount} values)", valueCount);
         await foreach (var buffer in _chunkAssembler.ReadMessagesAsync(byteReader))
         {
-            _logger.LogIf(LogLevel.Trace, "Decoding {bytes} bytes", () => [buffer.Length]);
+            _logger.LogTrace("Processing message chunk ({Bytes} bytes)", buffer.Length);
             var bufferPosition = 0;
             while (bufferPosition < buffer.Length && count < valueCount)
             {
                 var remaining = buffer.Slice(bufferPosition);
                 var markerByte = remaining.First.Span[0];
-                _logger.LogIf(LogLevel.Trace, "Decoding marker byte: {markerByte}", () => [markerByte]);
+                _logger.LogTrace("Decoding value {Index}/{Total}, marker 0x{Marker:X2}", count + 1, valueCount, markerByte);
 
                 var decoder = _valueDecoderProvider.GetDecoder(markerByte, this);
                 var decoderResult = decoder.Decode(remaining);
                 _logger.LogTrace(
-                    "Decoded value: {value} (consumed {bytesConsumed} bytes)",
+                    "Decoded value {Index}/{Total}: {Value} (consumed {BytesConsumed} bytes)",
+                    count + 1,
+                    valueCount,
                     decoderResult.Value,
                     decoderResult.BytesConsumed);
 
@@ -87,13 +87,13 @@ internal class PackStreamDecoder : IPackStreamDecoder
                 count++;
                 yield return decoderResult.Value;
             }
-
-            processed += bufferPosition;
         }
 
         if (count < valueCount)
         {
             throw new InvalidOperationException($"Expected {valueCount} values, but only got {count}.");
         }
+
+        _logger.LogDebug("Completed PackStream decode: {Count} values", count);
     }
 }

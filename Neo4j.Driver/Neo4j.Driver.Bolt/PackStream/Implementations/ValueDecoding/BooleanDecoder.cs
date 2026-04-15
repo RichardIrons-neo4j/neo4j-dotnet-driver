@@ -35,7 +35,8 @@ internal class BooleanDecoder(ILogger logger) : ValueDecoderBase(logger)
             PackStreamMarker.False => PackStreamValueView.Boolean(false),
             _ => throw new InvalidOperationException($"Unknown marker byte: 0x{buffer.FirstSpan[0]:X2}")
         };
-        
+
+        Logger.LogDebug("Decoded boolean {Value} (1 byte)", value.BooleanValue);
         return new ValueDecoderResult(value, (int)reader.Consumed);
     }
 }

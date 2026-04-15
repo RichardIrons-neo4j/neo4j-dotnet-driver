@@ -28,6 +28,7 @@ internal class NullDecoder(ILogger logger) : ValueDecoderBase(logger)
     {
         var reader = new SequenceReader<byte>(buffer);
         ReadValidMarkerByte(ref reader);
+        Logger.LogDebug("Decoded null (1 byte)");
         return new ValueDecoderResult(PackStreamValueView.Null(), 1);
     }
 }

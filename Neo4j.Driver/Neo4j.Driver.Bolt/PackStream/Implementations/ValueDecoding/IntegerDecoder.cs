@@ -32,7 +32,9 @@ public class IntegerDecoder(ILogger logger) : ValueDecoderBase(logger)
     {
         var reader = new SequenceReader<byte>(buffer);
         var marker = ReadValidMarkerByte(ref reader);
-        var value =  ReadInteger(ref reader, GetIntSize(marker));
-        return new ValueDecoderResult(PackStreamValueView.Integer(value), (int)reader.Consumed);
+        var value = ReadInteger(ref reader, GetIntSize(marker));
+        var consumed = (int)reader.Consumed;
+        Logger.LogDebug("Decoded integer {Value} ({BytesConsumed} bytes)", value, consumed);
+        return new ValueDecoderResult(PackStreamValueView.Integer(value), consumed);
     }
 }

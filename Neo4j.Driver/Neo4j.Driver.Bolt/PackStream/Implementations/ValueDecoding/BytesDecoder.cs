@@ -41,7 +41,9 @@ internal class BytesDecoder(ILogger logger) : ValueDecoderBase(logger)
         var intSize = GetIntSize(marker);
         var length = ReadSize(ref reader, intSize);
         var bytesData = ReadExact(ref reader, length);
+        var consumed = (int)reader.Consumed;
+        Logger.LogDebug("Decoded bytes length {Length} ({BytesConsumed} bytes)", length, consumed);
         var value = PackStreamValueView.Bytes(bytesData);
-        return new ValueDecoderResult(value, (int)reader.Consumed);
+        return new ValueDecoderResult(value, consumed);
     }
 }

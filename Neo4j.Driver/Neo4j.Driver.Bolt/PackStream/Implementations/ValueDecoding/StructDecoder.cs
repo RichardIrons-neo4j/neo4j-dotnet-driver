@@ -63,13 +63,11 @@ internal class StructDecoder(ILogger logger) : SequenceDecoderBase(logger), IRec
 
         var tag = ReadByte(ref reader);
 
-        Logger.LogDebug("Struct header: tag 0x{Tag:X2}, {FieldCount} fields", tag, fieldCount);
-
         var fieldsData = DecodePayload(ref reader, fieldCount, _recursionDecoder);
         var fields = new PackStreamListView(fieldsData, fieldCount, _recursionDecoder);
         var value = PackStreamValueView.Struct(new PackStreamStructView(tag, fields));
 
-        Logger.LogDebug("Decoded struct: tag 0x{Tag:X2}, {FieldCount} fields", tag, fieldCount);
+        Logger.LogDebug("Decoded struct: tag 0x{Tag:X2}, {FieldCount} fields, {TotalBytes} total bytes", tag, fieldCount, (int)reader.Consumed);
 
         return new ValueDecoderResult(value, (int)reader.Consumed);
     }

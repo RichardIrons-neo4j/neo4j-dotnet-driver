@@ -34,6 +34,8 @@ internal class FloatDecoder(ILogger logger) : ValueDecoderBase(logger)
         var reader = new SequenceReader<byte>(buffer);
         ReadValidMarkerByte(ref reader);
         var value = ReadDouble(ref reader);
-        return new ValueDecoderResult(PackStreamValueView.Float(value), (int)reader.Consumed);
+        var consumed = (int)reader.Consumed;
+        Logger.LogDebug("Decoded float {Value} ({BytesConsumed} bytes)", value, consumed);
+        return new ValueDecoderResult(PackStreamValueView.Float(value), consumed);
     }
 }
