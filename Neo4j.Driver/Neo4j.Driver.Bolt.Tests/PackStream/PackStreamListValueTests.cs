@@ -15,7 +15,6 @@
 
 using System.Buffers;
 using FluentAssertions;
-using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
@@ -161,7 +160,7 @@ internal class PackStreamListViewTests
     }
 
     [Test]
-    public void ElementAt_returns_value_at_index()
+    public void ElementAtReturnsValueAtIndex()
     {
         var decoder = new SingleByteIntDecoder();
         var data = new ReadOnlySequence<byte>([0x0A, 0x0B, 0x0C]);
@@ -173,7 +172,7 @@ internal class PackStreamListViewTests
     }
 
     [Test]
-    public void ElementAt_throws_when_index_negative()
+    public void ElementAtThrowsWhenIndexNegative()
     {
         var decoder = new SingleByteIntDecoder();
         var listValue = new PackStreamListView(ReadOnlySequence<byte>.Empty, 1, decoder);
@@ -185,7 +184,7 @@ internal class PackStreamListViewTests
     }
 
     [Test]
-    public void ElementAt_throws_when_index_greater_or_equal_Count()
+    public void ElementAtThrowsWhenIndexGreaterOrEqualCount()
     {
         var decoder = new SingleByteIntDecoder();
         var data = new ReadOnlySequence<byte>([0x01]);

@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -25,7 +25,7 @@ namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoding;
 internal class TinyIntDecoderTests : DecoderTestsBase<TinyIntDecoder>
 {
     [Test]
-    public void HandledMarkerBytes_IncludesPositiveAndNegativeTinyInts()
+    public void HandledMarkerBytesIncludesPositiveAndNegativeTinyInts()
     {
         var expected = new ByteArrayBuilder()
             .Range(..0x80)

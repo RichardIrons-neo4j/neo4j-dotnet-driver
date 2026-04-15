@@ -16,7 +16,6 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using FluentAssertions;
-using Moq;
 using Moq.AutoMock;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
@@ -25,7 +24,6 @@ using Neo4j.Driver.Bolt.PackStream.Implementations;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 using Neo4j.Driver.Bolt.Transport.Implementations;
-using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using NUnit.Framework;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -106,7 +104,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
     }
 
     [Test]
-    public async Task Decodes_single_value_in_one_message_with_chunk_assembly()
+    public async Task DecodesSingleValueInOneMessageWithChunkAssembly()
     {
         // One Bolt message: the message size is 4 (big-endian short). The message body is one PackStream value.
         byte[] wire =
@@ -140,7 +138,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
     }
 
     [Test]
-    public async Task Decodes_multiple_values_in_one_message()
+    public async Task DecodesMultipleValuesInOneMessage()
     {
         // One Bolt message containing three PackStream values: an int, a string, and a list.
         byte[] wire =
@@ -187,7 +185,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
     }
 
     [Test]
-    public async Task Decodes_values_split_across_two_bolt_messages()
+    public async Task DecodesValuesSplitAcrossTwoBoltMessages()
     {
         // First Bolt message: one PackStream value (a tiny int). Second message: one value (a string).
         byte[] wire =
@@ -228,7 +226,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
     }
 
     [Test]
-    public async Task Decodes_nested_list_and_map_in_one_message()
+    public async Task DecodesNestedListAndMapInOneMessage()
     {
         // One Bolt message whose body is a single PackStream list containing a map.
         byte[] wire =
@@ -277,7 +275,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
     }
 
     [Test]
-    public async Task Decodes_message_when_body_arrives_in_two_reads()
+    public async Task DecodesMessageWhenBodyArrivesInTwoReads()
     {
         // Simulate the byte reader returning the chunk header and part of the body in one read,
         // and the rest of the body in a second read. The chunk assembler must wait for the full message.
@@ -316,7 +314,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
     }
 
     [Test]
-    public async Task Decodes_two_messages_when_second_message_arrives_in_later_read()
+    public async Task DecodesTwoMessagesWhenSecondMessageArrivesInLaterRead()
     {
         // First read: complete first message (one value). Second read: second message (one value).
         byte[] chunk1 =
@@ -346,7 +344,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
     }
 
     [Test]
-    public async Task Decodes_null_and_struct_in_one_message()
+    public async Task DecodesNullAndStructInOneMessage()
     {
         // One Bolt message: two PackStream values, null and a struct.
         byte[] wire =
@@ -391,7 +389,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
     }
 
     [Test]
-    public async Task Decodes_empty_message_then_value_message()
+    public async Task DecodesEmptyMessageThenValueMessage()
     {
         // First message has zero-length body; second message has one PackStream value.
         byte[] wire =

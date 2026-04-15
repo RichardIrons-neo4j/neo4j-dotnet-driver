@@ -37,35 +37,35 @@ internal class MessageDecoderTests
     private static ILogger Logger => Mock.Of<ILogger>();
 
     [Test]
-    public void SuccessMessageDecoder_HandledTag_matches_MessageKind_Success()
+    public void SuccessMessageDecoderHandledTagMatchesMessageKindSuccess()
     {
         var decoder = new SuccessMessageDecoder(Logger);
         decoder.HandledTag.Should().Be((byte)MessageKind.Success).And.Be(0x70);
     }
 
     [Test]
-    public void RecordMessageDecoder_HandledTag_matches_MessageKind_Record()
+    public void RecordMessageDecoderHandledTagMatchesMessageKindRecord()
     {
         var decoder = new RecordMessageDecoder(Logger);
         decoder.HandledTag.Should().Be((byte)MessageKind.Record).And.Be(0x71);
     }
 
     [Test]
-    public void FailureMessageDecoder_HandledTag_matches_MessageKind_Failure()
+    public void FailureMessageDecoderHandledTagMatchesMessageKindFailure()
     {
         var decoder = new FailureMessageDecoder(Logger);
         decoder.HandledTag.Should().Be((byte)MessageKind.Failure).And.Be(0x7F);
     }
 
     [Test]
-    public void IgnoredMessageDecoder_HandledTag_matches_MessageKind_Ignored()
+    public void IgnoredMessageDecoderHandledTagMatchesMessageKindIgnored()
     {
         var decoder = new IgnoredMessageDecoder(Logger);
         decoder.HandledTag.Should().Be((byte)MessageKind.Ignored).And.Be(0x7E);
     }
 
     [Test]
-    public void MessageDecoderProvider_decodes_Success_struct_into_BoltMessage()
+    public void MessageDecoderProviderDecodesSuccessStructIntoBoltMessage()
     {
         var structView = CreateStructView(0x70, 1, new StubPackStreamDecoder()); // SUCCESS, 1 field (metadata)
         var provider = CreateProvider();
@@ -77,7 +77,7 @@ internal class MessageDecoderTests
     }
 
     [Test]
-    public void MessageDecoderProvider_decodes_Record_struct_into_BoltMessage()
+    public void MessageDecoderProviderDecodesRecordStructIntoBoltMessage()
     {
         var structView = CreateStructView(0x71, 1, new StubPackStreamDecoder()); // RECORD, 1 field (list)
         var provider = CreateProvider();
@@ -89,7 +89,7 @@ internal class MessageDecoderTests
     }
 
     [Test]
-    public void MessageDecoderProvider_decodes_Failure_struct_into_BoltMessage()
+    public void MessageDecoderProviderDecodesFailureStructIntoBoltMessage()
     {
         var structView = CreateStructView(0x7F, 1, new StubPackStreamDecoder()); // FAILURE, 1 field (map)
         var provider = CreateProvider();
@@ -101,7 +101,7 @@ internal class MessageDecoderTests
     }
 
     [Test]
-    public void MessageDecoderProvider_decodes_Ignored_struct_into_BoltMessage()
+    public void MessageDecoderProviderDecodesIgnoredStructIntoBoltMessage()
     {
         var structView = CreateStructView(0x7E, 0, new StubPackStreamDecoder()); // IGNORED, 0 fields
         var provider = CreateProvider();
@@ -113,7 +113,7 @@ internal class MessageDecoderTests
     }
 
     [Test]
-    public void MessageDecoderProvider_TryGetDecoder_returns_false_for_unknown_tag()
+    public void MessageDecoderProviderTryGetDecoderReturnsFalseForUnknownTag()
     {
         var provider = CreateProvider();
 
@@ -124,7 +124,32 @@ internal class MessageDecoderTests
     }
 
     [Test]
-    public void Success_message_view_exposes_metadata_from_struct_field()
+    public void MessageDecoderProviderTryGetDecoderReturnsTrueAndDecoderIsNotNullForKnownTags()
+    {
+        var provider = CreateProvider();
+        var stubDecoder = new StubPackStreamDecoder();
+
+        (byte tag, MessageKind expectedKind, int fieldCount)[] known =
+        [
+            (0x70, MessageKind.Success, 1),
+            (0x71, MessageKind.Record, 1),
+            (0x7F, MessageKind.Failure, 1),
+            (0x7E, MessageKind.Ignored, 0),
+        ];
+
+        foreach (var (tag, expectedKind, fieldCount) in known)
+        {
+            var found = provider.TryGetDecoder(tag, out var decoder);
+            found.Should().BeTrue($"tag 0x{tag:X2} is registered");
+            decoder.Should().NotBeNull();
+            var structView = CreateStructView(tag, fieldCount, stubDecoder);
+            var message = decoder!.Decode(structView);
+            message.Kind.Should().Be(expectedKind);
+        }
+    }
+
+    [Test]
+    public void SuccessMessageViewExposesMetadataFromStructField()
     {
         // PackStream: SUCCESS struct (tag 0x70) with one field = map {"server" -> "Neo4j/5.0"}
         // Tiny struct 1 field: 0xB1, tag 0x70, then map 1 entry
@@ -161,7 +186,7 @@ internal class MessageDecoderTests
     }
 
     [Test]
-    public void Record_message_view_exposes_fields_list_from_struct_field()
+    public void RecordMessageViewExposesFieldsListFromStructField()
     {
         // PackStream: RECORD struct (tag 0x71) with one field = list [42, "hello"]
         // Tiny struct 1 field: 0xB1, tag 0x71, then list 2 items: 0x92, 0x2A, 0x85 0x68 0x65 0x6C 0x6F
@@ -192,7 +217,7 @@ internal class MessageDecoderTests
     }
 
     [Test]
-    public void Failure_message_view_exposes_metadata_from_struct_field()
+    public void FailureMessageViewExposesMetadataFromStructField()
     {
         // PackStream: FAILURE struct (tag 0x7F) with one field = map {"code" -> "X", "message" -> "Y"}
         // Tiny struct 1 field: 0xB1, tag 0x7F, then map 2 entries

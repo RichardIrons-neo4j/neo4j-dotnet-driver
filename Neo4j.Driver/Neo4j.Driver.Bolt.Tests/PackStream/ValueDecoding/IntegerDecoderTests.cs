@@ -25,7 +25,7 @@ namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoding;
 internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
 {
     [Test]
-    public void HandledMarkerBytes_IncludesInt8Int16Int32Int64()
+    public void HandledMarkerBytesIncludesInt8Int16Int32Int64()
     {
         var expected = new[] { PackStreamMarker.Int8, PackStreamMarker.Int16, PackStreamMarker.Int32, PackStreamMarker.Int64 };
         Subject.HandledMarkerBytes.Should().BeEquivalentTo(expected);
@@ -34,7 +34,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     #region INT_8 (marker 0xC8 + 1 byte signed)
 
     [Test]
-    public void DecodesInt8_Positive_42()
+    public void DecodesInt8Positive42()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int8, 0x2A]);
         var result = Subject.Decode(buffer);
@@ -43,7 +43,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt8_MaxPositive_127()
+    public void DecodesInt8MaxPositive127()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int8, 0x7F]);
         var result = Subject.Decode(buffer);
@@ -52,7 +52,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt8_MinNegative_Minus128()
+    public void DecodesInt8MinNegativeMinus128()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int8, 0x80]);
         var result = Subject.Decode(buffer);
@@ -61,7 +61,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt8_Minus17()
+    public void DecodesInt8Minus17()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int8, 0xEF]);
         var result = Subject.Decode(buffer);
@@ -70,7 +70,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt8_MinusOne()
+    public void DecodesInt8MinusOne()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int8, 0xFF]);
         var result = Subject.Decode(buffer);
@@ -83,7 +83,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     #region INT_16 (marker 0xC9 + 2 bytes big-endian signed)
 
     [Test]
-    public void DecodesInt16_Positive_256()
+    public void DecodesInt16Positive256()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int16, 0x01, 0x00]);
         var result = Subject.Decode(buffer);
@@ -92,7 +92,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt16_MaxPositive_32767()
+    public void DecodesInt16MaxPositive32767()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int16, 0x7F, 0xFF]);
         var result = Subject.Decode(buffer);
@@ -101,7 +101,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt16_MinNegative_Minus32768()
+    public void DecodesInt16MinNegativeMinus32768()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int16, 0x80, 0x00]);
         var result = Subject.Decode(buffer);
@@ -110,7 +110,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt16_MinusOne()
+    public void DecodesInt16MinusOne()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int16, 0xFF, 0xFF]);
         var result = Subject.Decode(buffer);
@@ -119,7 +119,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt16_Zero()
+    public void DecodesInt16Zero()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int16, 0x00, 0x00]);
         var result = Subject.Decode(buffer);
@@ -132,7 +132,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     #region INT_32 (marker 0xCA + 4 bytes big-endian signed)
 
     [Test]
-    public void DecodesInt32_Positive_65536()
+    public void DecodesInt32Positive65536()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int32, 0x00, 0x01, 0x00, 0x00]);
         var result = Subject.Decode(buffer);
@@ -141,7 +141,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt32_MaxPositive_2147483647()
+    public void DecodesInt32MaxPositive2147483647()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int32, 0x7F, 0xFF, 0xFF, 0xFF]);
         var result = Subject.Decode(buffer);
@@ -150,7 +150,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt32_MinNegative_Minus2147483648()
+    public void DecodesInt32MinNegativeMinus2147483648()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int32, 0x80, 0x00, 0x00, 0x00]);
         var result = Subject.Decode(buffer);
@@ -159,7 +159,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt32_MinusOne()
+    public void DecodesInt32MinusOne()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int32, 0xFF, 0xFF, 0xFF, 0xFF]);
         var result = Subject.Decode(buffer);
@@ -168,7 +168,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt32_Zero()
+    public void DecodesInt32Zero()
     {
         var buffer = new ReadOnlySequence<byte>([PackStreamMarker.Int32, 0x00, 0x00, 0x00, 0x00]);
         var result = Subject.Decode(buffer);
@@ -181,7 +181,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     #region INT_64 (marker 0xCB + 8 bytes big-endian signed)
 
     [Test]
-    public void DecodesInt64_Positive_4294967296()
+    public void DecodesInt64Positive4294967296()
     {
         // 2^32
         var buffer = new ReadOnlySequence<byte>(
@@ -192,7 +192,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt64_MaxValue()
+    public void DecodesInt64MaxValue()
     {
         var buffer = new ReadOnlySequence<byte>(
             [PackStreamMarker.Int64, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
@@ -202,7 +202,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt64_MinValue()
+    public void DecodesInt64MinValue()
     {
         var buffer = new ReadOnlySequence<byte>(
             [PackStreamMarker.Int64, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
@@ -212,7 +212,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt64_MinusOne()
+    public void DecodesInt64MinusOne()
     {
         var buffer = new ReadOnlySequence<byte>(
             [PackStreamMarker.Int64, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
@@ -222,7 +222,7 @@ internal class IntegerDecoderTests : DecoderTestsBase<IntegerDecoder>
     }
 
     [Test]
-    public void DecodesInt64_Zero()
+    public void DecodesInt64Zero()
     {
         var buffer = new ReadOnlySequence<byte>(
             [PackStreamMarker.Int64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);

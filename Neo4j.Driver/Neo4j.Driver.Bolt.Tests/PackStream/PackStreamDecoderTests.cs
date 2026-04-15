@@ -17,7 +17,6 @@ using System.Buffers;
 using Moq;
 using NUnit.Framework;
 using FluentAssertions;
-using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
@@ -114,6 +113,26 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
         result.Should().HaveCount(2);
         result[0].IntValue.Should().Be(10);
         result[1].IntValue.Should().Be(20);
+    }
+
+    [Test]
+    public void DecodeThrowsInvalidOperationExceptionWhenNoDecoderForMarkerByte()
+    {
+        AutoMocker.GetMock<IValueDecoderProvider>()
+            .Setup(x => x.TryGetDecoder(0x99, It.IsAny<IPackStreamDecoder>(), out It.Ref<IValueDecoder?>.IsAny!))
+            .Callback((byte _, IPackStreamDecoder _, out IValueDecoder? d) => { d = null; })
+            .Returns(false);
+
+        var buffer = new ReadOnlySequence<byte>([0x99, 0x00]);
+        var byteReader = new Mock<IByteReader>();
+        ReadOnlySequence<byte>[] chunks = [buffer];
+        AutoMocker.GetMock<IChunkAssembler>()
+            .Setup(x => x.ReadMessagesAsync(byteReader.Object, CancellationToken.None))
+            .Returns(chunks.ToAsyncEnumerable());
+
+        var act = async () => await Subject.Decode(byteReader.Object).Take(1).ToListAsync().ConfigureAwait(false);
+
+        act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Unknown marker byte*0x99*");
     }
 
     private class MockDecoder : IValueDecoder
