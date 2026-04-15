@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Buffers.Binary;
+
 namespace Neo4j.Driver.Bolt.Handshake;
 
 /// <summary>
@@ -38,6 +40,14 @@ internal readonly struct BoltHandshakeVersion : IEquatable<BoltHandshakeVersion>
     public int Major { get; }
 
     public int Minor { get; }
+    
+    public static BoltHandshakeVersion FromBytes(byte[] bytes)
+    {
+        var packed = BinaryPrimitives.ReadInt32BigEndian(bytes);
+        var major = packed & 0xFF;
+        var minor = (packed >> 8) & 0xFF;
+        return new BoltHandshakeVersion(major, minor);
+    }
 
     /// <summary>
     /// Unpacks the first server response word (big-endian int32 on the wire, as produced by

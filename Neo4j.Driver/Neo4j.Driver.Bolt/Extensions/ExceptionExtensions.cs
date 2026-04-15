@@ -31,10 +31,7 @@ internal static class ExceptionExtensions
         
         public static void ThrowIf(bool condition, [CallerArgumentExpression(nameof(condition))] string? message = null)
         {
-            if (condition)
-            {
-                throw CreateExceptionWithMessage<T>(message ?? "Condition was true");
-            }
+            Exception.ThrowIf(condition, () => CreateExceptionWithMessage<T>(message ?? "Condition was true"));
         }
     }
 

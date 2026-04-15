@@ -13,25 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.Logging;
+namespace Neo4j.Driver.Bolt.DependencyInjection;
 
-namespace Neo4j.Driver.Bolt.Extensions;
-
-[SuppressMessage(
-    "Usage", 
-    "CA2254:Template should be a static expression", 
-    Justification = "Logging utility method")]
-public static class LoggerExtensions
+public interface IScopeOwner
 {
-    extension(ILogger logger)
-    {
-        public void LogIf(LogLevel logLevel, string template, Func<object[]> args)
-        {
-            if (logger.IsEnabled(logLevel))
-            {
-                logger.Log(logLevel, template, args());
-            }
-        }
-    }
+    Action OnScopeExit { get; set; }
 }

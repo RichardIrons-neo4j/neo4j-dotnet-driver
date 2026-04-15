@@ -31,7 +31,7 @@ namespace Neo4j.Driver.Bolt.DependencyInjection;
 public class ServiceContainer : IServiceResolver, IDisposable
 {
     private readonly IServiceResolver? _parent;
-    private readonly Dictionary<Type, HashSet<Type>> _implementationsByService = new();
+    private readonly Dictionary<Type, HashSet<Type>> _implementations = new();
     private readonly Dictionary<Type, object> _instances = new();
     private bool _disposed;
 
@@ -65,7 +65,7 @@ public class ServiceContainer : IServiceResolver, IDisposable
     public ServiceContainer Register<TService, TImplementation>()
         where TImplementation : class, TService
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(_disposed, this);
         AddRegistration(typeof(TService), typeof(TImplementation));
         return this;
     }
@@ -73,7 +73,7 @@ public class ServiceContainer : IServiceResolver, IDisposable
     public ServiceContainer RegisterInstance<TService>(TService instance)
         where TService : class
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(instance);
         _instances[typeof(TService)] = instance;
         return this;
@@ -85,7 +85,7 @@ public class ServiceContainer : IServiceResolver, IDisposable
     /// </summary>
     public ServiceContainer RegisterTypesFromAssembly(Assembly assembly)
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(assembly);
 
         foreach (var type in assembly.GetTypes().OrderBy(t => t.FullName, StringComparer.Ordinal))
@@ -120,37 +120,16 @@ public class ServiceContainer : IServiceResolver, IDisposable
         RegisterTypesFromAssembly(typeof(ServiceContainer).Assembly);
 
     /// <inheritdoc />
-    public T Resolve<T>()
-        where T : notnull =>
-        (T)Resolve(typeof(T));
-
-    /// <inheritdoc />
+    public T Resolve<T>() where T : notnull => (T)Resolve(typeof(T));
+    
     public object Resolve(Type serviceType)
     {
-        ThrowIfDisposed();
-        ArgumentNullException.ThrowIfNull(serviceType);
-        return ResolveCore(serviceType, new Stack<Type>());
-    }
-
-    /// <inheritdoc />
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-        _implementationsByService.Clear();
-        _instances.Clear();
-    }
-
-    private void ThrowIfDisposed()
-    {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(serviceType);
+        return Resolve(serviceType, new Stack<Type>());
     }
 
-    private object ResolveCore(Type serviceType, Stack<Type> resolutionStack)
+    private object Resolve(Type serviceType, Stack<Type> resolutionStack)
     {
         if (_instances.TryGetValue(serviceType, out var instance))
         {
@@ -158,61 +137,60 @@ public class ServiceContainer : IServiceResolver, IDisposable
             return instance;
         }
 
-        if (IsIEnumerableOfT(serviceType))
+        if (_parent is null && serviceType is { IsClass: true } and { IsAbstract: false })
+        {
+            // a concrete class resolves to itself by default if nothing registered anywhere up the stack
+            return InstantiateService(serviceType, resolutionStack);
+        }
+
+        if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
         {
             // IEnumerable<T>, return all implementations
             return ResolveAll(serviceType, resolutionStack);
         }
 
-        var implementations = GetLocalImplementationTypes(serviceType);
-        return implementations.Any()
-            ? Activate(implementations[^1], resolutionStack) // last registration wins
-            : ResolveFromParentOrThrow(serviceType); // no local registration, delegate to parent if any
+        if (_implementations.TryGetValue(serviceType, out var implTypes) && implTypes.Count > 0)
+        {
+            // last registration wins
+            return InstantiateService(implTypes.Last(), resolutionStack); 
+        }
+
+        return ResolveFromParentOrThrow(serviceType); // no local registration, delegate to parent if any
+
     }
 
     private object ResolveFromParentOrThrow(Type serviceType)
     {
-        return _parent is not null
-            ? _parent.Resolve(serviceType)
-            : throw new InvalidOperationException($"No registration for {serviceType.FullName}.");
-    }
+        if (_parent is not null)
+        {
+            return _parent.Resolve(serviceType);
+        }
 
-    private static bool IsIEnumerableOfT(Type serviceType)
-    {
-        return serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>);
+        throw new InvalidOperationException($"No registration for {serviceType.FullName}.");
     }
 
     private object ResolveAll(Type serviceType, Stack<Type> resolutionStack)
     {
-        var elementType = serviceType.GetGenericArguments()[0];
-        var implTypes = GetLocalImplementationTypes(elementType);
-        var listType = typeof(List<>).MakeGenericType(elementType);
+        var typeofT = serviceType.GetGenericArguments()[0];
+        var listType = typeof(List<>).MakeGenericType(typeofT);
         var list = (IList)Activator.CreateInstance(listType)!;
-        
-        if (implTypes.Count == 0)
+
+        if (!_implementations.TryGetValue(typeofT, out var impls))
         {
             return _parent?.Resolve(serviceType) ?? list;
         }
 
-        foreach (var impl in implTypes)
+        foreach (var service in impls.Select(impl => Resolve(impl, resolutionStack)))
         {
-            list.Add(Activate(impl, resolutionStack));
+            list.Add(service);
         }
 
         return list;
     }
 
-    private object Activate(Type concreteType, Stack<Type> resolutionStack)
+    private object InstantiateService(Type concreteType, Stack<Type> resolutionStack)
     {
-        if (resolutionStack.Contains(concreteType))
-        {
-            var path = string.Join(
-                " -> ",
-                resolutionStack.Reverse().Append(concreteType).Select(static t => t.FullName ?? t.Name));
-
-            throw new InvalidOperationException(
-                $"Circular dependency while resolving {concreteType.FullName}. Path: {path}.");
-        }
+        ThrowIfCircularDependency(concreteType, resolutionStack);
 
         resolutionStack.Push(concreteType);
         try
@@ -222,7 +200,7 @@ public class ServiceContainer : IServiceResolver, IDisposable
             var args = new object[parameters.Length];
             for (var i = 0; i < parameters.Length; i++)
             {
-                args[i] = ResolveCore(parameters[i].ParameterType, resolutionStack);
+                args[i] = Resolve(parameters[i].ParameterType, resolutionStack);
             }
 
             return Activator.CreateInstance(concreteType, args) ??
@@ -234,39 +212,48 @@ public class ServiceContainer : IServiceResolver, IDisposable
         }
     }
 
-    private List<Type> GetLocalImplementationTypes(Type serviceType)
+    private static void ThrowIfCircularDependency(Type concreteType, Stack<Type> resolutionStack)
     {
-        // do we have a local registration?
-        if (_implementationsByService.TryGetValue(serviceType, out var set) && set.Count > 0)
+        if (resolutionStack.Contains(concreteType))
         {
-            return set.ToList();
-        }
+            var path = string.Join(
+                " -> ",
+                resolutionStack.Reverse().Append(concreteType).Select(static t => t.FullName ?? t.Name));
 
-        return [];
+            throw new InvalidOperationException(
+                $"Circular dependency while resolving {concreteType.FullName}. Path: {path}.");
+        }
     }
 
     private void AddRegistration(Type serviceType, Type implementationType)
     {
-        if (_implementationsByService.TryGetValue(serviceType, out var types))
+        if (_implementations.TryGetValue(serviceType, out var types))
         {
             types.Add(implementationType);
         }
         else
         {
-            _implementationsByService[serviceType] = [implementationType];
+            _implementations[serviceType] = [implementationType];
         }
     }
 
     private static ConstructorInfo SelectConstructor(Type concreteType)
     {
         var constructors = concreteType.GetConstructors(BindingFlags.Instance | BindingFlags.Public);
-
-        if (constructors.Length == 1)
-        {
-            return constructors[0];
-        }
-
         return constructors.MaxBy(c => c.GetParameters().Length) ??
             throw new InvalidOperationException($"{concreteType.FullName} has no public constructors.");
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _implementations.Clear();
+        _instances.Clear();
     }
 }

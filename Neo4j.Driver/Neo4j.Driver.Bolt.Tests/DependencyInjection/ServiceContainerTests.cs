@@ -38,7 +38,8 @@ internal class ServiceContainerTests
     {
         var container = new ServiceContainer()
             .Register<IWidget, Widget>()
-            .Register<IGadget, Gadget>();
+            .Register<IGadget, Gadget>()
+            .Register<Root, Root>();
 
         var root = container.Resolve<Root>();
         root.Widget.Should().BeOfType<Widget>();
@@ -191,6 +192,7 @@ internal class ServiceContainerTests
     public void Resolve_IEnumerable_ReturnsAllImplementationsInRegistrationOrder()
     {
         var container = new ServiceContainer()
+            .Register<Root, Root>()
             .Register<IWidget, Widget>()
             .Register<IWidget, OtherWidget>();
 

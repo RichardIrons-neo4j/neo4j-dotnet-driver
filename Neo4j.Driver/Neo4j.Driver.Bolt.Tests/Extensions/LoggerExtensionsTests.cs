@@ -25,30 +25,55 @@ namespace Neo4j.Driver.Bolt.Tests.Extensions;
 internal class LoggerExtensionsTests
 {
     [Test]
-    public void LogIfInvokesArgsAndLogsWhenLevelEnabled()
+    public void LogIfDoesNotInvokeArgsWhenLevelDisabled()
     {
-        var logger = new Mock<ILogger>();
-        logger.Setup(x => x.IsEnabled(LogLevel.Debug)).Returns(true);
+        var logger = new MockLogger();
         var argsInvoked = false;
-        object[] GetArgs() { argsInvoked = true; return [42]; }
 
-        logger.Object.LogIf(LogLevel.Debug, "Message {A}", GetArgs);
+        logger.LogIf(LogLevel.Trace, "Message", () => { argsInvoked = true; return []; });
 
-        argsInvoked.Should().BeTrue();
-        logger.Verify(
-            x => x.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        argsInvoked.Should().BeFalse();
+        logger.LoggingCalls.Should().BeEmpty();
     }
 
     [Test]
-    public void LogIfDoesNotInvokeArgsWhenLevelDisabled()
+    public void LogIfInvokesArgsAndLogsWhenLevelEnabled()
     {
-        var logger = new Mock<ILogger>();
-        logger.Setup(x => x.IsEnabled(LogLevel.Trace)).Returns(false);
-        var argsInvoked = false;
+        Func<object[]> args = () => [42];
+        var logger = new MockLogger();
+        
+        logger.LogIf(LogLevel.Debug, "Message {A}", args);
+        
+        logger.LoggingCalls.Count.Should().Be(1);
+        logger.LoggingCalls[0].LogMessage.Should().Be("Message 42");
+    }
 
-        logger.Object.LogIf(LogLevel.Trace, "Message", () => { argsInvoked = true; return []; });
+    private class MockLogger : ILogger
+    {
+        private readonly List<LoggingCall> _loggingCalls = [];
+        public IReadOnlyList<LoggingCall> LoggingCalls => _loggingCalls;
+        
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            _loggingCalls.Add(new LoggingCall(logLevel, eventId, state!, exception, formatter(state!, exception)));
+            Console.WriteLine($"Log lv: '{logLevel}'; ev: '{eventId}'; st: '{state}'; ex: '{exception?.Message}';");
+        }
 
-        argsInvoked.Should().BeFalse();
+        public record LoggingCall(
+            LogLevel LogLevel,
+            EventId EventId,
+            object State,
+            Exception? Exception,
+            string LogMessage);
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Debug;
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull =>
+            throw new NotImplementedException();
     }
 }

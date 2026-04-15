@@ -15,6 +15,7 @@
 
 using System.Buffers.Binary;
 using Neo4j.Driver;
+using Neo4j.Driver.Bolt.Extensions;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 
 namespace Neo4j.Driver.Bolt.Handshake;
@@ -46,25 +47,11 @@ internal class BoltHandshake : IBoltHandshake
 
         var responseWord = new byte[sizeof(int)];
         await reader.ReadExactlyAsync(responseWord, cancellationToken).ConfigureAwait(false);
-        var packed = BinaryPrimitives.ReadInt32BigEndian(responseWord);
-        var version = BoltHandshakeVersion.FromPackedInt32(packed);
+        var version = BoltHandshakeVersion.FromBytes(responseWord);
 
-        if (version.IsManifestMarker)
-        {
-            throw new NotImplementedException(
-                "Manifest-style Bolt handshake (server major 255) is not implemented in Neo4j.Driver.Bolt yet. " +
-                "See Neo4j.Driver Internal/Connector/BoltHandshaker.");
-        }
-
-        if (version.Major == 0 && version.Minor == 0)
-        {
-            throw new ProtocolException(NoAgreedVersion);
-        }
-
-        if (version.IsHttpResponse)
-        {
-            throw new NotSupportedException(HttpEndpointMessage);
-        }
+        NotImplementedException.ThrowIf(version.IsManifestMarker); // TODO: implement manifest follow-up
+        ProtocolException.ThrowIf(version is {Major: 0, Minor: 0}, NoAgreedVersion);
+        NotSupportedException.ThrowIf(version.IsHttpResponse, HttpEndpointMessage);
 
         return version;
     }
