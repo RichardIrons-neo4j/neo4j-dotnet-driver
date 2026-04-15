@@ -15,6 +15,7 @@
 
 using System.Buffers;
 using System.Buffers.Binary;
+using Neo4j.Driver;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.Helpers;
 
