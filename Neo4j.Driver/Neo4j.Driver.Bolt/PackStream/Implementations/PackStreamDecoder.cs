@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using System.Buffers;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
@@ -31,7 +32,6 @@ internal class PackStreamDecoder : IPackStreamDecoder
     private readonly ILogger _logger;
 
     public PackStreamDecoder(
-        IValueDecoder[] decoders,
         IChunkAssembler chunkAssembler,
         IValueDecoderProvider valueDecoderProvider,
         ILogger logger)
@@ -39,11 +39,6 @@ internal class PackStreamDecoder : IPackStreamDecoder
         _chunkAssembler = chunkAssembler ?? throw new ArgumentNullException(nameof(chunkAssembler));
         _valueDecoderProvider = valueDecoderProvider;
         _logger = logger;
-
-        if (decoders is null or { Length: 0 })
-        {
-            throw new ArgumentNullException(nameof(decoders), "At least one decoder must be provided.");
-        }
     }
 
     /// <inheritdoc />

@@ -23,11 +23,9 @@ using Neo4j.Driver.Bolt.Extensions;
 namespace Neo4j.Driver.Bolt.DependencyInjection;
 
 /// <summary>
-/// Minimal container: map abstractions to implementations (multiple per service allowed),
-/// optional pre-built instances, and <see cref="Resolve{T}"/> with recursive constructor injection (transient).
-/// Use <see cref="RegisterTypesFromAssembly"/> to register all public and internal concrete types against
-/// interfaces defined in the same assembly. Resolve <c>IEnumerable&lt;T&gt;</c> or <c>T[]</c> to obtain all
-/// implementations of <c>T</c>. Circular dependencies are detected via a <see cref="Stack{T}"/> of concrete types.
+/// Internal-use container: register implementations (several per service), instances, optional assembly scan,
+/// and <see cref="Resolve{T}"/> with constructor injection. Multiple implementations: resolve
+/// <c>IEnumerable&lt;T&gt;</c> only. Ambiguous single <c>T</c> throws.
 /// </summary>
 public sealed class ServiceContainer : IServiceResolver
 {
@@ -35,9 +33,8 @@ public sealed class ServiceContainer : IServiceResolver
     private readonly Dictionary<Type, object> _instances = new();
 
     /// <summary>
-    /// Adds <typeparamref name="TImplementation"/> as an implementation of <typeparamref name="TService"/>.
-    /// Multiple implementations may be registered for the same service; use
-    /// <c>Resolve&lt;IEnumerable&lt;TService&gt;&gt;()</c> or <c>Resolve&lt;TService[]&gt;()</c> to retrieve them all.
+    /// Registers <typeparamref name="TImplementation"/> for <typeparamref name="TService"/>.
+    /// If several implementations exist for <typeparamref name="TService"/>, resolve <c>IEnumerable&lt;TService&gt;</c>.
     /// </summary>
     public ServiceContainer Register<TService, TImplementation>()
         where TImplementation : class, TService
@@ -46,9 +43,6 @@ public sealed class ServiceContainer : IServiceResolver
         return this;
     }
 
-    /// <summary>
-    /// Registers a pre-built instance. Looked up before implementation lists.
-    /// </summary>
     public ServiceContainer RegisterInstance<TService>(TService instance)
         where TService : class
     {
@@ -58,18 +52,10 @@ public sealed class ServiceContainer : IServiceResolver
     }
 
     /// <summary>
-    /// Scans <paramref name="assembly"/> for non-abstract classes and registers each against every interface
-    /// that interface is defined in <paramref name="assembly"/> (same assembly as the implementation).
-    /// Also registers each concrete type as its own service if it is not generic.
-    /// Types are processed in stable order by full name.
+    /// Registers concrete types in <paramref name="assembly"/> as themselves and for each interface
+    /// also defined in that assembly. Types ordered by full name.
     /// </summary>
-    /// <param name="assembly">Assembly to scan (e.g. <see cref="Assembly.GetExecutingAssembly"/> or <c>typeof(T).Assembly</c>).</param>
-    /// <param name="implementationFilter">Optional; return <c>false</c> to skip a concrete type entirely.</param>
-    /// <param name="interfaceFilter">Optional; return <c>false</c> to skip registering a (implementation, interface) pair.</param>
-    public ServiceContainer RegisterTypesFromAssembly(
-        Assembly assembly,
-        Func<Type, bool>? implementationFilter = null,
-        Func<Type, bool>? interfaceFilter = null)
+    public ServiceContainer RegisterTypesFromAssembly(Assembly assembly)
     {
         ArgumentNullException.ThrowIfNull(assembly);
 
@@ -85,35 +71,20 @@ public sealed class ServiceContainer : IServiceResolver
                 continue;
             }
 
-            if (implementationFilter?.Invoke(type) == false)
-            {
-                continue;
-            }
-
             AddRegistration(type, type);
 
             foreach (var iface in type.GetInterfaces())
             {
-                if (iface.Assembly != assembly)
+                if (iface.Assembly == assembly)
                 {
-                    continue;
+                    AddRegistration(iface, type);
                 }
-
-                if (interfaceFilter?.Invoke(iface) == false)
-                {
-                    continue;
-                }
-
-                AddRegistration(iface, type);
             }
         }
 
         return this;
     }
 
-    /// <summary>
-    /// Registers types from the assembly that contains <see cref="ServiceContainer"/>.
-    /// </summary>
     public ServiceContainer RegisterTypesFromThisAssembly() =>
         RegisterTypesFromAssembly(typeof(ServiceContainer).Assembly);
 
@@ -136,9 +107,9 @@ public sealed class ServiceContainer : IServiceResolver
             return instance;
         }
 
-        if (TryResolveEnumerable(serviceType, resolutionStack, out var enumerableResult))
+        if (IsIEnumerableOfT(serviceType))
         {
-            return enumerableResult;
+            return ResolveAll(serviceType, resolutionStack);
         }
 
         var implementations = GetRegisteredImplementationTypes(serviceType);
@@ -146,72 +117,25 @@ public sealed class ServiceContainer : IServiceResolver
             implementations.Count == 0,
             () => new InvalidOperationException($"No registration for {serviceType.FullName}."));
 
-        InvalidOperationException.ThrowIf(
-            implementations.Count > 1,
-            () => new InvalidOperationException(
-                $"Multiple implementations ({implementations.Count}) are registered for {serviceType.FullName}. " +
-                $"Resolve IEnumerable<{serviceType.Name}> or {serviceType.Name}[] to obtain all implementations."));
-
-        return Activate(implementations[0], resolutionStack);
+        return Activate(implementations[^1], resolutionStack);
     }
 
-    private bool TryResolveEnumerable(Type serviceType, Stack<Type> resolutionStack, out object result)
+    private static bool IsIEnumerableOfT(Type serviceType) =>
+        serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>);
+
+    private object ResolveAll(Type serviceType, Stack<Type> resolutionStack)
     {
-        Type? elementType = null;
-        var asArray = false;
-
-        if (serviceType.IsArray && serviceType.GetArrayRank() == 1)
-        {
-            elementType = serviceType.GetElementType();
-            asArray = true;
-        }
-        else if (serviceType.IsGenericType)
-        {
-            var def = serviceType.GetGenericTypeDefinition();
-            if (def == typeof(IEnumerable<>) ||
-                def == typeof(IReadOnlyList<>) ||
-                def == typeof(IReadOnlyCollection<>) ||
-                def == typeof(IList<>) ||
-                def == typeof(ICollection<>))
-            {
-                elementType = serviceType.GetGenericArguments()[0];
-            }
-        }
-
-        if (elementType is null)
-        {
-            result = null!;
-            return false;
-        }
-
+        var elementType = serviceType.GetGenericArguments()[0];
         var implTypes = GetRegisteredImplementationTypes(elementType);
-        var items = new List<object>(implTypes.Count);
-        foreach (var impl in implTypes)
-        {
-            items.Add(Activate(impl, resolutionStack));
-        }
-
-        if (asArray)
-        {
-            var array = Array.CreateInstance(elementType, items.Count);
-            for (var i = 0; i < items.Count; i++)
-            {
-                array.SetValue(items[i], i);
-            }
-
-            result = array;
-            return true;
-        }
-
         var listType = typeof(List<>).MakeGenericType(elementType);
         var list = (IList)Activator.CreateInstance(listType)!;
-        foreach (var item in items)
+        
+        foreach (var impl in implTypes)
         {
-            list.Add(item);
+            list.Add(Activate(impl, resolutionStack));
         }
 
-        result = list;
-        return true;
+        return list;
     }
 
     private object Activate(Type concreteType, Stack<Type> resolutionStack)

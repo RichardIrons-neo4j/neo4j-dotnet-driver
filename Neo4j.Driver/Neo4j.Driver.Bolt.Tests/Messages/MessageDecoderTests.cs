@@ -309,7 +309,7 @@ internal class MessageDecoderTests
         };
 
         var provider = new ValueDecoderProvider(decoders, Logger);
-        return new PackStreamDecoder(decoders, Mock.Of<IChunkAssembler>(), provider, Logger);
+        return new PackStreamDecoder(Mock.Of<IChunkAssembler>(), provider, Logger);
     }
 
     private static IMessageDecoderProvider CreateProvider()

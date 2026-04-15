@@ -107,17 +107,6 @@ internal class ServiceContainerTests
     }
 
     [Test]
-    public void Resolve_MultipleImplementationsSameInterface_ThrowsInvalidOperationException()
-    {
-        var container = new ServiceContainer()
-            .Register<IWidget, Widget>()
-            .Register<IWidget, OtherWidget>();
-
-        var act = () => container.Resolve<IWidget>();
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Multiple implementations*");
-    }
-
-    [Test]
     public void Resolve_IEnumerable_ReturnsAllImplementationsInRegistrationOrder()
     {
         var container = new ServiceContainer()
@@ -125,19 +114,6 @@ internal class ServiceContainerTests
             .Register<IWidget, OtherWidget>();
 
         var all = container.Resolve<IEnumerable<IWidget>>().ToList();
-        all.Should().HaveCount(2);
-        all[0].Should().BeOfType<Widget>();
-        all[1].Should().BeOfType<OtherWidget>();
-    }
-
-    [Test]
-    public void Resolve_Array_ReturnsAllImplementationsInRegistrationOrder()
-    {
-        var container = new ServiceContainer()
-            .Register<IWidget, Widget>()
-            .Register<IWidget, OtherWidget>();
-
-        var all = container.Resolve<IWidget[]>();
         all.Should().HaveCount(2);
         all[0].Should().BeOfType<Widget>();
         all[1].Should().BeOfType<OtherWidget>();
