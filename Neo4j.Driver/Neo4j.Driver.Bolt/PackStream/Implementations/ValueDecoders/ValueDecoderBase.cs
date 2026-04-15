@@ -22,11 +22,11 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
 public abstract class ValueDecoderBase : IValueDecoder
 {
-    protected readonly ILogger? Logger;
+    protected readonly ILogger Logger;
 
-    protected ValueDecoderBase(ILogger? logger = null)
+    protected ValueDecoderBase(ILogger logger)
     {
-        Logger = logger;
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public abstract byte[] HandledMarkerBytes { get; }

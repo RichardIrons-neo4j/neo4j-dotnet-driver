@@ -15,6 +15,7 @@
 
 using System.Buffers;
 using System.Buffers.Binary;
+using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
@@ -26,6 +27,10 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// </summary>
 internal class FloatDecoder : ValueDecoderBase
 {
+    public FloatDecoder(ILogger logger) : base(logger)
+    {
+    }
+
     public override byte[] HandledMarkerBytes => [PackStreamMarker.Float64];
 
     public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)

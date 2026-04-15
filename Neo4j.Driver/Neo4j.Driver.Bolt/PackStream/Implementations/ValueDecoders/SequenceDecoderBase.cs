@@ -51,7 +51,7 @@ internal abstract class SequenceDecoderBase : ValueDecoderBase
                     $"Unexpected end of data: expected {valueCount} items but only found {i}.");
             }
 
-            if (Logger?.IsEnabled(LogLevel.Trace) == true)
+            if (Logger.IsEnabled(LogLevel.Trace))
             {
                 var nextByte = reader.UnreadSequence.FirstSpan[0];
                 Logger.LogTrace(
