@@ -16,7 +16,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.Tests.TestHelpers.TestHelperTests;
+namespace Neo4j.Driver.Bolt.Tests.TestHelpers.Tests;
 
 public class SetSizeGeneratorTests
 {

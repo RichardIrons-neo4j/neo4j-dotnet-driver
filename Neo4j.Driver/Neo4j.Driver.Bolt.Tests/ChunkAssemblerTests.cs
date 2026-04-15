@@ -2,7 +2,6 @@ using System.Buffers;
 using System.IO.Pipelines;
 using FluentAssertions;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;
-using Neo4j.Driver.Bolt.Transport;
 using Neo4j.Driver.Bolt.Transport.Implementations;
 using NUnit.Framework;
 
@@ -23,11 +22,10 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
 
         var sequence = new ReadOnlySequence<byte>(bytes);
         var reader = PipeReader.Create(sequence);
-        var assembler = new ChunkAssembler(new ConsoleLogger());
         byte[] expectedBytes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         // Act
-        var messages = await assembler.ReadMessagesAsync(reader).ToListAsync();
+        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync();
 
         // Assert
         messages.Should().HaveCount(1);
@@ -65,9 +63,8 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     {
         byte[] bytes = [0x00]; // Only 1 byte of header
         var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
-        var assembler = new ChunkAssembler(new ConsoleLogger());
         
-        var act = async () =>  await assembler.ReadMessagesAsync(reader).ToListAsync();
+        var act = async () =>  await Subject.ReadMessagesAsync(reader).ToListAsync();
 
         await act.Should().ThrowAsync<ProtocolException>();
     }
@@ -78,9 +75,8 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         // Header says 10 bytes, only 2 provided
         byte[] bytes = [0x00, 0x0A, 0x01, 0x02];
         var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
-        var assembler = new ChunkAssembler(new ConsoleLogger());
     
-        var act = async () => await assembler.ReadMessagesAsync(reader).ToListAsync();
+        var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync();
     
         await act.Should().ThrowAsync<ProtocolException>();
     }
@@ -90,9 +86,8 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     {
         byte[] bytes = [0x00, 0x00]; // Message size = 0
         var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
-        var assembler = new ChunkAssembler(new ConsoleLogger());
     
-        var messages = await assembler.ReadMessagesAsync(reader).ToListAsync();
+        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync();
     
         messages.Should().HaveCount(1);
         messages[0].Length.Should().Be(0);
@@ -102,9 +97,8 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     public async Task HandlesEmptyPipe()
     {
         var reader = PipeReader.Create(new ReadOnlySequence<byte>([]));
-        var assembler = new ChunkAssembler(new ConsoleLogger());
     
-        var messages = await assembler.ReadMessagesAsync(reader).ToListAsync();
+        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync();
     
         messages.Should().BeEmpty();
     }
@@ -113,10 +107,9 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     public async Task ThrowsOnCancellation()
     {
         var pipe = new Pipe();
-        var assembler = new ChunkAssembler(new ConsoleLogger());
         using var cts = new CancellationTokenSource();
     
-        var readTask = assembler.ReadMessagesAsync(pipe.Reader, cts.Token).ToListAsync();
+        var readTask = Subject.ReadMessagesAsync(pipe.Reader, cts.Token).ToListAsync();
     
         // Cancel before any data arrives
         cts.Cancel();
@@ -136,9 +129,8 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
             0x00, 0x05, 0x01        // Incomplete message (header says 5, only 1 provided)
         ];
         var reader = PipeReader.Create(new ReadOnlySequence<byte>(bytes));
-        var assembler = new ChunkAssembler(new ConsoleLogger());
     
-        var act = async () => await assembler.ReadMessagesAsync(reader).ToListAsync();
+        var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync();
     
         await act.Should().ThrowAsync<ProtocolException>();
     }
@@ -229,15 +221,14 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         return result;
     }
 
-    private static async Task<byte[][]> TestMessageAssembly(IEnumerable<byte[]> chunks)
+    private async Task<byte[][]> TestMessageAssembly(IEnumerable<byte[]> chunks)
     {
         var chunkPipe = new TestChunkPipe(chunks);
-        var assembler = new ChunkAssembler(new ConsoleLogger());
         var messages = new List<byte[]>();
         
         var result = Task.Run(async () =>
         {
-            await foreach (var readMessage in assembler.ReadMessagesAsync(chunkPipe.Reader).ConfigureAwait(false))
+            await foreach (var readMessage in Subject.ReadMessagesAsync(chunkPipe.Reader).ConfigureAwait(false))
             {
                 messages.Add(readMessage.ToArray());
             }

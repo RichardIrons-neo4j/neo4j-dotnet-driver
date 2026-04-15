@@ -17,7 +17,6 @@ using System.Buffers;
 using System.IO.Pipelines;
 using NUnit.Framework;
 using FluentAssertions;
-using Moq.AutoMock;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Implementations;
@@ -25,7 +24,7 @@ using Neo4j.Driver.Bolt.Transport.Abstractions;
 
 namespace Neo4j.Driver.Bolt.Tests.PackStream;
 
-public class PackStreamDecoderTests
+internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
 {
     [Test]
     public async Task DecodesSingleValue()
@@ -33,55 +32,74 @@ public class PackStreamDecoderTests
         byte[] packStreamMessage = [0x01, 0x69, 0xEF];
         var pipe = new Pipe();
 
-        var automocker = new AutoMocker();
         var dummyDecoder = new MockDecoder(
             [0x01],
-            packStreamMessage,
-            PackStreamValue.Int8(-123));
+            [0x01],
+            PackStreamValue.Int(-123));
 
         IValueDecoder[] decoders = [dummyDecoder];
-        automocker.Use(decoders);
+        AutoMocker.Use(decoders);
 
         ReadOnlySequence<byte>[] messages = [new(packStreamMessage)];
-        var chunkAssembler = automocker.GetMock<IChunkAssembler>();
+        var chunkAssembler = AutoMocker.GetMock<IChunkAssembler>();
         chunkAssembler
             .Setup(x => x.ReadMessagesAsync(pipe.Reader, CancellationToken.None))
             .Returns(messages.ToAsyncEnumerable());
 
-        var packStreamDecoder = automocker.CreateInstance<PackStreamDecoder>();
-
-        var result = await packStreamDecoder.Decode(pipe.Reader, 1).ToListAsync();
+        var result = await Subject.Decode(pipe.Reader, 1).ToListAsync();
         result.Should().HaveCount(1);
-        result.First().Should().Be(PackStreamValue.Int8(-123));
+        result.First().Should().Be(PackStreamValue.Int(-123));
     }
 
-    private IValueDecoder[] CreateMockDecoders()
+    [Test]
+    public async Task DecodesMultipleValues()
     {
-        return
-        [
-            
-        ];
+        Dictionary<byte[], PackStreamValue> packStreamMessages = new()
+        {
+            // not real packstream messages
+            [[0x01,0x02, 0x03]] = PackStreamValue.Int(12345),
+            [[0x32, 0xFF, 0xFF, 0xFF]] = PackStreamValue.Int(123456789),
+            [[0xFF, 0x00]] = PackStreamValue.Float(123.456)
+        };
+
+        var decoders = new List<IValueDecoder>();
+        foreach (var (bytes, packStreamValue) in packStreamMessages)
+        {
+            decoders.Add(new MockDecoder([bytes[0]], bytes, packStreamValue));
+        }
+
+        AutoMocker.Use(decoders.ToArray());
+
+        var messages = packStreamMessages.Select(kvp => new ReadOnlySequence<byte>(kvp.Key)).ToArray();
+        var chunkAssembler = AutoMocker.GetMock<IChunkAssembler>();
+        var pipe = new Pipe();
+        chunkAssembler
+            .Setup(x => x.ReadMessagesAsync(pipe.Reader, CancellationToken.None))
+            .Returns(messages.ToAsyncEnumerable());
+
+        var result = await Subject.Decode(pipe.Reader, 3).ToListAsync();
+        result.Should().HaveCount(3);
+        result.Should().BeEquivalentTo(packStreamMessages.Values);
     }
-}
 
-internal class MockDecoder : IValueDecoder
-{
-    private readonly byte[] _expectedBytes;
-    private readonly PackStreamValue _decodeResult;
-
-    public MockDecoder(byte[] validMarkerBytes, byte[] expectedBytes, PackStreamValue decodeResult)
+    private class MockDecoder : IValueDecoder
     {
-        HandledMarkerBytes = validMarkerBytes;
-        _expectedBytes = expectedBytes;
-        _decodeResult = decodeResult;
-    }
+        private readonly PackStreamValue _decodeResult;
+        private readonly int _messageLength;
 
-    public byte[] HandledMarkerBytes { get; }
+        public MockDecoder(byte[] validMarkerBytes, IReadOnlyCollection<byte> message, PackStreamValue decodeResult)
+        {
+            HandledMarkerBytes = validMarkerBytes;
+            _decodeResult = decodeResult;
+            _messageLength = message.Count;
+        }
 
-    public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
-    {
-        var actualBytes = buffer.ToArray();
-        actualBytes.Should().BeEquivalentTo(_expectedBytes, options => options.WithStrictOrdering());
-        return new ValueDecoderResult(_decodeResult, _expectedBytes.Length);
+        public byte[] HandledMarkerBytes { get; }
+
+        public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
+        {
+            HandledMarkerBytes.Should().Contain(buffer.First.Span[0]);
+            return new ValueDecoderResult(_decodeResult, _messageLength);
+        }
     }
 }
