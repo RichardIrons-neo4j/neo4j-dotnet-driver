@@ -73,19 +73,15 @@ internal class PackStreamDecoder : IPackStreamDecoder
             while (bufferPosition < buffer.Length)
             {
                 var remaining = buffer.Slice(bufferPosition);
-                var markerByte = remaining.First.Span[0];
-                _logger.LogTrace("Decoding value, marker 0x{Marker:X2}", markerByte);
-
-                var decoder = _valueDecoderProvider.GetDecoder(markerByte, this);
-                var decoderResult = decoder.Decode(remaining);
+                var result = Decode(remaining);
                 _logger.LogTrace(
                     "Decoded value: {Value} (consumed {BytesConsumed} bytes)",
-                    decoderResult.Value,
-                    decoderResult.BytesConsumed);
+                    result.Value,
+                    result.BytesConsumed);
 
-                bufferPosition += decoderResult.BytesConsumed;
+                bufferPosition += result.BytesConsumed;
                 count++;
-                yield return decoderResult.Value;
+                yield return result.Value;
             }
         }
 

@@ -84,6 +84,33 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
         result.Should().BeEquivalentTo(packStreamMessages.Values);
     }
 
+    [Test]
+    public async Task DecodeFromStreamYieldsMultipleValuesFromOneChunk()
+    {
+        // One Bolt message chunk containing two PackStream values (0x01 and 0x02).
+        // The stream Decode uses the sync Decode(ReadOnlySequence) in a loop, so we get two values.
+        var decoderFor0x01 = new MockDecoder([0x01], [0x01], PackStreamValueView.Integer(10));
+        var decoderFor0x02 = new MockDecoder([0x02], [0x02], PackStreamValueView.Integer(20));
+        AutoMocker.GetMock<IValueDecoderProvider>()
+            .Setup(x => x.GetDecoder(0x01, It.IsAny<IPackStreamDecoder>()))
+            .Returns(decoderFor0x01);
+        AutoMocker.GetMock<IValueDecoderProvider>()
+            .Setup(x => x.GetDecoder(0x02, It.IsAny<IPackStreamDecoder>()))
+            .Returns(decoderFor0x02);
+
+        var byteReader = new Mock<IByteReader>();
+        ReadOnlySequence<byte>[] chunks = [new ReadOnlySequence<byte>([0x01, 0x02])];
+        AutoMocker.GetMock<IChunkAssembler>()
+            .Setup(x => x.ReadMessagesAsync(byteReader.Object, CancellationToken.None))
+            .Returns(chunks.ToAsyncEnumerable());
+
+        var result = await Subject.Decode(byteReader.Object).Take(2).ToListAsync().ConfigureAwait(false);
+
+        result.Should().HaveCount(2);
+        result[0].IntValue.Should().Be(10);
+        result[1].IntValue.Should().Be(20);
+    }
+
     private class MockDecoder : IValueDecoder
     {
         private readonly PackStreamValueView _decodeResult;
