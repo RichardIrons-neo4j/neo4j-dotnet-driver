@@ -46,6 +46,34 @@ public readonly struct PackStreamListView
     public Enumerator GetEnumerator() => new(_itemsData, _itemCount, _decoder);
 
     /// <summary>
+    /// Decodes and returns the element at the given index without enumerating the entire list.
+    /// </summary>
+    /// <param name="index">Zero-based index of the element.</param>
+    /// <returns>The decoded value at that index.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Index is negative or not less than Count.</exception>
+    public PackStreamValueView ElementAt(int index)
+    {
+        if (index < 0 || index >= _itemCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index), index, $"Index must be in range [0, {_itemCount}).");
+        }
+
+        var remaining = _itemsData;
+        for (var i = 0; i <= index; i++)
+        {
+            var result = _decoder.Decode(remaining);
+            if (i == index)
+            {
+                return result.Value;
+            }
+
+            remaining = remaining.Slice(result.BytesConsumed);
+        }
+
+        throw new InvalidOperationException("Unreachable");
+    }
+
+    /// <summary>
     /// Returns a heap-allocated IEnumerable for LINQ operations.
     /// </summary>
     public IEnumerable<PackStreamValueView> ToEnumerable()

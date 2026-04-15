@@ -160,6 +160,44 @@ internal class PackStreamListViewTests
         secondPass.Should().BeEquivalentTo([1, 2]);
     }
 
+    [Test]
+    public void ElementAt_returns_value_at_index()
+    {
+        var decoder = new SingleByteIntDecoder();
+        var data = new ReadOnlySequence<byte>([0x0A, 0x0B, 0x0C]);
+        var listValue = new PackStreamListView(data, 3, decoder);
+
+        listValue.ElementAt(0).IntValue.Should().Be(0x0A);
+        listValue.ElementAt(1).IntValue.Should().Be(0x0B);
+        listValue.ElementAt(2).IntValue.Should().Be(0x0C);
+    }
+
+    [Test]
+    public void ElementAt_throws_when_index_negative()
+    {
+        var decoder = new SingleByteIntDecoder();
+        var listValue = new PackStreamListView(ReadOnlySequence<byte>.Empty, 1, decoder);
+
+        var act = () => listValue.ElementAt(-1);
+
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .WithParameterName("index");
+    }
+
+    [Test]
+    public void ElementAt_throws_when_index_greater_or_equal_Count()
+    {
+        var decoder = new SingleByteIntDecoder();
+        var data = new ReadOnlySequence<byte>([0x01]);
+        var listValue = new PackStreamListView(data, 1, decoder);
+
+        var act0 = () => listValue.ElementAt(1);
+        var act1 = () => listValue.ElementAt(2);
+
+        act0.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("index");
+        act1.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("index");
+    }
+
     /// <summary>
     /// Decodes each byte as an integer value, consuming 1 byte per item.
     /// </summary>
