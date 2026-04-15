@@ -19,5 +19,9 @@ namespace Neo4j.Driver.Bolt.Transport.Abstractions;
 
 public interface IPackStreamPipe
 {
-    IAsyncEnumerable<PackStreamValueView> ReadAsync();
+    /// <summary>
+    /// Reads PackStream values from the pipe. Use <see cref="CancellationToken"/> (e.g. via
+    /// <c>ReadAsync(ct)</c> or <c>ReadAsync().WithCancellation(ct)</c>) to cancel.
+    /// </summary>
+    IAsyncEnumerable<PackStreamValueView> ReadAsync(CancellationToken cancellationToken = default);
 }

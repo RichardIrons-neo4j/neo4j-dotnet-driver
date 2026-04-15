@@ -298,7 +298,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
             0x03,
         ];
 
-        var byteReader = await CreateChunkedByteReader([chunk1, chunk2]);
+        var byteReader = await CreateChunkedByteReader([chunk1, chunk2]).ConfigureAwait(false);
         var materialisedListItems = new List<long>();
         var valueCount = 0;
 
@@ -337,8 +337,8 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
             0xC2,
         ];
 
-        var byteReader = await CreateChunkedByteReader([chunk1, chunk2]);
-        var values = await Subject.Decode(byteReader).Take(2).ToListAsync();
+        var byteReader = await CreateChunkedByteReader([chunk1, chunk2]).ConfigureAwait(false);
+        var values = await Subject.Decode(byteReader).Take(2).ToListAsync().ConfigureAwait(false);
 
         values.Should().HaveCount(2);
         values[0].BooleanValue.Should().BeTrue();

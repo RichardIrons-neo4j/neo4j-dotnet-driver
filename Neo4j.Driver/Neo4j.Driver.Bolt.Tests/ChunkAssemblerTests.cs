@@ -31,7 +31,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         byte[] expectedBytes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         // Act
-        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync();
+        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync().ConfigureAwait(false);
 
         // Assert
         messages.Should().HaveCount(1);
@@ -56,7 +56,7 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         byte[] expectedMessage = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         // Act
-        var messages = await TestMessageAssembly(chunks);
+        var messages = await TestMessageAssembly(chunks).ConfigureAwait(false);
 
         // Assert
         var messageResults = messages.ToArray();
@@ -70,9 +70,9 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         byte[] bytes = [0x00]; // Only 1 byte of header
         var reader = CreateByteReader(bytes);
         
-        var act = async () =>  await Subject.ReadMessagesAsync(reader).ToListAsync();
+        var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync().ConfigureAwait(false);
 
-        await act.Should().ThrowAsync<ProtocolException>();
+        await act.Should().ThrowAsync<ProtocolException>().ConfigureAwait(false);
     }
     
     [Test]
@@ -82,19 +82,19 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         byte[] bytes = [0x00, 0x0A, 0x01, 0x02];
         var reader = CreateByteReader(bytes);
     
-        var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync();
-    
-        await act.Should().ThrowAsync<ProtocolException>();
+        var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync().ConfigureAwait(false);
+
+        await act.Should().ThrowAsync<ProtocolException>().ConfigureAwait(false);
     }
-    
+
     [Test]
     public async Task HandlesZeroLengthMessage()
     {
         byte[] bytes = [0x00, 0x00]; // Message size = 0
         var reader = CreateByteReader(bytes);
-    
-        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync();
-    
+
+        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync().ConfigureAwait(false);
+
         messages.Should().HaveCount(1);
         messages[0].Length.Should().Be(0);
     }
@@ -103,9 +103,9 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
     public async Task HandlesEmptyPipe()
     {
         var reader = CreateByteReader([]);
-    
-        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync();
-    
+
+        var messages = await Subject.ReadMessagesAsync(reader).ToListAsync().ConfigureAwait(false);
+
         messages.Should().BeEmpty();
     }
     
@@ -121,9 +121,9 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         // Cancel before any data arrives
         cts.Cancel();
     
-        var act = async () => await readTask;
-    
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        var act = async () => await readTask.ConfigureAwait(false);
+
+        await act.Should().ThrowAsync<OperationCanceledException>().ConfigureAwait(false);
     }
     
     [Test]
@@ -137,16 +137,16 @@ public class ChunkAssemblerTests : UnitTestBase<ChunkAssembler>
         ];
         var reader = CreateByteReader(bytes);
     
-        var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync();
-    
-        await act.Should().ThrowAsync<ProtocolException>();
+        var act = async () => await Subject.ReadMessagesAsync(reader).ToListAsync().ConfigureAwait(false);
+
+        await act.Should().ThrowAsync<ProtocolException>().ConfigureAwait(false);
     }
 
     [TestCaseSource(nameof(GetChunkingTestCases))]
     public async Task CorrectlyAssemblesMessagesWithMultipleChunks(MessageChunkingTestCase testCase)
     {
         // Act
-        var messages = await TestMessageAssembly(testCase.Chunks);
+        var messages = await TestMessageAssembly(testCase.Chunks).ConfigureAwait(false);
 
         // Assert
         messages.Should().HaveCount(testCase.ExpectedMessages.Length);

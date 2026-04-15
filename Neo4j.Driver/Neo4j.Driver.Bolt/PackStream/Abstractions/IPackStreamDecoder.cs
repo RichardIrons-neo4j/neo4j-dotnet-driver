@@ -25,8 +25,11 @@ internal interface IPackStreamDecoder
     /// <summary>
     /// Decodes values asynchronously from a byte reader. Yields one value per Bolt message body.
     /// The consumer stops enumerating when it has read enough; the reader position advances accordingly.
+    /// Pass cancellation via <c>Decode(reader, ct)</c> or <c>Decode(reader).WithCancellation(ct)</c>.
     /// </summary>
-    IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, CancellationToken cancellationToken = default);
+    IAsyncEnumerable<PackStreamValueView> Decode(
+        IByteReader byteReader,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Decodes a single value synchronously from an already-buffered sequence.
