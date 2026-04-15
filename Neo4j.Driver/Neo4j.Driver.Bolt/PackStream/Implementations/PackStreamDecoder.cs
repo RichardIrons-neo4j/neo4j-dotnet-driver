@@ -55,7 +55,11 @@ internal class PackStreamDecoder : IPackStreamDecoder
 
         var markerByte = buffer.First.Span[0];
 
-        var decoder = _valueDecoderProvider.GetDecoder(markerByte, this);
+        if (!_valueDecoderProvider.TryGetDecoder(markerByte, this, out var decoder))
+        {
+            throw new InvalidOperationException($"Unknown marker byte: 0x{markerByte:X2}");
+        }
+
         return decoder.Decode(buffer);
     }
 

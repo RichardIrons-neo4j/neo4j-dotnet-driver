@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -13,9 +13,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 
 internal interface IValueDecoderProvider
 {
-    IValueDecoder GetDecoder(byte markerByte, IPackStreamDecoder recursionDecoder);
+    /// <summary>
+    /// Tries to get the value decoder for the given marker byte.
+    /// </summary>
+    /// <param name="markerByte">The PackStream marker byte.</param>
+    /// <param name="recursionDecoder">Decoder to use for nested values when the decoder is recursive.</param>
+    /// <param name="decoder">The decoder if found; non-null when the method returns true.</param>
+    /// <returns>True if a decoder was found; otherwise false. Caller should throw if false.</returns>
+    bool TryGetDecoder(byte markerByte, IPackStreamDecoder recursionDecoder, [NotNullWhen(true)] out IValueDecoder? decoder);
 }

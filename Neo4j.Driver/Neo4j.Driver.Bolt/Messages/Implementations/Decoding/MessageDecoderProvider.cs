@@ -14,13 +14,12 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using Neo4j.Driver.Bolt.Messages.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 using Neo4j.Driver.Bolt.Messages.Abstractions.Decoding;
-using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
 namespace Neo4j.Driver.Bolt.Messages.Implementations.Decoding;
 
-internal sealed class MessageDecoderProvider
+internal sealed class MessageDecoderProvider : IMessageDecoderProvider
 {
     private readonly IReadOnlyDictionary<byte, IMessageDecoder> _decodersByTag;
 
@@ -35,16 +34,11 @@ internal sealed class MessageDecoderProvider
         _decodersByTag = dict;
     }
 
-    /// <summary>
-    /// Decodes a Bolt message from a struct view. The struct tag determines which decoder is used.
-    /// </summary>
-    public BoltMessage Decode(PackStreamStructView structView)
+    /// <inheritdoc />
+    public bool TryGetDecoder(byte tag, [NotNullWhen(true)] out IMessageDecoder? decoder)
     {
-        if (!_decodersByTag.TryGetValue(structView.Tag, out var decoder))
-        {
-            throw new KeyNotFoundException($"No message decoder registered for tag 0x{structView.Tag:X2}.");
-        }
-
-        return decoder.Decode(structView);
+        var found = _decodersByTag.TryGetValue(tag, out var d);
+        decoder = d;
+        return found;
     }
 }

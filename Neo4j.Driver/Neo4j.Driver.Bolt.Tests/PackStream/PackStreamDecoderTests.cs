@@ -40,8 +40,9 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
             PackStreamValueView.Integer(-123));
         
         AutoMocker.GetMock<IValueDecoderProvider>()
-            .Setup(x => x.GetDecoder(It.IsAny<byte>(), It.IsAny<IPackStreamDecoder>()))
-            .Returns(dummyDecoder);
+            .Setup(x => x.TryGetDecoder(It.IsAny<byte>(), It.IsAny<IPackStreamDecoder>(), out It.Ref<IValueDecoder?>.IsAny!))
+            .Callback((byte _, IPackStreamDecoder _, out IValueDecoder? d) => { d = dummyDecoder; })
+            .Returns(true);
 
         ReadOnlySequence<byte>[] messages = [new(packStreamMessage)];
         var chunkAssembler = AutoMocker.GetMock<IChunkAssembler>();
@@ -67,9 +68,11 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
 
         foreach (var (bytes, packStreamValue) in packStreamMessages)
         {
+            var decoder = new MockDecoder([bytes[0]], bytes, packStreamValue);
             AutoMocker.GetMock<IValueDecoderProvider>()
-                .Setup(x => x.GetDecoder(bytes[0], It.IsAny<IPackStreamDecoder>()))
-                .Returns(new MockDecoder([bytes[0]], bytes, packStreamValue));
+                .Setup(x => x.TryGetDecoder(bytes[0], It.IsAny<IPackStreamDecoder>(), out It.Ref<IValueDecoder?>.IsAny!))
+                .Callback((byte _, IPackStreamDecoder _, out IValueDecoder? d) => { d = decoder; })
+                .Returns(true);
         }
 
         var messages = packStreamMessages.Select(kvp => new ReadOnlySequence<byte>(kvp.Key)).ToArray();
@@ -92,11 +95,13 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
         var decoderFor0x01 = new MockDecoder([0x01], [0x01], PackStreamValueView.Integer(10));
         var decoderFor0x02 = new MockDecoder([0x02], [0x02], PackStreamValueView.Integer(20));
         AutoMocker.GetMock<IValueDecoderProvider>()
-            .Setup(x => x.GetDecoder(0x01, It.IsAny<IPackStreamDecoder>()))
-            .Returns(decoderFor0x01);
+            .Setup(x => x.TryGetDecoder(0x01, It.IsAny<IPackStreamDecoder>(), out It.Ref<IValueDecoder?>.IsAny!))
+            .Callback((byte _, IPackStreamDecoder _, out IValueDecoder? d) => { d = decoderFor0x01; })
+            .Returns(true);
         AutoMocker.GetMock<IValueDecoderProvider>()
-            .Setup(x => x.GetDecoder(0x02, It.IsAny<IPackStreamDecoder>()))
-            .Returns(decoderFor0x02);
+            .Setup(x => x.TryGetDecoder(0x02, It.IsAny<IPackStreamDecoder>(), out It.Ref<IValueDecoder?>.IsAny!))
+            .Callback((byte _, IPackStreamDecoder _, out IValueDecoder? d) => { d = decoderFor0x02; })
+            .Returns(true);
 
         var byteReader = new Mock<IByteReader>();
         ReadOnlySequence<byte>[] chunks = [new ReadOnlySequence<byte>([0x01, 0x02])];

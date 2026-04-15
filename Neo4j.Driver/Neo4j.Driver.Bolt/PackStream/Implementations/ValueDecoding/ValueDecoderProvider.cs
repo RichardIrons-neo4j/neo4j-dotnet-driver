@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 
@@ -8,7 +9,7 @@ internal class ValueDecoderProvider : IValueDecoderProvider
 {
     private readonly ILogger _logger;
     private readonly Dictionary<byte, IValueDecoder> _decoders = new();
-    
+
     public ValueDecoderProvider(IEnumerable<IValueDecoder> decoders, ILogger logger)
     {
         _logger = logger;
@@ -28,19 +29,19 @@ internal class ValueDecoderProvider : IValueDecoderProvider
             }
         }
     }
-    
-    public IValueDecoder GetDecoder(byte markerByte, IPackStreamDecoder recursionDecoder)
-    {
-        if (!_decoders.TryGetValue(markerByte, out var decoder))
-        {
-            throw new InvalidOperationException($"Unknown marker byte: 0x{markerByte:X2}");
-        }
 
-        if (decoder is IRecursiveValueDecoder recursiveValueDecoder)
+    public bool TryGetDecoder(
+        byte markerByte,
+        IPackStreamDecoder recursionDecoder,
+        [NotNullWhen(true)] out IValueDecoder? decoder)
+    {
+        var found = _decoders.TryGetValue(markerByte, out var d);
+        decoder = d;
+        if (found && decoder is IRecursiveValueDecoder recursiveValueDecoder)
         {
             recursiveValueDecoder.SetRecursionDecoder(recursionDecoder);
         }
-        
-        return decoder;
+
+        return found;
     }
 }

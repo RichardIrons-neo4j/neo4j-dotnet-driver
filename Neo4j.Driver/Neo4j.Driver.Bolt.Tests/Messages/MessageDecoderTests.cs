@@ -18,6 +18,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Neo4j.Driver.Bolt.Messages.Abstractions;
+using Neo4j.Driver.Bolt.Messages.Abstractions.Decoding;
 using Neo4j.Driver.Bolt.Messages.Implementations.Decoding;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
@@ -69,7 +70,7 @@ internal class MessageDecoderTests
         var structView = CreateStructView(0x70, 1, new StubPackStreamDecoder()); // SUCCESS, 1 field (metadata)
         var provider = CreateProvider();
 
-        var message = provider.Decode(structView);
+        var message = DecodeMessage(provider, structView);
 
         message.Kind.Should().Be(MessageKind.Success);
         message.AsSuccess(); // view is constructible
@@ -81,7 +82,7 @@ internal class MessageDecoderTests
         var structView = CreateStructView(0x71, 1, new StubPackStreamDecoder()); // RECORD, 1 field (list)
         var provider = CreateProvider();
 
-        var message = provider.Decode(structView);
+        var message = DecodeMessage(provider, structView);
 
         message.Kind.Should().Be(MessageKind.Record);
         message.AsRecord(); // view is constructible
@@ -93,7 +94,7 @@ internal class MessageDecoderTests
         var structView = CreateStructView(0x7F, 1, new StubPackStreamDecoder()); // FAILURE, 1 field (map)
         var provider = CreateProvider();
 
-        var message = provider.Decode(structView);
+        var message = DecodeMessage(provider, structView);
 
         message.Kind.Should().Be(MessageKind.Failure);
         message.AsFailure(); // view is constructible
@@ -105,21 +106,21 @@ internal class MessageDecoderTests
         var structView = CreateStructView(0x7E, 0, new StubPackStreamDecoder()); // IGNORED, 0 fields
         var provider = CreateProvider();
 
-        var message = provider.Decode(structView);
+        var message = DecodeMessage(provider, structView);
 
         message.Kind.Should().Be(MessageKind.Ignored);
         message.AsIgnored();
     }
 
     [Test]
-    public void MessageDecoderProvider_throws_for_unknown_tag()
+    public void MessageDecoderProvider_TryGetDecoder_returns_false_for_unknown_tag()
     {
-        var structView = CreateStructView(0x99, 0, new StubPackStreamDecoder());
         var provider = CreateProvider();
 
-        var act = () => provider.Decode(structView);
+        var found = provider.TryGetDecoder(0x99, out var decoder);
 
-        act.Should().Throw<KeyNotFoundException>();
+        found.Should().BeFalse();
+        decoder.Should().BeNull();
     }
 
     [Test]
@@ -141,7 +142,7 @@ internal class MessageDecoderTests
         result.Value.Type.Should().Be(PackStreamType.Struct);
 
         var structView = result.Value.StructValue;
-        var message = CreateProvider().Decode(structView);
+        var message = DecodeMessage(CreateProvider(), structView);
         message.Kind.Should().Be(MessageKind.Success);
 
         var success = message.AsSuccess();
@@ -177,7 +178,7 @@ internal class MessageDecoderTests
         result.Value.Type.Should().Be(PackStreamType.Struct);
 
         var structView = result.Value.StructValue;
-        var message = CreateProvider().Decode(structView);
+        var message = DecodeMessage(CreateProvider(), structView);
         message.Kind.Should().Be(MessageKind.Record);
 
         var record = message.AsRecord();
@@ -208,7 +209,7 @@ internal class MessageDecoderTests
         result.Value.Type.Should().Be(PackStreamType.Struct);
 
         var structView = result.Value.StructValue;
-        var message = CreateProvider().Decode(structView);
+        var message = DecodeMessage(CreateProvider(), structView);
         message.Kind.Should().Be(MessageKind.Failure);
 
         var failure = message.AsFailure();
@@ -240,7 +241,7 @@ internal class MessageDecoderTests
         return new PackStreamDecoder(decoders, Mock.Of<IChunkAssembler>(), provider, Logger);
     }
 
-    private static MessageDecoderProvider CreateProvider()
+    private static IMessageDecoderProvider CreateProvider()
     {
         return new MessageDecoderProvider(
         [
@@ -249,6 +250,16 @@ internal class MessageDecoderTests
             new FailureMessageDecoder(Logger),
             new IgnoredMessageDecoder(Logger),
         ]);
+    }
+
+    private static BoltMessage DecodeMessage(IMessageDecoderProvider provider, PackStreamStructView structView)
+    {
+        if (!provider.TryGetDecoder(structView.Tag, out var decoder))
+        {
+            throw new KeyNotFoundException($"No message decoder registered for tag 0x{structView.Tag:X2}.");
+        }
+
+        return decoder.Decode(structView);
     }
 
     private static PackStreamStructView CreateStructView(byte tag, int fieldCount, IPackStreamDecoder decoder)
