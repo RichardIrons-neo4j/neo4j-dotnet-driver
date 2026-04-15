@@ -338,18 +338,18 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
             var array = buffer.ToArray();
             return array[0] switch
             {
-                0x01 => new(PackStreamValue.Integer(1), 1),
-                0x02 => new(PackStreamValue.Integer(2), 1),
-                0x03 => new(PackStreamValue.Integer(3), 1),
-                0x04 => new(PackStreamValue.Integer(4), 1),
-                0x05 => new(PackStreamValue.Integer(5), 1),
-                0x11 => new(PackStreamValue.Float(0.1f), 1),
-                0x12 => new(PackStreamValue.Float(0.2f), 1),
-                0x13 => new(PackStreamValue.Float(0.3f), 1),
-                0x14 => new(PackStreamValue.Float(0.4f), 1),
-                0x15 => new(PackStreamValue.Float(0.5f), 1),
-                0x20 => new(PackStreamValue.String(GetUtfBytes("Hello")), 1),
-                0x21 => new(PackStreamValue.String(GetUtfBytes("World")), 1),
+                0x01 => new ValueDecoderResult(PackStreamValue.Integer(1), 1),
+                0x02 => new ValueDecoderResult(PackStreamValue.Integer(2), 1),
+                0x03 => new ValueDecoderResult(PackStreamValue.Integer(3), 1),
+                0x04 => new ValueDecoderResult(PackStreamValue.Integer(4), 1),
+                0x05 => new ValueDecoderResult(PackStreamValue.Integer(5), 1),
+                0x11 => new ValueDecoderResult(PackStreamValue.Float(0.1f), 1),
+                0x12 => new ValueDecoderResult(PackStreamValue.Float(0.2f), 1),
+                0x13 => new ValueDecoderResult(PackStreamValue.Float(0.3f), 1),
+                0x14 => new ValueDecoderResult(PackStreamValue.Float(0.4f), 1),
+                0x15 => new ValueDecoderResult(PackStreamValue.Float(0.5f), 1),
+                0x20 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("Hello")), 1),
+                0x21 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("World")), 1),
                 >= 0x90 and <= 0x9F
                     or PackStreamMarker.List8
                     or PackStreamMarker.List16

@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -19,4 +19,10 @@ public readonly struct PackStreamStructValue
 {
     public byte Tag { get; }
     public PackStreamListValue Fields { get; }
+
+    internal PackStreamStructValue(byte tag, PackStreamListValue fields)
+    {
+        Tag = tag;
+        Fields = fields;
+    }
 }

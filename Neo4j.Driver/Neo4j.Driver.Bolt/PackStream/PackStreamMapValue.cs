@@ -19,21 +19,6 @@ using Neo4j.Driver.Bolt.PackStream.Abstractions;
 namespace Neo4j.Driver.Bolt.PackStream;
 
 /// <summary>
-/// A key-value pair from a PackStream map.
-/// </summary>
-public readonly struct PackStreamMapEntry
-{
-    public PackStreamValue Key { get; }
-    public PackStreamValue Value { get; }
-
-    internal PackStreamMapEntry(PackStreamValue key, PackStreamValue value)
-    {
-        Key = key;
-        Value = value;
-    }
-}
-
-/// <summary>
 /// A PackStream map value that supports allocation-free enumeration of key-value entries
 /// via foreach, or heap-allocated enumeration via ToEnumerable() for LINQ operations.
 /// </summary>
@@ -63,7 +48,7 @@ public readonly struct PackStreamMapValue
     /// <summary>
     /// Returns a heap-allocated IEnumerable for LINQ operations.
     /// </summary>
-    public IEnumerable<PackStreamMapEntry> ToEnumerable()
+    public IEnumerable<KeyValuePair<PackStreamValue, PackStreamValue>> ToEnumerable()
     {
         var remaining = _entriesData;
         for (var i = 0; i < _entryCount; i++)
@@ -75,27 +60,12 @@ public readonly struct PackStreamMapValue
             }
 
             var keyResult = _decoder.Decode(remaining);
-            if (keyResult.BytesConsumed == 0 || keyResult.BytesConsumed > remaining.Length)
-            {
-                throw new InvalidOperationException("Invalid key decoding map entry.");
-            }
-
             remaining = remaining.Slice(keyResult.BytesConsumed);
-
-            if (remaining.IsEmpty)
-            {
-                throw new InvalidOperationException($"Unexpected end of data: expected value for map entry {i + 1}.");
-            }
-
+            
             var valueResult = _decoder.Decode(remaining);
-            if (valueResult.BytesConsumed == 0 || valueResult.BytesConsumed > remaining.Length)
-            {
-                throw new InvalidOperationException("Invalid value decoding map entry.");
-            }
-
             remaining = remaining.Slice(valueResult.BytesConsumed);
-
-            yield return new PackStreamMapEntry(keyResult.Value, valueResult.Value);
+            
+            yield return new KeyValuePair<PackStreamValue, PackStreamValue>(keyResult.Value, valueResult.Value);
         }
     }
 
@@ -104,7 +74,7 @@ public readonly struct PackStreamMapValue
         private readonly IPackStreamDecoder _decoder;
         private SequenceReader<byte> _reader;
         private int _remainingCount;
-        private PackStreamMapEntry _current;
+        private KeyValuePair<PackStreamValue, PackStreamValue> _current;
 
         internal Enumerator(
             ReadOnlySequence<byte> data,
@@ -117,7 +87,7 @@ public readonly struct PackStreamMapValue
             _current = default;
         }
 
-        public PackStreamMapEntry Current => _current;
+        public KeyValuePair<PackStreamValue, PackStreamValue> Current => _current;
 
         public bool MoveNext()
         {
@@ -136,7 +106,7 @@ public readonly struct PackStreamMapValue
             _reader.Advance(keyResult.BytesConsumed);
             var valueResult = _decoder.Decode(_reader.UnreadSequence);
             _reader.Advance(valueResult.BytesConsumed);
-            _current = new PackStreamMapEntry(keyResult.Value, valueResult.Value);
+            _current = new KeyValuePair<PackStreamValue, PackStreamValue>(keyResult.Value, valueResult.Value);
             _remainingCount--;
             return true;
         }

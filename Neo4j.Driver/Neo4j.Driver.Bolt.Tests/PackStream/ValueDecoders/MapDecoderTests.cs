@@ -78,10 +78,11 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
         result.Value.MapValue.Count.Should().Be(1);
         result.BytesConsumed.Should().Be(3);
 
-        var entries = result.Value.MapValue.ToEnumerable().ToList();
+        var entries = result.Value.MapValue.ToEnumerable()
+            .ToDictionary(e => e.Key.StringValue.ToString(), e => e.Value.IntValue);
+
         entries.Should().HaveCount(1);
-        entries[0].Key.StringValue.ToString().Should().Be("Hello");
-        entries[0].Value.IntValue.Should().Be(1);
+        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(1);
     }
 
     [Test]
@@ -95,11 +96,12 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
         result.Value.MapValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(5); // A2 (1) + 4 payload bytes
 
-        var entries = result.Value.MapValue.ToEnumerable().ToList();
-        entries[0].Key.StringValue.ToString().Should().Be("Hello");
-        entries[0].Value.IntValue.Should().Be(1);
-        entries[1].Key.StringValue.ToString().Should().Be("World");
-        entries[1].Value.IntValue.Should().Be(2);
+        var entries = result.Value.MapValue.ToEnumerable()
+            .ToDictionary(e => e.Key.StringValue.ToString(), e => e.Value.IntValue);
+
+        entries.Should().HaveCount(2);
+        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(1);
+        entries.Should().ContainKey("World").WhoseValue.Should().Be(2);
     }
 
     [Test]
@@ -109,28 +111,26 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
 
         var result = Subject.Decode(buffer);
 
-        var entries = new List<PackStreamMapEntry>();
+        var entries = new Dictionary<string, long>();
         foreach (var entry in result.Value.MapValue)
         {
-            entries.Add(entry);
+            entries.Add(entry.Key.StringValue.ToString(), entry.Value.IntValue);
         }
 
         entries.Should().HaveCount(2);
-        entries[0].Key.StringValue.ToString().Should().Be("Hello");
-        entries[0].Value.IntValue.Should().Be(1);
-        entries[1].Key.StringValue.ToString().Should().Be("World");
-        entries[1].Value.IntValue.Should().Be(2);
+        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(1);
+        entries.Should().ContainKey("World").WhoseValue.Should().Be(2);
     }
 
     [Test]
     public void DecodesTinyMapMaxSize()
     {
-        // TinyMap with 15 entries (max for TinyMap): "Hello"=>1, "World"=>2, ... (repeat pattern)
+        // TinyMap with 15 entries (max for TinyMap): {"Hello": 1, "Hello": 2, ...}
         var bytes = new List<byte> { 0xAF }; // TinyMap 15 entries
         for (var i = 0; i < 15; i++)
         {
             bytes.Add(0x20); // key "Hello"
-            bytes.Add((byte)(0x01 + (i % 5))); // value 1-5
+            bytes.Add((byte)i);
         }
 
         var buffer = new ReadOnlySequence<byte>(bytes.ToArray());
@@ -141,9 +141,11 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
 
         var entries = result.Value.MapValue.ToEnumerable().ToList();
         entries.Should().HaveCount(15);
-        foreach (var entry in entries)
+        for (var index = 0; index < entries.Count; index++)
         {
+            var entry = entries[index];
             entry.Key.StringValue.ToString().Should().Be("Hello");
+            entry.Value.IntValue.Should().Be(index);
         }
     }
 
@@ -158,11 +160,12 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
         result.Value.MapValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(6);
 
-        var entries = result.Value.MapValue.ToEnumerable().ToList();
-        entries[0].Key.StringValue.ToString().Should().Be("Hello");
-        entries[0].Value.IntValue.Should().Be(5);
-        entries[1].Key.StringValue.ToString().Should().Be("World");
-        entries[1].Value.IntValue.Should().Be(3);
+        var entries = result.Value.MapValue.ToEnumerable()
+            .ToDictionary(e => e.Key.StringValue.ToString(), e => e.Value.IntValue);
+
+        entries.Should().HaveCount(2);
+        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(5);
+        entries.Should().ContainKey("World").WhoseValue.Should().Be(6);
     }
 
     [Test]
@@ -175,11 +178,12 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
         result.Value.MapValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(7); // D9 (1) + 2 size bytes + 4 payload
 
-        var entries = result.Value.MapValue.ToEnumerable().ToList();
-        entries[0].Key.StringValue.ToString().Should().Be("Hello");
-        entries[0].Value.IntValue.Should().Be(1);
-        entries[1].Key.StringValue.ToString().Should().Be("World");
-        entries[1].Value.IntValue.Should().Be(2);
+        var entries = result.Value.MapValue.ToEnumerable()
+            .ToDictionary(e => e.Key.StringValue.ToString(), e => e.Value.IntValue);
+
+        entries.Should().HaveCount(2);
+        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(1);
+        entries.Should().ContainKey("World").WhoseValue.Should().Be(2);
     }
 
     [Test]
@@ -193,9 +197,12 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
         result.Value.MapValue.Count.Should().Be(2);
         result.BytesConsumed.Should().Be(9); // DA (1) + 4 size bytes + 4 payload
 
-        var entries = result.Value.MapValue.ToEnumerable().ToList();
-        entries[0].Key.StringValue.ToString().Should().Be("Hello");
-        entries[1].Key.StringValue.ToString().Should().Be("World");
+        var entries = result.Value.MapValue.ToEnumerable()
+            .ToDictionary(e => e.Key.StringValue.ToString(), e => e.Value.IntValue);
+        
+        entries.Should().HaveCount(2);
+        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(1);
+        entries.Should().ContainKey("World").WhoseValue.Should().Be(2);
     }
 
     [Test]
@@ -208,11 +215,10 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
 
         result.Value.MapValue.Count.Should().Be(2);
 
-        var entries = result.Value.MapValue.ToEnumerable().ToList();
-        entries[0].Key.StringValue.ToString().Should().Be("Hello");
-        entries[0].Value.IntValue.Should().Be(1);
-        entries[1].Key.StringValue.ToString().Should().Be("World");
-        entries[1].Value.FloatValue.Should().BeApproximately(0.1, 0.001);
+        var entries = result.Value.MapValue.ToEnumerable().ToDictionary(e => e.Key.StringValue.ToString(), e => e.Value);
+        entries.Should().HaveCount(2);
+        entries.Should().ContainKey("Hello").WhoseValue.Should().Be(PackStreamValue.Integer(1));
+        entries["World"].FloatValue.Should().BeApproximately(0.1f, 0.00001f);
     }
 
     [Test]
@@ -365,15 +371,15 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
             var marker = array[0];
             return marker switch
             {
-                0x01 => new(PackStreamValue.Integer(1), 1),
-                0x02 => new(PackStreamValue.Integer(2), 1),
-                0x03 => new(PackStreamValue.Integer(3), 1),
-                0x04 => new(PackStreamValue.Integer(4), 1),
-                0x05 => new(PackStreamValue.Integer(5), 1),
-                0x11 => new(PackStreamValue.Float(0.1f), 1),
-                0x12 => new(PackStreamValue.Float(0.2f), 1),
-                0x20 => new(PackStreamValue.String(GetUtfBytes("Hello")), 1),
-                0x21 => new(PackStreamValue.String(GetUtfBytes("World")), 1),
+                0x01 => new ValueDecoderResult(PackStreamValue.Integer(1), 1),
+                0x02 => new ValueDecoderResult(PackStreamValue.Integer(2), 1),
+                0x03 => new ValueDecoderResult(PackStreamValue.Integer(3), 1),
+                0x04 => new ValueDecoderResult(PackStreamValue.Integer(4), 1),
+                0x05 => new ValueDecoderResult(PackStreamValue.Integer(5), 1),
+                0x11 => new ValueDecoderResult(PackStreamValue.Float(0.1f), 1),
+                0x12 => new ValueDecoderResult(PackStreamValue.Float(0.2f), 1),
+                0x20 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("Hello")), 1),
+                0x21 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("World")), 1),
                 >= 0xA0 and <= 0xAF or PackStreamMarker.Map8 or PackStreamMarker.Map16 or PackStreamMarker.Map32
                     => _mapDecoder.Decode(buffer),
                 _ => throw new ArgumentOutOfRangeException(
@@ -412,10 +418,10 @@ internal class MapDecoderTests : UnitTestBase<MapDecoder>
             var marker = array[0];
             return marker switch
             {
-                0x01 => new(PackStreamValue.Integer(1), 1),
-                0x02 => new(PackStreamValue.Integer(2), 1),
-                0x20 => new(PackStreamValue.String(GetUtfBytes("Hello")), 1),
-                0x21 => new(PackStreamValue.String(GetUtfBytes("World")), 1),
+                0x01 => new ValueDecoderResult(PackStreamValue.Integer(1), 1),
+                0x02 => new ValueDecoderResult(PackStreamValue.Integer(2), 1),
+                0x20 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("Hello")), 1),
+                0x21 => new ValueDecoderResult(PackStreamValue.String(GetUtfBytes("World")), 1),
                 >= 0xA0 and <= 0xAF or PackStreamMarker.Map8 or PackStreamMarker.Map16 or PackStreamMarker.Map32
                     => _mapDecoder.Decode(buffer),
                 >= 0x90 and <= 0x9F or PackStreamMarker.List8 or PackStreamMarker.List16 or PackStreamMarker.List32
