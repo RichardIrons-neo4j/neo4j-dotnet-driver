@@ -40,32 +40,29 @@ builder.WebHost.UseKestrel(k => k.ListenAnyIP(benchkitBackendConfiguration.Backe
 
 // wire up autofac
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
-    .ConfigureContainer<ContainerBuilder>(
-        b =>
-        {
-            b.RegisterInstance(benchkitBackendConfiguration).SingleInstance();
-            b.RegisterModule<BenchkitBackendModule>();
-        });
+    .ConfigureContainer<ContainerBuilder>(b =>
+    {
+        b.RegisterInstance(benchkitBackendConfiguration).SingleInstance();
+        b.RegisterModule<BenchkitBackendModule>();
+    });
 
 builder.Services
     .AddNeo4jDriver(benchkitBackendConfiguration)
     .AddEndpointsApiExplorer()
-    .AddSwaggerGen(
-        c =>
-        {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "BenchkitBackend", Version = "v1" });
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            c.IncludeXmlComments(xmlPath);
-        })
+    .AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "BenchkitBackend", Version = "v1" });
+        var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        c.IncludeXmlComments(xmlPath);
+    })
     .AddControllers()
     .AddControllersAsServices()
-    .AddJsonOptions(
-        options =>
-        {
-            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-            options.JsonSerializerOptions.Converters.Add(new ObjectToPrimitiveConverter());
-        });
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        options.JsonSerializerOptions.Converters.Add(new ObjectToPrimitiveConverter());
+    });
 
 // setup Serilog
 Log.Logger = new LoggerConfiguration()

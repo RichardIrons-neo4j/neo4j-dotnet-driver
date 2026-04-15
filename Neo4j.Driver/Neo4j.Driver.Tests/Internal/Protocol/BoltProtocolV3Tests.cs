@@ -78,8 +78,11 @@ public class BoltProtocolV3Tests
             var mockMsgFactory = new Mock<IBoltProtocolMessageFactory>();
             var mockHandlerFactory = new Mock<IBoltProtocolHandlerFactory>();
             var protocol = new BoltProtocolV3(mockMsgFactory.Object, mockHandlerFactory.Object);
-            var ex = await Record.ExceptionAsync(
-                () => protocol.AuthenticateAsync(mockConn.Object, "ua", auth, new NotificationsDisabledConfig()));
+            var ex = await Record.ExceptionAsync(() => protocol.AuthenticateAsync(
+                mockConn.Object,
+                "ua",
+                auth,
+                new NotificationsDisabledConfig()));
 
             ex.Should().BeOfType<ArgumentOutOfRangeException>();
         }
@@ -119,13 +122,12 @@ public class BoltProtocolV3Tests
         [Fact]
         public async Task ShouldThrowProtocolExceptionIfNullConnection()
         {
-            var ex = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.GetRoutingTableAsync(
-                    null,
-                    "db",
-                    null,
-                    null,
-                    It.IsAny<IHomeDbCache>()));
+            var ex = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.GetRoutingTableAsync(
+                null,
+                "db",
+                null,
+                null,
+                It.IsAny<IHomeDbCache>()));
 
             ex.Should().BeOfType<ProtocolException>();
         }
@@ -137,13 +139,12 @@ public class BoltProtocolV3Tests
             mockConn.SetupGet(x => x.Version).Returns(BoltProtocolVersion.V3_0);
             mockConn.SetupProperty(x => x.SessionConfig);
 
-            var ex = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.GetRoutingTableAsync(
-                    mockConn.Object,
-                    "db",
-                    new SessionConfig("Douglas Fir"),
-                    null,
-                    It.IsAny<IHomeDbCache>()));
+            var ex = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.GetRoutingTableAsync(
+                mockConn.Object,
+                "db",
+                new SessionConfig("Douglas Fir"),
+                null,
+                It.IsAny<IHomeDbCache>()));
 
             ex.Should().BeOfType<ArgumentException>();
         }
@@ -181,27 +182,25 @@ public class BoltProtocolV3Tests
             var msgFactory = new Mock<IBoltProtocolMessageFactory>();
 
             AutoCommitParams queryParams = null;
-            msgFactory.Setup(
-                    x => x.NewRunWithMetadataMessage(
-                        mockConn.Object,
-                        It.IsAny<AutoCommitParams>(),
-                        It.IsAny<INotificationsConfig>()))
+            msgFactory.Setup(x => x.NewRunWithMetadataMessage(
+                    mockConn.Object,
+                    It.IsAny<AutoCommitParams>(),
+                    It.IsAny<INotificationsConfig>()))
                 .Callback<IConnection, AutoCommitParams, INotificationsConfig>((_, y, _) => queryParams = y);
 
             var handlerFactory = new Mock<IBoltProtocolHandlerFactory>();
-            handlerFactory.Setup(
-                    x => x.NewResultCursorBuilder(
-                        It.IsAny<SummaryBuilder>(),
-                        It.IsAny<IConnection>(),
-                        It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
-                            Func<IResultStreamBuilder, long, long, Task>>>(),
-                        It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
-                            Func<IResultStreamBuilder, long, Task>>>(),
-                        It.IsAny<IBookmarksTracker>(),
-                        It.IsAny<IResultResourceHandler>(),
-                        It.IsAny<long>(),
-                        It.IsAny<bool>(),
-                        It.IsAny<IInternalAsyncTransaction>()))
+            handlerFactory.Setup(x => x.NewResultCursorBuilder(
+                    It.IsAny<SummaryBuilder>(),
+                    It.IsAny<IConnection>(),
+                    It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
+                        Func<IResultStreamBuilder, long, long, Task>>>(),
+                    It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
+                        Func<IResultStreamBuilder, long, Task>>>(),
+                    It.IsAny<IBookmarksTracker>(),
+                    It.IsAny<IResultResourceHandler>(),
+                    It.IsAny<long>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IInternalAsyncTransaction>()))
                 .Returns(resultCursorBuilderMock.Object);
 
             var protocol = new BoltProtocolV3(msgFactory.Object, handlerFactory.Object);
@@ -269,12 +268,11 @@ public class BoltProtocolV3Tests
                 SessionConfig = new SessionConfig("Douglas Fir")
             };
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.RunInAutoCommitTransactionAsync(
-                    mockConn.Object,
-                    acp,
-                    null,
-                    It.IsAny<IHomeDbCache>()));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.RunInAutoCommitTransactionAsync(
+                mockConn.Object,
+                acp,
+                null,
+                It.IsAny<IHomeDbCache>()));
 
             exception.Should().BeOfType<ArgumentException>();
         }
@@ -294,12 +292,11 @@ public class BoltProtocolV3Tests
                 Query = new Query("...")
             };
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.RunInAutoCommitTransactionAsync(
-                    mockConn.Object,
-                    acp,
-                    new NotificationsDisabledConfig(),
-                    It.IsAny<IHomeDbCache>()));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.RunInAutoCommitTransactionAsync(
+                mockConn.Object,
+                acp,
+                new NotificationsDisabledConfig(),
+                It.IsAny<IHomeDbCache>()));
 
             exception.Should().BeOfType<ArgumentOutOfRangeException>();
         }
@@ -318,12 +315,11 @@ public class BoltProtocolV3Tests
                 Query = new Query("...")
             };
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.RunInAutoCommitTransactionAsync(
-                    mockConn.Object,
-                    acp,
-                    new NotificationsDisabledConfig(),
-                    It.IsAny<IHomeDbCache>()));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.RunInAutoCommitTransactionAsync(
+                mockConn.Object,
+                acp,
+                new NotificationsDisabledConfig(),
+                It.IsAny<IHomeDbCache>()));
 
             exception.Should().BeNull();
         }
@@ -339,12 +335,11 @@ public class BoltProtocolV3Tests
                 Database = "NotNull"
             };
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.RunInAutoCommitTransactionAsync(
-                    mockConn.Object,
-                    acp,
-                    null,
-                    It.IsAny<IHomeDbCache>()));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.RunInAutoCommitTransactionAsync(
+                mockConn.Object,
+                acp,
+                null,
+                It.IsAny<IHomeDbCache>()));
 
             exception.Should().BeOfType<ClientException>();
         }
@@ -375,32 +370,29 @@ public class BoltProtocolV3Tests
             var resultCursorBuilderMock = new Mock<IResultCursorBuilder>();
             var handlerFactory = new Mock<IBoltProtocolHandlerFactory>();
             var summaryBuilder = new SummaryBuilder(new Query("..."), new ServerInfo(new Uri("http://0.0.0.0")));
-            handlerFactory.Setup(
-                    x => x.NewRunResponseHandlerV3(
-                        resultCursorBuilderMock.Object,
-                        It.IsNotNull<SummaryBuilder>()))
+            handlerFactory.Setup(x => x.NewRunResponseHandlerV3(
+                    resultCursorBuilderMock.Object,
+                    It.IsNotNull<SummaryBuilder>()))
                 .Returns(new RunResponseHandlerV3(resultCursorBuilderMock.Object, summaryBuilder));
 
-            handlerFactory.Setup(
-                    x => x.NewPullAllResponseHandler(
-                        resultCursorBuilderMock.Object,
-                        It.IsNotNull<SummaryBuilder>(),
-                        mockBt.Object))
+            handlerFactory.Setup(x => x.NewPullAllResponseHandler(
+                    resultCursorBuilderMock.Object,
+                    It.IsNotNull<SummaryBuilder>(),
+                    mockBt.Object))
                 .Returns(new PullAllResponseHandler(resultCursorBuilderMock.Object, summaryBuilder, mockBt.Object));
 
-            handlerFactory.Setup(
-                    x => x.NewResultCursorBuilder(
-                        It.IsAny<SummaryBuilder>(),
-                        It.IsAny<IConnection>(),
-                        It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
-                            Func<IResultStreamBuilder, long, long, Task>>>(),
-                        It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
-                            Func<IResultStreamBuilder, long, Task>>>(),
-                        It.IsAny<IBookmarksTracker>(),
-                        It.IsAny<IResultResourceHandler>(),
-                        It.IsAny<long>(),
-                        It.IsAny<bool>(),
-                        It.IsAny<IInternalAsyncTransaction>()))
+            handlerFactory.Setup(x => x.NewResultCursorBuilder(
+                    It.IsAny<SummaryBuilder>(),
+                    It.IsAny<IConnection>(),
+                    It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
+                        Func<IResultStreamBuilder, long, long, Task>>>(),
+                    It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
+                        Func<IResultStreamBuilder, long, Task>>>(),
+                    It.IsAny<IBookmarksTracker>(),
+                    It.IsAny<IResultResourceHandler>(),
+                    It.IsAny<long>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IInternalAsyncTransaction>()))
                 .Returns(resultCursorBuilderMock.Object);
 
             var protocol = new BoltProtocolV3(msgFactory.Object, handlerFactory.Object);
@@ -445,19 +437,18 @@ public class BoltProtocolV3Tests
             mockConn.SetupGet(x => x.Version).Returns(BoltProtocolVersion.V3_0);
             mockConn.SetupGet(x => x.SessionConfig).Returns(new SessionConfig("Douglas Fire"));
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.BeginTransactionAsync(
-                    mockConn.Object,
-                    new BeginTransactionParams(
-                        null,
-                        null,
-                        TransactionConfig.Default,
-                        null,
-                        null,
-                        new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
-                    HomeDbCacheKey.Default,
-                    It.IsAny<IHomeDbCache>(),
-                    SessionConfig.Default));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.BeginTransactionAsync(
+                mockConn.Object,
+                new BeginTransactionParams(
+                    null,
+                    null,
+                    TransactionConfig.Default,
+                    null,
+                    null,
+                    new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
+                HomeDbCacheKey.Default,
+                It.IsAny<IHomeDbCache>(),
+                SessionConfig.Default));
 
             exception.Should().BeOfType<ArgumentException>();
         }
@@ -472,19 +463,18 @@ public class BoltProtocolV3Tests
             mockConn.SetupGet(x => x.Version).Returns(new BoltProtocolVersion(major, minor));
             mockConn.SetupGet(x => x.Mode).Returns(AccessMode.Read);
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.BeginTransactionAsync(
-                    mockConn.Object,
-                    new BeginTransactionParams(
-                        null,
-                        null,
-                        TransactionConfig.Default,
-                        null,
-                        new NotificationsDisabledConfig(),
-                        new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
-                    HomeDbCacheKey.Default,
-                    It.IsAny<IHomeDbCache>(),
-                    SessionConfig.Default));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.BeginTransactionAsync(
+                mockConn.Object,
+                new BeginTransactionParams(
+                    null,
+                    null,
+                    TransactionConfig.Default,
+                    null,
+                    new NotificationsDisabledConfig(),
+                    new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
+                HomeDbCacheKey.Default,
+                It.IsAny<IHomeDbCache>(),
+                SessionConfig.Default));
 
             exception.Should().BeOfType<ArgumentOutOfRangeException>();
         }
@@ -498,19 +488,18 @@ public class BoltProtocolV3Tests
             mockConn.SetupGet(x => x.Version).Returns(new BoltProtocolVersion(major, minor));
             mockConn.SetupGet(x => x.Mode).Returns(AccessMode.Read);
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.BeginTransactionAsync(
-                    mockConn.Object,
-                    new BeginTransactionParams(
-                        null,
-                        null,
-                        TransactionConfig.Default,
-                        null,
-                        new NotificationsDisabledConfig(),
-                        new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
-                    HomeDbCacheKey.Default,
-                    It.IsAny<IHomeDbCache>(),
-                    SessionConfig.Default));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.BeginTransactionAsync(
+                mockConn.Object,
+                new BeginTransactionParams(
+                    null,
+                    null,
+                    TransactionConfig.Default,
+                    null,
+                    new NotificationsDisabledConfig(),
+                    new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
+                HomeDbCacheKey.Default,
+                It.IsAny<IHomeDbCache>(),
+                SessionConfig.Default));
 
             exception.Should().BeNull();
         }
@@ -521,19 +510,18 @@ public class BoltProtocolV3Tests
             var mockConn = new Mock<IConnection>();
             mockConn.SetupGet(x => x.Version).Returns(BoltProtocolVersion.V3_0);
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.BeginTransactionAsync(
-                    mockConn.Object,
-                    new BeginTransactionParams(
-                        "db",
-                        null,
-                        TransactionConfig.Default,
-                        null,
-                        null,
-                        new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
-                    HomeDbCacheKey.Default,
-                    It.IsAny<IHomeDbCache>(),
-                    SessionConfig.Default));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.BeginTransactionAsync(
+                mockConn.Object,
+                new BeginTransactionParams(
+                    "db",
+                    null,
+                    TransactionConfig.Default,
+                    null,
+                    null,
+                    new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
+                HomeDbCacheKey.Default,
+                It.IsAny<IHomeDbCache>(),
+                SessionConfig.Default));
 
             exception.Should().BeOfType<ClientException>();
         }
@@ -545,19 +533,18 @@ public class BoltProtocolV3Tests
             mockConn.SetupGet(x => x.Version).Returns(BoltProtocolVersion.V3_0);
             mockConn.SetupGet(x => x.Mode).Returns((AccessMode?)null);
 
-            var exception = await Record.ExceptionAsync(
-                () => BoltProtocolV3.Instance.BeginTransactionAsync(
-                    mockConn.Object,
-                    new BeginTransactionParams(
-                        null,
-                        null,
-                        TransactionConfig.Default,
-                        null,
-                        null,
-                        new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
-                    HomeDbCacheKey.Default,
-                    It.IsAny<IHomeDbCache>(),
-                    SessionConfig.Default));
+            var exception = await Record.ExceptionAsync(() => BoltProtocolV3.Instance.BeginTransactionAsync(
+                mockConn.Object,
+                new BeginTransactionParams(
+                    null,
+                    null,
+                    TransactionConfig.Default,
+                    null,
+                    null,
+                    new TransactionInfo(QueryApiType.UnmanagedTransaction, false, true)),
+                HomeDbCacheKey.Default,
+                It.IsAny<IHomeDbCache>(),
+                SessionConfig.Default));
 
             exception.Should().BeOfType<InvalidOperationException>();
         }
@@ -571,14 +558,13 @@ public class BoltProtocolV3Tests
 
             var fakeMessage = new BeginMessage(null, null, null, null, AccessMode.Write, null, null);
             var msgFactory = new Mock<IBoltProtocolMessageFactory>();
-            msgFactory.Setup(
-                    x => x.NewBeginMessage(
-                        It.IsAny<IConnection>(),
-                        It.IsAny<string>(),
-                        It.IsAny<Bookmarks>(),
-                        It.IsAny<TransactionConfig>(),
-                        It.IsAny<AccessMode>(),
-                        It.IsAny<INotificationsConfig>()))
+            msgFactory.Setup(x => x.NewBeginMessage(
+                    It.IsAny<IConnection>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Bookmarks>(),
+                    It.IsAny<TransactionConfig>(),
+                    It.IsAny<AccessMode>(),
+                    It.IsAny<INotificationsConfig>()))
                 .Returns(fakeMessage);
 
             var protocol = new BoltProtocolV3(msgFactory.Object);
@@ -619,14 +605,13 @@ public class BoltProtocolV3Tests
 
             var fakeMessage = new BeginMessage(null, null, null, null, AccessMode.Write, null, null);
             var msgFactory = new Mock<IBoltProtocolMessageFactory>();
-            msgFactory.Setup(
-                    x => x.NewBeginMessage(
-                        It.IsAny<IConnection>(),
-                        It.IsAny<string>(),
-                        It.IsAny<Bookmarks>(),
-                        It.IsAny<TransactionConfig>(),
-                        It.IsAny<AccessMode>(),
-                        It.IsAny<INotificationsConfig>()))
+            msgFactory.Setup(x => x.NewBeginMessage(
+                    It.IsAny<IConnection>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Bookmarks>(),
+                    It.IsAny<TransactionConfig>(),
+                    It.IsAny<AccessMode>(),
+                    It.IsAny<INotificationsConfig>()))
                 .Returns(fakeMessage);
 
             var protocol = new BoltProtocolV3(msgFactory.Object);
@@ -676,32 +661,29 @@ public class BoltProtocolV3Tests
             var resultCursorBuilderMock = new Mock<IResultCursorBuilder>();
             var handlerFactory = new Mock<IBoltProtocolHandlerFactory>();
             var summaryBuilder = new SummaryBuilder(new Query("..."), new ServerInfo(new Uri("http://0.0.0.0")));
-            handlerFactory.Setup(
-                    x => x.NewRunResponseHandlerV3(
-                        resultCursorBuilderMock.Object,
-                        It.IsNotNull<SummaryBuilder>()))
+            handlerFactory.Setup(x => x.NewRunResponseHandlerV3(
+                    resultCursorBuilderMock.Object,
+                    It.IsNotNull<SummaryBuilder>()))
                 .Returns(new RunResponseHandlerV3(resultCursorBuilderMock.Object, summaryBuilder));
 
-            handlerFactory.Setup(
-                    x => x.NewPullAllResponseHandler(
-                        resultCursorBuilderMock.Object,
-                        It.IsNotNull<SummaryBuilder>(),
-                        null))
+            handlerFactory.Setup(x => x.NewPullAllResponseHandler(
+                    resultCursorBuilderMock.Object,
+                    It.IsNotNull<SummaryBuilder>(),
+                    null))
                 .Returns(new PullAllResponseHandler(resultCursorBuilderMock.Object, summaryBuilder, null));
 
-            handlerFactory.Setup(
-                    x => x.NewResultCursorBuilder(
-                        It.IsAny<SummaryBuilder>(),
-                        It.IsAny<IConnection>(),
-                        It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
-                            Func<IResultStreamBuilder, long, long, Task>>>(),
-                        It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
-                            Func<IResultStreamBuilder, long, Task>>>(),
-                        It.IsAny<IBookmarksTracker>(),
-                        It.IsAny<IResultResourceHandler>(),
-                        It.IsAny<long>(),
-                        It.IsAny<bool>(),
-                        It.IsAny<IInternalAsyncTransaction>()))
+            handlerFactory.Setup(x => x.NewResultCursorBuilder(
+                    It.IsAny<SummaryBuilder>(),
+                    It.IsAny<IConnection>(),
+                    It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
+                        Func<IResultStreamBuilder, long, long, Task>>>(),
+                    It.IsAny<Func<IConnection, SummaryBuilder, IBookmarksTracker,
+                        Func<IResultStreamBuilder, long, Task>>>(),
+                    It.IsAny<IBookmarksTracker>(),
+                    It.IsAny<IResultResourceHandler>(),
+                    It.IsAny<long>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IInternalAsyncTransaction>()))
                 .Returns(resultCursorBuilderMock.Object);
 
             var protocol = new BoltProtocolV3(msgFactory.Object, handlerFactory.Object);

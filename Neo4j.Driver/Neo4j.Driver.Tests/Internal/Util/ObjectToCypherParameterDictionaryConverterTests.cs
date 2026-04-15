@@ -289,12 +289,6 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         innerList[2].As<int>().Should().Be(3);
     }
 
-    public class Person
-    {
-        public string Name { get; set; }
-        public int Age { get; set; }
-    }
-
     [Fact]
     public void ToDictionary_ShouldHandleEmptyDictionary()
     {
@@ -382,11 +376,11 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         var propertyValue = Guid.NewGuid().ToString();
         var testObj = new ParameterMappingTestClass
         {
-            MappingBindingsDecorated = propertyValue,
+            MappingBindingsDecorated = propertyValue
         };
-        
+
         var parameters = _converter.Convert(testObj);
-        
+
         parameters.Should().ContainKey("decorated_property_with_bindings");
         parameters["decorated_property_with_bindings"].Should().Be(propertyValue);
     }
@@ -400,7 +394,7 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         var propertyValue = Guid.NewGuid().ToString();
         var testObj = new ParameterMappingTestClass
         {
-            SomeProperty = propertyValue,
+            SomeProperty = propertyValue
         };
 
         var parameters = _converter.Convert(testObj);
@@ -420,11 +414,11 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         var propertyValue = Guid.NewGuid().ToString();
         var testObj = new ParameterMappingTestClass
         {
-            NotDecoratedProperty = propertyValue,
+            NotDecoratedProperty = propertyValue
         };
-        
+
         var parameters = _converter.Convert(testObj);
-        
+
         parameters.Should().ContainKey("NotDecoratedProperty");
         parameters["NotDecoratedProperty"].Should().Be(propertyValue);
     }
@@ -436,11 +430,11 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         mockTranslator.Setup(t => t.Translate(It.IsAny<string>()))
             .Returns<string>(s => s.ToLowerInvariant());
 
-        ((IRecordObjectMapping)RecordObjectMapping.Instance).TranslateIdentifiers(mockTranslator.Object, false);
+        ((IRecordObjectMapping)RecordObjectMapping.Instance).TranslateIdentifiers(mockTranslator.Object);
         var propertyValue = Guid.NewGuid().ToString();
         var testObj = new ParameterMappingTestClass
         {
-            NotDecoratedProperty = propertyValue,
+            NotDecoratedProperty = propertyValue
         };
 
         var parameters = _converter.Convert(testObj);
@@ -455,12 +449,12 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         var mockTranslator = new Mock<IConventionTranslator>();
         mockTranslator.Setup(t => t.Translate(It.IsAny<string>()))
             .Returns<string>(s => s.ToLowerInvariant());
-        
+
         ((IRecordObjectMapping)RecordObjectMapping.Instance).TranslateIdentifiers(mockTranslator.Object, true);
         var propertyValue = Guid.NewGuid().ToString();
         var testObj = new ParameterMappingTestClass
         {
-            NotDecoratedProperty = propertyValue,
+            NotDecoratedProperty = propertyValue
         };
 
         var parameters = _converter.Convert(testObj);
@@ -475,11 +469,11 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         var propertyValue = Guid.NewGuid().ToString();
         var testObj = new ParameterMappingTestClass
         {
-            MultiplyDecoratedProperty = propertyValue,
+            MultiplyDecoratedProperty = propertyValue
         };
-        
+
         var parameters = _converter.Convert(testObj);
-        
+
         parameters.Should().ContainKey("multiply_decorated_property");
         parameters["multiply_decorated_property"].Should().Be(propertyValue);
     }
@@ -490,13 +484,19 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         var propertyValue = Guid.NewGuid().ToString();
         var testObj = new ParameterMappingTestClass
         {
-            CustomDecoratedProperty = propertyValue,
+            CustomDecoratedProperty = propertyValue
         };
-        
+
         var parameters = _converter.Convert(testObj);
-        
+
         parameters.Should().ContainKey("CustomParameterName");
         parameters["CustomParameterName"].Should().Be(propertyValue);
+    }
+
+    public class Person
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
     }
 
     private class ParameterMappingTestClass
@@ -504,9 +504,9 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         [MappingBindings(CypherParameterName = "decorated_property_with_bindings")]
         public string MappingBindingsDecorated { get; init; }
 
-        [CypherParameterMapping("explicitParamName")] 
+        [CypherParameterMapping("explicitParamName")]
         public string SomeProperty { get; init; }
-        
+
         public string NotDecoratedProperty { get; init; }
 
         [MappingSource("not_used", CypherParameterName = "shouldn't_be_used")]
@@ -516,7 +516,7 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         [CustomCypherParameter]
         public string CustomDecoratedProperty { get; init; }
     }
-    
+
     [AttributeUsage(AttributeTargets.Property)]
     private class CustomCypherParameterAttribute : Attribute, IMappingBindingMutator
     {
@@ -531,7 +531,7 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         public string Key1 { get; set; }
         public string Key2 { get; set; }
     }
-    
+
     public class MyCollection<T> : IEnumerable<T>
     {
         private readonly IEnumerable<T> _values;
@@ -542,7 +542,15 @@ public class ObjectToCypherParameterDictionaryConverterTests : MappingTestWithGl
         }
 
         public string Name => "My Collection implements IEnumerable<T>";
-        public IEnumerator<T> GetEnumerator() => _values.GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _values.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 }

@@ -204,7 +204,7 @@ public class BoltProtocolVersionTests
     public void ProtocolLargeBoundsTest()
     {
         var successLargeNumber = 1213486160; ////0x‭48 54 54 50 - or HTTP in ascii codes...
-        
+
         var bv = new BoltProtocolVersion(successLargeNumber);
         (bv.MajorVersion == 80 && bv.MinorVersion == 84).Should().BeTrue();
     }
@@ -264,18 +264,24 @@ public class BoltProtocolVersionTests
     }
 
     [Theory]
-    [InlineData(new Byte[] { 0x00, 0x1B, 0x1B, 0x05 }, 27, 27, 5)] // Range - 6, Version - 5.27
-    [InlineData(new Byte[] { 0x00, 0x05, 0x1A, 0x05 }, 5, 26, 5)] // Range - 5, Version - 5.26
+    [InlineData(new byte[] { 0x00, 0x1B, 0x1B, 0x05 }, 27, 27, 5)] // Range - 6, Version - 5.27
+    [InlineData(new byte[] { 0x00, 0x05, 0x1A, 0x05 }, 5, 26, 5)] // Range - 5, Version - 5.26
     public void UnpackVersionAndRangeSuccess(
-        Byte[] sourcePackedInt,
+        byte[] sourcePackedInt,
         int range,
         int minorVersion,
         int majorVersion)
     {
-        var packedInt = new Byte[4];
-        sourcePackedInt.CopyTo(packedInt, 0);       //Do a copy here because it turns out that ToInt32 (and all the other conversion methods change the supplied byte array as it's a ref type...maybebug?)    
+        var packedInt = new byte[4];
+        sourcePackedInt.CopyTo(
+            packedInt,
+            0); //Do a copy here because it turns out that ToInt32 (and all the other conversion methods change the supplied byte array as it's a ref type...maybebug?)    
+
         var protocolVersion = BoltProtocolVersion.FromPackedInt(PackStreamBitConverter.ToInt32(packedInt));
-        sourcePackedInt.CopyTo(packedInt, 0);       //Do a copy here because it turns out that ToInt32 (and all the other conversion methods change the supplied byte array as it's a ref type...maybebug?)
+        sourcePackedInt.CopyTo(
+            packedInt,
+            0); //Do a copy here because it turns out that ToInt32 (and all the other conversion methods change the supplied byte array as it's a ref type...maybebug?)
+
         var rangeValue = BoltProtocolVersion.RangeFromPackedInt(PackStreamBitConverter.ToInt32(packedInt));
 
         protocolVersion.MajorVersion.Should().Be(majorVersion);

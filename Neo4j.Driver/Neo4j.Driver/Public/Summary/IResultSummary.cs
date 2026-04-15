@@ -69,13 +69,11 @@ public interface IResultSummary
     /// notifications do not affect the execution of a query.
     /// </remarks>
     [Obsolete(
-        "Notifications are being replaced by GQL Statuses. Please use GqlStatusObjects property instead. "+ 
+        "Notifications are being replaced by GQL Statuses. Please use GqlStatusObjects property instead. " +
         "This property will be removed in a future release.")]
     IList<INotification> Notifications { get; }
 
-    /// <summary>
-    /// Gets the GQL statuses produced by the server when executing a statement or query.
-    /// </summary>
+    /// <summary>Gets the GQL statuses produced by the server when executing a statement or query.</summary>
     /// <seealso cref="IGqlStatusObject">For more information about GQL Statuses</seealso>
     /// <since>5.23.0</since>
     IList<IGqlStatusObject> GqlStatusObjects { get; }

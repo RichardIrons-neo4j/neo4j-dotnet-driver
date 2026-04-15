@@ -33,19 +33,18 @@ public sealed class RxReadCommandInTx : RxCommand
         var session = NewSession(AccessMode.Read, context);
 
         var summary = await BeginTransaction(session, context)
-            .SelectMany(
-                txc =>
-                {
-                    var result = txc.Run("MATCH (n) RETURN n LIMIT 1");
+            .SelectMany(txc =>
+            {
+                var result = txc.Run("MATCH (n) RETURN n LIMIT 1");
 
-                    return result
-                        .Records()
-                        .SingleOrDefaultAsync()
-                        .All(r => Matches(() => r?[0].Should().BeAssignableTo<INode>()))
-                        .SelectMany(_ => result.Consume())
-                        .CatchAndThrow(_ => txc.Rollback<IResultSummary>())
-                        .Concat(txc.Commit<IResultSummary>());
-                })
+                return result
+                    .Records()
+                    .SingleOrDefaultAsync()
+                    .All(r => Matches(() => r?[0].Should().BeAssignableTo<INode>()))
+                    .SelectMany(_ => result.Consume())
+                    .CatchAndThrow(_ => txc.Rollback<IResultSummary>())
+                    .Concat(txc.Commit<IResultSummary>());
+            })
             .CatchAndThrow(_ => session.Close<IResultSummary>())
             .Concat(session.Close<IResultSummary>());
 

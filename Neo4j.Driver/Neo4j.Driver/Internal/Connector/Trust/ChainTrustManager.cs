@@ -82,7 +82,7 @@ internal class ChainTrustManager : TrustManager
         out X509Chain chain)
     {
         var time = DateTime.Now;
-        var newChain = new X509Chain()
+        var newChain = new X509Chain
         {
             ChainPolicy =
             {

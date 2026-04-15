@@ -70,9 +70,8 @@ public sealed class AccessModeTests
             GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, NoEncryption);
 
         await using var session = driver.AsyncSession(o => o.WithDefaultAccessMode(mode));
-        var result = await session.ExecuteReadAsync(
-            tx =>
-                tx.RunAndSingleAsync("RETURN $x", new { x = 1 }, r => r[0].As<int>()));
+        var result = await session.ExecuteReadAsync(tx =>
+            tx.RunAndSingleAsync("RETURN $x", new { x = 1 }, r => r[0].As<int>()));
 
         result.Should().Be(1);
     }
@@ -126,12 +125,11 @@ public sealed class AccessModeTests
             GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, NoEncryption);
 
         await using var session = driver.AsyncSession(o => o.WithDefaultAccessMode(mode));
-        var result = await session.ExecuteWriteAsync(
-            tx =>
-                tx.RunAndSingleAsync(
-                    "CREATE (n: { id: $x }) RETURN $x",
-                    new { x = 1 },
-                    r => r[0].As<int>()));
+        var result = await session.ExecuteWriteAsync(tx =>
+            tx.RunAndSingleAsync(
+                "CREATE (n: { id: $x }) RETURN $x",
+                new { x = 1 },
+                r => r[0].As<int>()));
 
         result.Should().Be(1);
     }

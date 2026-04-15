@@ -47,11 +47,10 @@ public class SocketClientTests
         {
             boltHandshaker = new Mock<IBoltHandshaker>();
             boltHandshaker
-                .Setup(
-                    x => x.DoHandshakeAsync(
-                        It.IsAny<ITcpSocketClient>(),
-                        It.IsAny<INeo4jLogger>(),
-                        It.IsAny<CancellationToken>()))
+                .Setup(x => x.DoHandshakeAsync(
+                    It.IsAny<ITcpSocketClient>(),
+                    It.IsAny<INeo4jLogger>(),
+                    It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Version));
         }
 
@@ -99,7 +98,10 @@ public class SocketClientTests
         var mw = messageWriter ?? Mock.Of<IMessageWriter>();
 
         factory
-            .Setup(x => x.MessageReader(It.IsAny<ITcpSocketClient>(), It.IsAny<DriverContext>(), It.IsAny<INeo4jLogger>()))
+            .Setup(x => x.MessageReader(
+                It.IsAny<ITcpSocketClient>(),
+                It.IsAny<DriverContext>(),
+                It.IsAny<INeo4jLogger>()))
             .Returns(mr);
 
         factory
@@ -118,11 +120,10 @@ public class SocketClientTests
             var mockHandshaker = new Mock<IBoltHandshaker>();
             var exception = new IOException();
             mockHandshaker
-                .Setup(
-                    x => x.DoHandshakeAsync(
-                        It.IsAny<ITcpSocketClient>(),
-                        It.IsAny<INeo4jLogger>(),
-                        It.IsAny<CancellationToken>()))
+                .Setup(x => x.DoHandshakeAsync(
+                    It.IsAny<ITcpSocketClient>(),
+                    It.IsAny<INeo4jLogger>(),
+                    It.IsAny<CancellationToken>()))
                 .ThrowsAsync(exception);
 
             var client = NewClient(io, null, mockHandshaker);

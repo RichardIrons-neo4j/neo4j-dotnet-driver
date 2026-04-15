@@ -40,9 +40,8 @@ public sealed class MultiDatabasesTests
         using var __ = BoltStubServer.Start("V4/read_from_aDatabase", 9005);
         await using var driver = GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, _setupConfig);
 
-        await using var session = driver.AsyncSession(
-            o =>
-                o.WithDatabase("aDatabase").WithDefaultAccessMode(AccessMode.Read));
+        await using var session = driver.AsyncSession(o =>
+            o.WithDatabase("aDatabase").WithDefaultAccessMode(AccessMode.Read));
 
         var cursor =
             await session.RunAsync("MATCH (n) RETURN n.name");
@@ -59,9 +58,8 @@ public sealed class MultiDatabasesTests
         using var __ = BoltStubServer.Start("V4/write_to_aDatabase", 9007);
         await using var driver = GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, _setupConfig);
 
-        await using var session = driver.AsyncSession(
-            o =>
-                o.WithDatabase("aDatabase").WithDefaultAccessMode(AccessMode.Write));
+        await using var session = driver.AsyncSession(o =>
+            o.WithDatabase("aDatabase").WithDefaultAccessMode(AccessMode.Write));
 
         await session.RunAndConsumeAsync("CREATE (n {name:'Bob'})");
     }
@@ -88,18 +86,16 @@ public sealed class MultiDatabasesTests
     {
         using var _ = BoltStubServer.Start("V4/acquire_endpoints_aDatabase_no_servers", 9001);
 
-        var exception = await Record.ExceptionAsync(
-            async () =>
-            {
-                await using var driver =
-                    GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, _setupConfig);
+        var exception = await Record.ExceptionAsync(async () =>
+        {
+            await using var driver =
+                GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, _setupConfig);
 
-                await using var session = driver.AsyncSession(
-                    o =>
-                        o.WithDatabase("aDatabase").WithDefaultAccessMode(AccessMode.Read));
+            await using var session = driver.AsyncSession(o =>
+                o.WithDatabase("aDatabase").WithDefaultAccessMode(AccessMode.Read));
 
-                await session.RunAsync("MATCH (n) RETURN n.name");
-            });
+            await session.RunAsync("MATCH (n) RETURN n.name");
+        });
 
         exception
             .Should()
@@ -113,22 +109,20 @@ public sealed class MultiDatabasesTests
     {
         using var _ = BoltStubServer.Start("V4/acquire_endpoints_db_not_found", 9001);
 
-        var exception = await Record.ExceptionAsync(
-            async () =>
-            {
-                await using var driver = GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, _setupConfig);
+        var exception = await Record.ExceptionAsync(async () =>
+        {
+            await using var driver = GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, _setupConfig);
 
-                await using var session = driver.AsyncSession(
-                    o =>
-                        o.WithDatabase("aDatabase").WithDefaultAccessMode(AccessMode.Read));
+            await using var session = driver.AsyncSession(o =>
+                o.WithDatabase("aDatabase").WithDefaultAccessMode(AccessMode.Read));
 
-                var cursor =
-                    await session.RunAsync("MATCH (n) RETURN n.name");
+            var cursor =
+                await session.RunAsync("MATCH (n) RETURN n.name");
 
-                var result = await cursor.ToListAsync(r => r[0].As<string>());
+            var result = await cursor.ToListAsync(r => r[0].As<string>());
 
-                result.Should().BeEquivalentTo("Bob", "Alice", "Tina");
-            });
+            result.Should().BeEquivalentTo("Bob", "Alice", "Tina");
+        });
 
         exception
             .Should()
@@ -148,11 +142,10 @@ public sealed class MultiDatabasesTests
         await using var driver =
             GraphDatabase.Driver("neo4j://127.0.0.1:9001", AuthTokens.None, _setupConfig);
 
-        await using var session = driver.AsyncSession(
-            o =>
-                o.WithDatabase("aDatabase")
-                    .WithDefaultAccessMode(AccessMode.Read)
-                    .WithBookmarks(bookmark1, bookmark2));
+        await using var session = driver.AsyncSession(o =>
+            o.WithDatabase("aDatabase")
+                .WithDefaultAccessMode(AccessMode.Read)
+                .WithBookmarks(bookmark1, bookmark2));
 
         var cursor =
             await session.RunAsync("MATCH (n) RETURN n.name");

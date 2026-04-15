@@ -108,7 +108,7 @@ public class MappingProviderTests : MappingTestWithGlobalState
         public int IntValue { get; set; }
 
         [MappingSource("stringValue")]
-        public string Text { get; set; } = null!;
+        public string Text { get; } = null!;
     }
 
     private class SecondTestObject
@@ -119,14 +119,14 @@ public class MappingProviderTests : MappingTestWithGlobalState
 
     private class ThirdTestObject
     {
-        public int IntValue { get; set; } = -1;
+        public int IntValue { get; } = -1;
         public string StringValue { get; } = "unset";
     }
 
     private class PersonWithAge
     {
         [MappingSource("name")]
-        public string Name { get; set; } = null!;
+        public string Name { get; } = null!;
 
         [MappingOptional]
         public int Age { get; set; }
@@ -137,23 +137,19 @@ public class MappingProviderTests : MappingTestWithGlobalState
         public void CreateMappers(IMappingRegistry registry)
         {
             registry
-                .RegisterMapping<TestObject>(
-                    b => b
-                        .UseDefaultMapping()
-                        .Map(x => x.Text, "stringValue", converter: x => x.As<string>().ToUpper() + "!"))
-                .RegisterMapping<SecondTestObject>(
-                    b => b
-                        .MapWholeObject(
-                            r => new SecondTestObject
-                            {
-                                Number = r.Get<int>("intValue") + 1,
-                                Text = r.Get<string>("stringValue").ToLower()
-                            }))
+                .RegisterMapping<TestObject>(b => b
+                    .UseDefaultMapping()
+                    .Map(x => x.Text, "stringValue", converter: x => x.As<string>().ToUpper() + "!"))
+                .RegisterMapping<SecondTestObject>(b => b
+                    .MapWholeObject(r => new SecondTestObject
+                    {
+                        Number = r.Get<int>("intValue") + 1,
+                        Text = r.Get<string>("stringValue").ToLower()
+                    }))
                 .RegisterMapping<ThirdTestObject>(_ => {})
-                .RegisterMapping<PersonWithAge>(
-                    b => b
-                        .UseDefaultMapping()
-                        .Map(x => x.Age, r => r.Get<int>("active") - r.Get<int>("born")));
+                .RegisterMapping<PersonWithAge>(b => b
+                    .UseDefaultMapping()
+                    .Map(x => x.Age, r => r.Get<int>("active") - r.Get<int>("born")));
         }
     }
 
@@ -212,7 +208,7 @@ public class MappingProviderTests : MappingTestWithGlobalState
 
     private class NameAndGuid
     {
-        public string Name { get; set; } = null!;
+        public string Name { get; } = null!;
         public Guid Guid { get; set; }
     }
 
@@ -220,15 +216,14 @@ public class MappingProviderTests : MappingTestWithGlobalState
     {
         public void CreateMappers(IMappingRegistry registry)
         {
-            registry.RegisterMapping<NameAndGuid>(
-                b =>
+            registry.RegisterMapping<NameAndGuid>(b =>
+            {
+                b.UseDefaultMapping();
+                if (overrideGuid)
                 {
-                    b.UseDefaultMapping();
-                    if (overrideGuid)
-                    {
-                        b.Map(x => x.Guid, "Guid", converter: x => Guid.Parse(x.As<string>()));
-                    }
-                });
+                    b.Map(x => x.Guid, "Guid", converter: x => Guid.Parse(x.As<string>()));
+                }
+            });
         }
     }
 }

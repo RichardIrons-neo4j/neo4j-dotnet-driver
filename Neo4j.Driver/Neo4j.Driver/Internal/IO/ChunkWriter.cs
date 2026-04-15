@@ -37,8 +37,8 @@ internal sealed class ChunkWriter : Stream, IChunkWriter
     private readonly MemoryStream _chunkStream;
     private readonly int _defaultBufferSize;
     private readonly Stream _downStream;
-    private readonly INeo4jLogger _neo4JLogger;
     private readonly int _maxBufferSize;
+    private readonly INeo4jLogger _neo4JLogger;
     private long _dataPos = -1;
     private int _shrinkCounter;
 

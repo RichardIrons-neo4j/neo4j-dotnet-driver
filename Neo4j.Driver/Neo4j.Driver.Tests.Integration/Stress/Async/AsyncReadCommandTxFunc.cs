@@ -29,18 +29,17 @@ public sealed class AsyncReadCommandTxFunc : AsyncCommand
     {
         await using var session = NewSession(AccessMode.Read, context);
 
-        await session.ExecuteReadAsync(
-                async tx =>
-                {
-                    var cursor = await tx.RunAsync("MATCH (n) RETURN n LIMIT 1").ConfigureAwait(false);
-                    var records = await cursor.ToListAsync().ConfigureAwait(false);
+        await session.ExecuteReadAsync(async tx =>
+            {
+                var cursor = await tx.RunAsync("MATCH (n) RETURN n LIMIT 1").ConfigureAwait(false);
+                var records = await cursor.ToListAsync().ConfigureAwait(false);
 
-                    if (records.Count > 0)
-                    {
-                        records[0][0].Should().BeAssignableTo<INode>();
-                        context.NodeRead(await cursor.ConsumeAsync());
-                    }
-                })
+                if (records.Count > 0)
+                {
+                    records[0][0].Should().BeAssignableTo<INode>();
+                    context.NodeRead(await cursor.ConsumeAsync());
+                }
+            })
             .ConfigureAwait(false);
     }
 }

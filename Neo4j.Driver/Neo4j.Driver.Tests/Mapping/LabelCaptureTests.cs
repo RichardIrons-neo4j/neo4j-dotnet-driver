@@ -103,26 +103,25 @@ public class LabelCaptureTests : MappingTestWithGlobalState
         /// <inheritdoc/>
         public void CreateMappers(IMappingRegistry registry)
         {
-            registry.RegisterMapping<TestMappedClass>(
-                b => b
-                    .Map(
-                        x => x.Label,
-                        "Person",
-                        MappingSource.NodeLabel,
-                        x => string.Join("|", ((string[])x).Select(y => y.ToUpper())),
-                        true)
-                    .Map(
-                        x => x.Labels,
-                        "Person",
-                        MappingSource.NodeLabel,
-                        x => ((string[])x).Select(y => y.Replace("a", "x")).ToList(),
-                        true)
-                    .Map(
-                        x => x.RelationshipType,
-                        "Relationship",
-                        MappingSource.RelationshipType,
-                        x => x?.ToString()?.ToLower(),
-                        true));
+            registry.RegisterMapping<TestMappedClass>(b => b
+                .Map(
+                    x => x.Label,
+                    "Person",
+                    MappingSource.NodeLabel,
+                    x => string.Join("|", ((string[])x).Select(y => y.ToUpper())),
+                    true)
+                .Map(
+                    x => x.Labels,
+                    "Person",
+                    MappingSource.NodeLabel,
+                    x => ((string[])x).Select(y => y.Replace("a", "x")).ToList(),
+                    true)
+                .Map(
+                    x => x.RelationshipType,
+                    "Relationship",
+                    MappingSource.RelationshipType,
+                    x => x?.ToString()?.ToLower(),
+                    true));
         }
     }
 }

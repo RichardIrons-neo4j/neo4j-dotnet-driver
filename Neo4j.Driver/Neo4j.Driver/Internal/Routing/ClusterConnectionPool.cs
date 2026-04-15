@@ -137,7 +137,7 @@ internal class ClusterConnectionPool : IClusterConnectionPool
         return _pools.Values.Sum(pool => pool.TotalNumberOfConnections);
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public bool ConnectionCausesCacheDisable(IConnection connection)
     {
         var totalSsrEnabled = _pools.Values.Sum(pool => pool.NumberOfConnectionsWithSsrEnabled);

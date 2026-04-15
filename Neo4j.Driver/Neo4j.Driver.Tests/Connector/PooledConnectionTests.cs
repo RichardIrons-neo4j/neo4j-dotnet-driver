@@ -81,9 +81,8 @@ public class PooledConnectionTests
             connection,
             releaseManager.Object);
 
-        var resultException = await Record.ExceptionAsync(
-            () =>
-                pooledConnection.OnErrorAsync(new AuthorizationException("Authorization error")));
+        var resultException = await Record.ExceptionAsync(() =>
+            pooledConnection.OnErrorAsync(new AuthorizationException("Authorization error")));
 
         releaseManager.Verify(rm => rm.OnPoolMemberException(pooledConnection, It.IsAny<Exception>()), Times.Once());
     }

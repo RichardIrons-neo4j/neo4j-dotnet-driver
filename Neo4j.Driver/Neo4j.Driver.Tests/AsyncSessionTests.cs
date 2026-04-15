@@ -35,7 +35,10 @@ namespace Neo4j.Driver.Tests;
 
 public class AsyncSessionTests
 {
-    internal static AsyncSession NewSession(IConnection connection, bool reactive = false, INeo4jLogger neo4JLogger = null)
+    internal static AsyncSession NewSession(
+        IConnection connection,
+        bool reactive = false,
+        INeo4jLogger neo4JLogger = null)
     {
         return new AsyncSession(
             new TestConnectionProvider(connection),
@@ -68,10 +71,9 @@ public class AsyncSessionTests
     {
         var mockConn = new Mock<IConnection>();
         // Whenever you enqueue any message, you immediately receives a response
-        mockConn.Setup(
-                x => x.EnqueueAsync(
-                    It.IsAny<IRequestMessage>(),
-                    It.IsAny<IResponseHandler>()))
+        mockConn.Setup(x => x.EnqueueAsync(
+                It.IsAny<IRequestMessage>(),
+                It.IsAny<IResponseHandler>()))
             .Returns(Task.CompletedTask)
             .Callback((IRequestMessage _, IResponseHandler h1) => { h1.OnSuccess(new Dictionary<string, object>()); });
 
@@ -118,8 +120,8 @@ public class AsyncSessionTests
                 .Returns(mockProtocol.Object);
 
             var session = NewSession(mockConn.Object);
-            var tx = await session.BeginTransactionAsync(
-                o => o.WithMetadata(new Dictionary<string, object> { ["key"] = "value" })
+            var tx = await session.BeginTransactionAsync(o =>
+                o.WithMetadata(new Dictionary<string, object> { ["key"] = "value" })
                     .WithTimeout(TimeSpan.MaxValue));
 
             var config = tx.TransactionConfig;
@@ -227,14 +229,13 @@ public class AsyncSessionTests
             // Given
             var mockProtocol = new Mock<IBoltProtocol>();
             var mockConn = NewMockedConnection(mockProtocol);
-            mockProtocol.Setup(
-                    x =>
-                        x.BeginTransactionAsync(
-                            It.IsAny<IConnection>(),
-                            It.IsAny<BeginTransactionParams>(),
-                            It.IsAny<HomeDbCacheKey>(),
-                            It.IsAny<IHomeDbCache>(),
-                            It.IsAny<Driver.SessionConfig>()))
+            mockProtocol.Setup(x =>
+                    x.BeginTransactionAsync(
+                        It.IsAny<IConnection>(),
+                        It.IsAny<BeginTransactionParams>(),
+                        It.IsAny<HomeDbCacheKey>(),
+                        It.IsAny<IHomeDbCache>(),
+                        It.IsAny<Driver.SessionConfig>()))
                 .Throws(new IOException("Triggered an error when beginTx"));
 
             var session = NewSession(mockConn.Object);
@@ -255,25 +256,23 @@ public class AsyncSessionTests
             var mockProtocol = new Mock<IBoltProtocol>();
             var mockConn = NewMockedConnection(mockProtocol);
             var calls = 0;
-            mockProtocol.Setup(
-                    x =>
-                        x.BeginTransactionAsync(
-                            It.IsAny<IConnection>(),
-                            It.IsAny<BeginTransactionParams>(),
-                            It.IsAny<HomeDbCacheKey>(),
-                            It.IsAny<IHomeDbCache>(),
-                            It.IsAny<Driver.SessionConfig>()))
+            mockProtocol.Setup(x =>
+                    x.BeginTransactionAsync(
+                        It.IsAny<IConnection>(),
+                        It.IsAny<BeginTransactionParams>(),
+                        It.IsAny<HomeDbCacheKey>(),
+                        It.IsAny<IHomeDbCache>(),
+                        It.IsAny<Driver.SessionConfig>()))
                 .Returns(Task.CompletedTask)
-                .Callback(
-                    () =>
+                .Callback(() =>
+                {
+                    // only throw exception on the first beginTx call
+                    calls++;
+                    if (calls == 1)
                     {
-                        // only throw exception on the first beginTx call
-                        calls++;
-                        if (calls == 1)
-                        {
-                            throw new IOException("Triggered an error when beginTx");
-                        }
-                    });
+                        throw new IOException("Triggered an error when beginTx");
+                    }
+                });
 
             var session = NewSession(mockConn.Object);
             var exc = await Record.ExceptionAsync(() => session.BeginTransactionAsync());
@@ -332,14 +331,13 @@ public class AsyncSessionTests
         {
             var mockProtocol = new Mock<IBoltProtocol>();
             var mockConn = NewMockedConnection(mockProtocol);
-            mockProtocol.Setup(
-                    x =>
-                        x.BeginTransactionAsync(
-                            It.IsAny<IConnection>(),
-                            It.IsAny<BeginTransactionParams>(),
-                            It.IsAny<HomeDbCacheKey>(),
-                            It.IsAny<IHomeDbCache>(),
-                            It.IsAny<Driver.SessionConfig>()))
+            mockProtocol.Setup(x =>
+                    x.BeginTransactionAsync(
+                        It.IsAny<IConnection>(),
+                        It.IsAny<BeginTransactionParams>(),
+                        It.IsAny<HomeDbCacheKey>(),
+                        It.IsAny<IHomeDbCache>(),
+                        It.IsAny<Driver.SessionConfig>()))
                 .Throws(new IOException("Triggered an error when beginTx"));
 
             var session = NewSession(mockConn.Object);
@@ -367,12 +365,13 @@ public class AsyncSessionTests
         public async void ShouldCloseConnectionOnCloseAsync()
         {
             var mockConn = NewMockedConnection();
-            mockConn.Setup(
-                    x => x.EnqueueAsync(
-                        It.IsAny<IRequestMessage>(),
-                        It.IsAny<IResponseHandler>()))
-                .Callback<IRequestMessage, IResponseHandler>(
-                    (_, h1) => { h1.OnSuccess(new Dictionary<string, object>()); });
+            mockConn.Setup(x => x.EnqueueAsync(
+                    It.IsAny<IRequestMessage>(),
+                    It.IsAny<IResponseHandler>()))
+                .Callback<IRequestMessage, IResponseHandler>((_, h1) =>
+                {
+                    h1.OnSuccess(new Dictionary<string, object>());
+                });
 
             var session = NewSession(mockConn.Object);
             await session.RunAsync("lalal");
@@ -388,12 +387,11 @@ public class AsyncSessionTests
         public void ShouldReturnSessionConfigAsItIs()
         {
             var driver = NewDriver();
-            var session = driver.AsyncSession(
-                b =>
-                    b.WithDatabase("molly")
-                        .WithDefaultAccessMode(AccessMode.Read)
-                        .WithFetchSize(17)
-                        .WithBookmarks(Bookmarks.From("bookmark1")));
+            var session = driver.AsyncSession(b =>
+                b.WithDatabase("molly")
+                    .WithDefaultAccessMode(AccessMode.Read)
+                    .WithFetchSize(17)
+                    .WithBookmarks(Bookmarks.From("bookmark1")));
 
             var config = session.SessionConfig;
 
@@ -450,7 +448,7 @@ public class AsyncSessionTests
             throw new NotSupportedException();
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc/>
         public bool IsDirectDriver => false;
 
         public DriverContext DriverContext => new(

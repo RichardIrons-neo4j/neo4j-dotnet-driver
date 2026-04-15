@@ -88,12 +88,13 @@ public class Neo4jException : Exception
     }
 
     /// <summary>
-    /// Gets whether the exception is retryable or not.  
-    /// Important Note: Methods that use Autocommit transactions  
-    /// <see cref="Neo4j.Driver.IAsyncSession.RunAsync(string, System.Action{Neo4j.Driver.TransactionConfigBuilder})"/>,  
-    /// <see cref="Neo4j.Driver.IAsyncSession.RunAsync(string, System.Collections.Generic.IDictionary{string, object}, System.Action{Neo4j.Driver.TransactionConfigBuilder})"/>,  
-    /// and  
-    /// <see cref="Neo4j.Driver.IAsyncSession.RunAsync(Neo4j.Driver.Query, System.Action{Neo4j.Driver.TransactionConfigBuilder})"/>  
+    /// Gets whether the exception is retryable or not. Important Note: Methods that use Autocommit transactions
+    /// <see cref="Neo4j.Driver.IAsyncSession.RunAsync(string, System.Action{Neo4j.Driver.TransactionConfigBuilder})"/>,
+    /// <see
+    ///     cref="Neo4j.Driver.IAsyncSession.RunAsync(string, System.Collections.Generic.IDictionary{string, object}, System.Action{Neo4j.Driver.TransactionConfigBuilder})"/>
+    /// , and
+    /// <see
+    ///     cref="Neo4j.Driver.IAsyncSession.RunAsync(Neo4j.Driver.Query, System.Action{Neo4j.Driver.TransactionConfigBuilder})"/>
     /// are not retryable regardless of this value.
     /// </summary>
     public virtual bool IsRetriable => false;
@@ -113,9 +114,7 @@ public class Neo4jException : Exception
     /// <summary>The raw classification as received from the server.</summary>
     public string GqlRawClassification { get; }
 
-    /// <summary>
-    /// Gets further information about the status for diagnostic purposes.
-    /// </summary>
+    /// <summary>Gets further information about the status for diagnostic purposes.</summary>
     public Dictionary<string, object> GqlDiagnosticRecord { get; }
 
     /// <summary>

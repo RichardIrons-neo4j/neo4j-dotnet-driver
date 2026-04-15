@@ -33,10 +33,10 @@ internal class AsyncRetryLogic : IAsyncRetryLogic
     private static readonly double InitialRetryDelayMs = TimeSpan.FromSeconds(1).TotalMilliseconds;
     private readonly double _initialRetryDelayMs;
     private readonly double _jitterFactor;
-
-    private readonly INeo4jLogger _neo4JLogger;
     private readonly double _maxRetryTimeMs;
     private readonly double _multiplier;
+
+    private readonly INeo4jLogger _neo4JLogger;
 
     public AsyncRetryLogic(TimeSpan maxRetryTimeout, INeo4jLogger neo4JLogger)
     {

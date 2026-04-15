@@ -13,23 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Neo4j.Driver.Mapping.ConventionTranslation;
 
-/// <summary>
-/// Parses a string according to a standard naming convention.
-/// </summary>
+/// <summary>Parses a string according to a standard naming convention.</summary>
 public class StandardCaseParser : IIdentifierParser<IReadOnlyList<string>>
 {
-    private readonly string _validationRegex;
     private readonly string _splitRegex;
+    private readonly string _validationRegex;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="StandardCaseParser"/> class.
-    /// </summary>
+    /// <summary>Initializes a new instance of the <see cref="StandardCaseParser"/> class.</summary>
     /// <param name="convention">The naming convention to use.</param>
     /// <exception cref="System.ArgumentOutOfRangeException">Thrown when an unsupported convention is provided.</exception>
     public StandardCaseParser(IdentifierCaseConvention convention)
@@ -42,11 +39,11 @@ public class StandardCaseParser : IIdentifierParser<IReadOnlyList<string>>
             IdentifierCaseConvention.ScreamingSnakeCase => ("^[A-Z]+(?:_[A-Z]+)*$", "_"),
             IdentifierCaseConvention.KebabCase => ("^[a-z]+(?:-[a-z]+)*$", "-"),
             IdentifierCaseConvention.CSharpIdentifier => ("^[a-zA-Z]+(?:[A-Z][a-z]*)*$", "(?<!^)(?=[A-Z])"),
-            _ => throw new System.ArgumentOutOfRangeException(nameof(convention), "Unsupported convention")
+            _ => throw new ArgumentOutOfRangeException(nameof(convention), "Unsupported convention")
         };
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public IReadOnlyList<string> ParseIdentifier(string input)
     {
         if (string.IsNullOrEmpty(input))
@@ -56,7 +53,7 @@ public class StandardCaseParser : IIdentifierParser<IReadOnlyList<string>>
 
         if (_validationRegex != null && !Regex.IsMatch(input, _validationRegex))
         {
-            throw new System.ArgumentException($"Input '{input}' does not match the expected convention.");
+            throw new ArgumentException($"Input '{input}' does not match the expected convention.");
         }
 
         return Regex.Split(input, _splitRegex)

@@ -37,9 +37,8 @@ internal class InternalRxSession : IRxSession
 
     public IObservable<T> Close<T>()
     {
-        return Observable.FromAsync(
-                () =>
-                    _session.CloseAsync())
+        return Observable.FromAsync(() =>
+                _session.CloseAsync())
             .SelectMany(_ => Observable.Empty<T>());
     }
 
@@ -91,9 +90,8 @@ internal class InternalRxSession : IRxSession
     public IObservable<IRxTransaction> BeginTransaction(Action<TransactionConfigBuilder> action)
     {
         return Observable.FromAsync(() => _session.BeginTransactionAsync(action, false))
-            .Select(
-                tx =>
-                    new InternalRxTransaction(tx.CastOrThrow<IInternalAsyncTransaction>()));
+            .Select(tx =>
+                new InternalRxTransaction(tx.CastOrThrow<IInternalAsyncTransaction>()));
     }
 
     private IObservable<InternalRxTransaction> BeginTransaction(
@@ -101,9 +99,8 @@ internal class InternalRxSession : IRxSession
         Action<TransactionConfigBuilder> action)
     {
         return Observable.FromAsync(() => _session.BeginTransactionAsync(mode, action, false))
-            .Select(
-                tx =>
-                    new InternalRxTransaction(tx.CastOrThrow<IInternalAsyncTransaction>()));
+            .Select(tx =>
+                new InternalRxTransaction(tx.CastOrThrow<IInternalAsyncTransaction>()));
     }
 
 #endregion
@@ -165,22 +162,20 @@ internal class InternalRxSession : IRxSession
     {
         return _retryLogic.Retry(
             BeginTransaction(mode, action)
-                .SelectMany(
-                    txc =>
-                        Observable.Defer(
-                                () =>
-                                {
-                                    try
-                                    {
-                                        return work(txc);
-                                    }
-                                    catch (Exception exc)
-                                    {
-                                        return Observable.Throw<T>(exc);
-                                    }
-                                })
-                            .CatchAndThrow(_ => txc.IsOpen ? txc.Rollback<T>() : Observable.Empty<T>())
-                            .Concat(txc.IsOpen ? txc.Commit<T>() : Observable.Empty<T>())));
+                .SelectMany(txc =>
+                    Observable.Defer(() =>
+                        {
+                            try
+                            {
+                                return work(txc);
+                            }
+                            catch (Exception exc)
+                            {
+                                return Observable.Throw<T>(exc);
+                            }
+                        })
+                        .CatchAndThrow(_ => txc.IsOpen ? txc.Rollback<T>() : Observable.Empty<T>())
+                        .Concat(txc.IsOpen ? txc.Commit<T>() : Observable.Empty<T>())));
     }
 
 #endregion

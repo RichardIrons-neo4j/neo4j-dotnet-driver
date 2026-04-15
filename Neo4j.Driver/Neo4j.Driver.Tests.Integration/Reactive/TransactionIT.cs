@@ -82,13 +82,12 @@ public sealed class TransactionIT : AbstractRxIT
     public void ShouldRunQueryAndCommit()
     {
         _session.BeginTransaction()
-            .SelectMany(
-                txc =>
-                    txc.Run("CREATE (n:Node {id: 42}) RETURN n")
-                        .Records()
-                        .Select(r => r["n"].As<INode>()["id"].As<int>())
-                        .Concat(txc.Commit<int>())
-                        .Catch(txc.Rollback<int>()))
+            .SelectMany(txc =>
+                txc.Run("CREATE (n:Node {id: 42}) RETURN n")
+                    .Records()
+                    .Select(r => r["n"].As<INode>()["id"].As<int>())
+                    .Concat(txc.Commit<int>())
+                    .Catch(txc.Rollback<int>()))
             .WaitForCompletion()
             .AssertEqual(
                 OnNext(0, 42),
@@ -272,7 +271,8 @@ public sealed class TransactionIT : AbstractRxIT
             .AssertEqual(
                 OnError<IRxTransaction>(
                     0,
-                    Matches<Exception>(exc => {
+                    Matches<Exception>(exc =>
+                    {
                         var ne = exc as Neo4jException;
                         ne.Should().NotBeNull();
                     })));
@@ -291,10 +291,9 @@ public sealed class TransactionIT : AbstractRxIT
             .AssertEqual(
                 OnError<int>(
                     0,
-                    Matches<Exception>(
-                        exc =>
-                            exc.Message.Should()
-                                .Be("Cannot commit this transaction, because it has already been committed."))));
+                    Matches<Exception>(exc =>
+                        exc.Message.Should()
+                            .Be("Cannot commit this transaction, because it has already been committed."))));
     }
 
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
@@ -310,10 +309,9 @@ public sealed class TransactionIT : AbstractRxIT
             .AssertEqual(
                 OnError<int>(
                     0,
-                    Matches<Exception>(
-                        exc =>
-                            exc.Message.Should()
-                                .Be("Cannot rollback this transaction, because it has already been rolled back."))));
+                    Matches<Exception>(exc =>
+                        exc.Message.Should()
+                            .Be("Cannot rollback this transaction, because it has already been rolled back."))));
     }
 
     [RequireServerFact]
@@ -329,10 +327,9 @@ public sealed class TransactionIT : AbstractRxIT
             .AssertEqual(
                 OnError<int>(
                     0,
-                    Matches<Exception>(
-                        exc =>
-                            exc.Message.Should()
-                                .Be("Cannot commit this transaction, because it has already been rolled back."))));
+                    Matches<Exception>(exc =>
+                        exc.Message.Should()
+                            .Be("Cannot commit this transaction, because it has already been rolled back."))));
     }
 
     [RequireServerFact]
@@ -348,10 +345,9 @@ public sealed class TransactionIT : AbstractRxIT
             .AssertEqual(
                 OnError<string>(
                     0,
-                    Matches<Exception>(
-                        exc =>
-                            exc.Message.Should()
-                                .Be("Cannot rollback this transaction, because it has already been committed."))));
+                    Matches<Exception>(exc =>
+                        exc.Message.Should()
+                            .Be("Cannot rollback this transaction, because it has already been committed."))));
     }
 
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
@@ -501,18 +497,16 @@ public sealed class TransactionIT : AbstractRxIT
         const int size = 1024;
 
         var messages = _session.BeginTransaction()
-            .SelectMany(
-                txc =>
-                    txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
-                        .Records()
-                        .Select(r => r[0].As<int>())
-                        .Buffer(50)
-                        .SelectMany(
-                            x =>
-                                txc.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records())
-                        .Select(r => r[0].As<int>())
-                        .Concat(txc.Commit<int>())
-                        .Catch((Exception exc) => txc.Rollback<int>().Concat(Observable.Throw<int>(exc))))
+            .SelectMany(txc =>
+                txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
+                    .Records()
+                    .Select(r => r[0].As<int>())
+                    .Buffer(50)
+                    .SelectMany(x =>
+                        txc.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records())
+                    .Select(r => r[0].As<int>())
+                    .Concat(txc.Commit<int>())
+                    .Catch((Exception exc) => txc.Rollback<int>().Concat(Observable.Throw<int>(exc))))
             .WaitForCompletion()
             .ToList();
 
@@ -558,17 +552,16 @@ public sealed class TransactionIT : AbstractRxIT
             .AssertEqual(
                 OnNext(
                     0,
-                    Matches<INode>(
-                        node => node.Should()
-                            .BeEquivalentTo(
-                                new
+                    Matches<INode>(node => node.Should()
+                        .BeEquivalentTo(
+                            new
+                            {
+                                Labels = new[] { "Node" },
+                                Properties = new Dictionary<string, object>
                                 {
-                                    Labels = new[] { "Node" },
-                                    Properties = new Dictionary<string, object>
-                                    {
-                                        { "id", (long)id }
-                                    }
-                                }))),
+                                    { "id", (long)id }
+                                }
+                            }))),
                 OnCompleted<INode>(0));
     }
 

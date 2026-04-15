@@ -30,6 +30,8 @@ public sealed class SessionConfig
 {
     internal static readonly SessionConfig Default = new();
     private IEnumerable<Bookmarks> _bookmarks;
+
+    private string _database;
     private string _impersonatedUser;
 
     internal SessionConfig()
@@ -85,10 +87,7 @@ public sealed class SessionConfig
         internal set => _database = string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
-    private string _database;
-
-
-/// <summary>
+    /// <summary>
     /// The type of access required by the constructed session. This is used to route the requests originating from this
     /// session instance to the correct server in a clustered environment.
     /// <remarks>
@@ -159,6 +158,7 @@ public sealed class SessionConfig
     internal DriverContext DriverContext { get; set; }
 
     internal Action<string> OnPinDatabase { get; set; }
+
     internal void PinDatabase(string database)
     {
         OnPinDatabase?.Invoke(database);
@@ -321,10 +321,10 @@ public sealed class SessionConfigBuilder
     /// <summary>
     /// Override configuration for which <see cref="INotification"/>s should be emitted for the lifetime of the
     /// session. <br/> Unspecified configuration will be provided by configuration specified in the server or the driver's
-    /// <see cref="ConfigBuilder.WithNotifications(Severity?, Category[], Classification[])"/>. <br/> If the driver has disabled notifications
-    /// with <see cref="ConfigBuilder.WithNotificationsDisabled"/>, the unspecified values will be provided by the server.
-    /// <br/> Disabling categories or severities allows the server to skip analysis for those, which can speed up query
-    /// execution.
+    /// <see cref="ConfigBuilder.WithNotifications(Severity?, Category[], Classification[])"/>. <br/> If the driver has
+    /// disabled notifications with <see cref="ConfigBuilder.WithNotificationsDisabled"/>, the unspecified values will be
+    /// provided by the server. <br/> Disabling categories or severities allows the server to skip analysis for those, which
+    /// can speed up query execution.
     /// </summary>
     /// <remarks>Cannot be used with: <see cref="WithNotificationsDisabled"/>.</remarks>
     /// <param name="minimumSeverity">
@@ -338,9 +338,9 @@ public sealed class SessionConfigBuilder
     /// <see cref="ConfigBuilder.WithNotifications(Severity?, Category[], Classification[])"/> or the server.
     /// </param>
     /// <param name="disabledClassifications">
-    /// Optional parameter to override the classification of notifications emitted. <br/> By passing
-    /// an empty collection, all classifications are enabled.<br/> By leaving null, the value will inherit configuration from the
-    /// server.
+    /// Optional parameter to override the classification of notifications emitted. <br/>
+    /// By passing an empty collection, all classifications are enabled.<br/> By leaving null, the value will inherit
+    /// configuration from the server.
     /// </param>
     /// <exception cref="ArgumentException">Thrown when all parameters are null.</exception>
     /// <returns>A <see cref="SessionConfigBuilder"/> instance for further configuration options.</returns>

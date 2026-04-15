@@ -35,12 +35,11 @@ internal class ParameterMapper : IParameterMapper
     {
         // this part only happens once, at the time of building the mapper
         var parameters = method.GetParameters();
-        var paramMappings = parameters.Select(
-            parameter => new
-            {
-                parameter,
-                mapping = _mappingBindingProvider.GetMappingBinding(parameter)
-            });
+        var paramMappings = parameters.Select(parameter => new
+        {
+            parameter,
+            mapping = _mappingBindingProvider.GetMappingBinding(parameter)
+        });
 
         return MapFromRecord;
 

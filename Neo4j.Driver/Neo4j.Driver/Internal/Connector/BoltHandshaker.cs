@@ -23,7 +23,6 @@ using Neo4j.Driver.Internal.IO;
 using Neo4j.Driver.Internal.Protocol;
 using Neo4j.Driver.Internal.Util;
 
-
 namespace Neo4j.Driver.Internal.Connector;
 
 internal interface IBoltHandshaker
@@ -37,12 +36,58 @@ internal interface IBoltHandshaker
 internal sealed class BoltHandshaker : IBoltHandshaker
 {
     internal static BoltHandshaker Default = new();
-    
+
     private BoltHandshaker()
     {
     }
 
-    private static async Task<(BoltProtocolVersion version, int range)> ParseProtocolVersionResponse(ITcpSocketClient socketClient, INeo4jLogger neo4JLogger, CancellationToken cancellationToken)
+    public async Task<BoltProtocolVersion> DoHandshakeAsync(
+        ITcpSocketClient socketClient,
+        INeo4jLogger neo4JLogger,
+        CancellationToken cancellationToken)
+    {
+        var data = BoltProtocolFactory.PackSupportedVersions();
+        await socketClient.WriterStream.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+        await socketClient.WriterStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+
+        neo4JLogger.Debug("C: [HANDSHAKE] Driver supported versions - {0}", data.ToHexString());
+
+        //if the server has not responded indicating a manifest handshake is in effect
+        //then it has responded with a protocol version that the driver should use. 
+        var serverVersionResponse = await ParseProtocolVersionResponse(socketClient, neo4JLogger, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!IsManifestSytleHandshake(serverVersionResponse.version))
+        {
+            return serverVersionResponse.version;
+        }
+
+        //We are now parsing a manifest style handshake...
+
+        CheckManifestVersion(serverVersionResponse.version, socketClient.ConnectionUri);
+
+        var protocolVersions = await ParseSupportedProtocolVersions(socketClient, neo4JLogger, cancellationToken)
+            .ConfigureAwait(false);
+
+        var capabilitiesBitMask =
+            await ParseCapabilityBitmask(socketClient, neo4JLogger, cancellationToken).ConfigureAwait(false);
+
+        var selectedVersion = SelectProtocolVersion(protocolVersions);
+
+        await EncodeAndSendHandshakeResponseAsync(
+            socketClient,
+            selectedVersion,
+            capabilitiesBitMask,
+            neo4JLogger,
+            cancellationToken);
+
+        return selectedVersion;
+    }
+
+    private static async Task<(BoltProtocolVersion version, int range)> ParseProtocolVersionResponse(
+        ITcpSocketClient socketClient,
+        INeo4jLogger neo4JLogger,
+        CancellationToken cancellationToken)
     {
         var responseBytes = new byte[4];
 
@@ -60,20 +105,23 @@ internal sealed class BoltHandshaker : IBoltHandshaker
         }
 
         var serverVersionResponse = BoltProtocolFactory.UnpackAgreedVersion(responseBytes);
-        return (serverVersionResponse.version, serverVersionResponse.range) ;
+        return (serverVersionResponse.version, serverVersionResponse.range);
     }
 
     private static bool IsManifestSytleHandshake(BoltProtocolVersion version)
     {
-        return (version.MajorVersion == BoltProtocolVersion.ManifestSchema);
+        return version.MajorVersion == BoltProtocolVersion.ManifestSchema;
     }
 
-    private static async Task<VarLong> ReadVariableLengthData(ITcpSocketClient socketClient, INeo4jLogger neo4JLogger, CancellationToken cancellationToken)
+    private static async Task<VarLong> ReadVariableLengthData(
+        ITcpSocketClient socketClient,
+        INeo4jLogger neo4JLogger,
+        CancellationToken cancellationToken)
     {
-        VarLong resultVariable = new VarLong();
+        var resultVariable = new VarLong();
         var responseByte = new byte[1];
         var moreData = true;
-        var serverResponse = String.Empty; 
+        var serverResponse = string.Empty;
 
         while (moreData)
         {
@@ -84,7 +132,7 @@ internal sealed class BoltHandshaker : IBoltHandshaker
             resultVariable.AddSegment(responseByte[0]);
 
             //If most significant bit of the byte is 1 then there are further bytes of the VarInt128 to follow
-            moreData = (responseByte[0] >> 7) == 1;
+            moreData = responseByte[0] >> 7 == 1;
 
             serverResponse += responseByte.ToHexString() + " ";
         }
@@ -97,11 +145,13 @@ internal sealed class BoltHandshaker : IBoltHandshaker
         ITcpSocketClient socketClient,
         INeo4jLogger neo4JLogger,
         CancellationToken cancellationToken)
-    {   
-        var numProtocolVersions = await ReadVariableLengthData(socketClient, neo4JLogger, cancellationToken).ConfigureAwait(false);
+    {
+        var numProtocolVersions =
+            await ReadVariableLengthData(socketClient, neo4JLogger, cancellationToken).ConfigureAwait(false);
+
         return numProtocolVersions.Value;
     }
-    
+
     private static async Task<List<BoltProtocolVersion>> ParseSupportedProtocolVersions(
         ITcpSocketClient sockeClient,
         INeo4jLogger neo4JLogger,
@@ -115,10 +165,9 @@ internal sealed class BoltHandshaker : IBoltHandshaker
             throw new ProtocolException("Server supplied a zero size list of acceptable protocols");
         }
 
-
         var protocolVersions = new List<BoltProtocolVersion>();
 
-        var responseBytes = new byte[4];       
+        var responseBytes = new byte[4];
         //Loop through the protocol versions reading each in and adding to supported list
         for (var i = 0; i < numProtocolVersions; i++)
         {
@@ -129,17 +178,18 @@ internal sealed class BoltHandshaker : IBoltHandshaker
             neo4JLogger.Debug("S: [HANDSHAKE] Supported protocol version and range - {0}", responseBytes.ToHexString());
 
             var protocolVersionAndRange = BoltProtocolFactory.UnpackAgreedVersion(responseBytes);
-            var lowestVersion = new BoltProtocolVersion(protocolVersionAndRange.version.MajorVersion,
-                                                         protocolVersionAndRange.version.MinorVersion - protocolVersionAndRange.range);
-            
+            var lowestVersion = new BoltProtocolVersion(
+                protocolVersionAndRange.version.MajorVersion,
+                protocolVersionAndRange.version.MinorVersion - protocolVersionAndRange.range);
+
             //If the protocol version from the server is one that this driver knows about add it to the list.
             foreach (var protocol in BoltProtocolFactory.SupportedVersions)
             {
                 if (protocol >= lowestVersion && protocol <= protocolVersionAndRange.version)
                 {
                     protocolVersions.Add(protocol);
-                }   
-            }  
+                }
+            }
         }
 
         return protocolVersions;
@@ -169,9 +219,12 @@ internal sealed class BoltHandshaker : IBoltHandshaker
         CancellationToken cancellationToken)
     {
         var versionData = PackStreamBitConverter.GetBytes(selectedVersion.PackToInt());
-        var compatabilityData = new byte[] { 0x00 }; //TODO: method that will eventually return a bitmask built using VarInt
+        var compatabilityData = new byte[]
+            { 0x00 }; //TODO: method that will eventually return a bitmask built using VarInt
 
-        var byteData = versionData.Concat(compatabilityData).ToArray(); //for performance can be changed to use block copy or similar
+        var byteData =
+            versionData.Concat(compatabilityData)
+                .ToArray(); //for performance can be changed to use block copy or similar
 
         await socketClient.WriterStream.WriteAsync(
                 byteData,
@@ -192,39 +245,5 @@ internal sealed class BoltHandshaker : IBoltHandshaker
             throw new ProtocolException(
                 $"Unsupported bolt protocol manifest version {version.MinorVersion} received from {connectionUri}");
         }
-    }
-
-    public async Task<BoltProtocolVersion> DoHandshakeAsync(
-        ITcpSocketClient socketClient,
-        INeo4jLogger neo4JLogger,
-        CancellationToken cancellationToken)
-    {
-        var data = BoltProtocolFactory.PackSupportedVersions();
-        await socketClient.WriterStream.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
-        await socketClient.WriterStream.FlushAsync(cancellationToken).ConfigureAwait(false);
-
-        neo4JLogger.Debug("C: [HANDSHAKE] Driver supported versions - {0}", data.ToHexString());
-
-        //if the server has not responded indicating a manifest handshake is in effect
-        //then it has responded with a protocol version that the driver should use. 
-        var serverVersionResponse = await ParseProtocolVersionResponse(socketClient, neo4JLogger, cancellationToken).ConfigureAwait(false);
-        if (!IsManifestSytleHandshake(serverVersionResponse.version))
-        {
-            return serverVersionResponse.version;
-        }
-
-        //We are now parsing a manifest style handshake...
-
-        CheckManifestVersion(serverVersionResponse.version, socketClient.ConnectionUri);
-        
-        var protocolVersions = await ParseSupportedProtocolVersions(socketClient, neo4JLogger, cancellationToken).ConfigureAwait(false);
-
-        var capabilitiesBitMask = await ParseCapabilityBitmask(socketClient, neo4JLogger, cancellationToken).ConfigureAwait(false);
-        
-        var selectedVersion = SelectProtocolVersion(protocolVersions);
-
-        await EncodeAndSendHandshakeResponseAsync(socketClient, selectedVersion, capabilitiesBitMask, neo4JLogger, cancellationToken);
-
-        return selectedVersion;
     }
 }

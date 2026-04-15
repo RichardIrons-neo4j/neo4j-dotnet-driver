@@ -47,6 +47,10 @@ internal class AuthToken : IAuthToken
 
     public IDictionary<string, object> Content { get; }
 
+    public string Scheme => Content.GetValueOrDefault(SchemeKey) as string;
+    public string Principal => Content.GetValueOrDefault(PrincipalKey) as string;
+    public string Realm => Content.GetValueOrDefault(RealmKey) as string;
+
     public override bool Equals(object obj)
     {
         return obj is AuthToken a && Equals(a);
@@ -54,7 +58,7 @@ internal class AuthToken : IAuthToken
 
     private bool Equals(AuthToken other)
     {
-        if(other is null)
+        if (other is null)
         {
             return false;
         }
@@ -86,10 +90,6 @@ internal class AuthToken : IAuthToken
 
         return hash;
     }
-
-    public string Scheme => Content.GetValueOrDefault(SchemeKey) as string;
-    public string Principal => Content.GetValueOrDefault(PrincipalKey) as string;
-    public string Realm => Content.GetValueOrDefault(RealmKey) as string;
 
     public override string ToString()
     {

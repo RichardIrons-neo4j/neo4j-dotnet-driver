@@ -157,7 +157,6 @@ public class Config
     /// given time will be closed once it is seen. Use <see cref="InfiniteInterval"/> to disable connection lifetime checking.
     /// </summary>
     public TimeSpan MaxConnectionLifetime { get; internal set; } = TimeSpan.FromHours(1);
-    
 
     /// <summary>
     /// Gets or internal sets a custom server address resolver used by the routing driver to resolve the initial

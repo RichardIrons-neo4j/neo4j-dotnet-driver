@@ -148,14 +148,13 @@ public class RxRetryLogicTests : AbstractRxTest
             .AssertEqual(
                 OnError<int>(
                     0,
-                    e => Matches(
-                        () =>
-                            e.Should()
-                                .BeOfType<ServiceUnavailableException>()
-                                .Which.InnerException.Should()
-                                .BeOfType<AggregateException>()
-                                .Which.InnerExceptions.Should()
-                                .BeSubsetOf(exceptions))));
+                    e => Matches(() =>
+                        e.Should()
+                            .BeOfType<ServiceUnavailableException>()
+                            .Which.InnerException.Should()
+                            .BeOfType<AggregateException>()
+                            .Which.InnerExceptions.Should()
+                            .BeSubsetOf(exceptions))));
     }
 
     private static IObservable<T> CreateFailingObservable<T>(T success, params Exception[] exceptions)
@@ -170,11 +169,10 @@ public class RxRetryLogicTests : AbstractRxTest
     {
         var index = 0;
 
-        return Observable.Defer(
-            () =>
-                index < exceptions.Length
-                    ? Observable.Throw<T>(exceptions[index++]).Delay(delay)
-                    : Observable.Return(success).Delay(delay));
+        return Observable.Defer(() =>
+            index < exceptions.Length
+                ? Observable.Throw<T>(exceptions[index++]).Delay(delay)
+                : Observable.Return(success).Delay(delay));
     }
 
     public static TheoryData<Exception> NonTransientErrors()

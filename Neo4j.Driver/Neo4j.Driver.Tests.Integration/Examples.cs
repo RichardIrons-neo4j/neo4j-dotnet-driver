@@ -482,17 +482,16 @@ public class Examples
             public void PrintGreeting(string message)
             {
                 using var session = _driver.Session();
-                var greeting = session.ExecuteWrite(
-                    tx =>
-                    {
-                        var result = tx.Run(
-                            "CREATE (a:Greeting) " +
-                            "SET a.message = $message " +
-                            "RETURN a.message + ', from node ' + id(a)",
-                            new { message });
+                var greeting = session.ExecuteWrite(tx =>
+                {
+                    var result = tx.Run(
+                        "CREATE (a:Greeting) " +
+                        "SET a.message = $message " +
+                        "RETURN a.message + ', from node ' + id(a)",
+                        new { message });
 
-                        return result.Single()[0].As<string>();
-                    });
+                    return result.Single()[0].As<string>();
+                });
 
                 Console.WriteLine(greeting);
             }
@@ -554,12 +553,11 @@ public class Examples
         public List<string> GetPeople()
         {
             using var session = Driver.Session();
-            return session.ExecuteRead(
-                tx =>
-                {
-                    var result = tx.Run("MATCH (a:Person) RETURN a.name ORDER BY a.name");
-                    return result.Select(record => record[0].As<string>()).ToList();
-                });
+            return session.ExecuteRead(tx =>
+            {
+                var result = tx.Run("MATCH (a:Person) RETURN a.name ORDER BY a.name");
+                return result.Select(record => record[0].As<string>()).ToList();
+            });
         }
         // end::result-consume[]
 
@@ -586,19 +584,17 @@ public class Examples
         {
             using var session = Driver.Session();
             var persons = session.ExecuteRead(tx => tx.Run("MATCH (a:Person) RETURN a.name AS name").ToList());
-            return persons.Sum(
-                person => session.ExecuteWrite(
-                    tx =>
-                    {
-                        var result = tx.Run(
-                            "MATCH (emp:Person {name: $person_name}) " +
-                            "MERGE (com:Company {name: $company_name}) " +
-                            "MERGE (emp)-[:WORKS_FOR]->(com)",
-                            new { person_name = person["name"].As<string>(), company_name = companyName });
+            return persons.Sum(person => session.ExecuteWrite(tx =>
+            {
+                var result = tx.Run(
+                    "MATCH (emp:Person {name: $person_name}) " +
+                    "MERGE (com:Company {name: $company_name}) " +
+                    "MERGE (emp)-[:WORKS_FOR]->(com)",
+                    new { person_name = person["name"].As<string>(), company_name = companyName });
 
-                        result.Consume();
-                        return 1;
-                    }));
+                result.Consume();
+                return 1;
+            }));
         }
         // end::result-retain[]
 
@@ -649,12 +645,11 @@ public class Examples
             try
             {
                 using var session = Driver.Session();
-                return session.ExecuteWrite(
-                    tx =>
-                    {
-                        tx.Run("CREATE (a:Item)").Consume();
-                        return true;
-                    });
+                return session.ExecuteWrite(tx =>
+                {
+                    tx.Run("CREATE (a:Item)").Consume();
+                    return true;
+                });
             }
             catch (ServiceUnavailableException)
             {
@@ -988,9 +983,8 @@ public class Examples
             }
 
             // Create a friendship between the two people created above.
-            using (var session3 = Driver.Session(
-                       o =>
-                           o.WithDefaultAccessMode(AccessMode.Write).WithBookmarks(savedBookmarks.ToArray())))
+            using (var session3 = Driver.Session(o =>
+                       o.WithDefaultAccessMode(AccessMode.Write).WithBookmarks(savedBookmarks.ToArray())))
             {
                 session3.ExecuteWrite(tx => MakeFriends(tx, "Alice", "Bob"));
 
@@ -1082,12 +1076,11 @@ public abstract class BaseExample : IDisposable
     protected int CountNodes(string label, string property, string value)
     {
         using var session = Driver.Session();
-        return session.ExecuteRead(
-            tx => tx.Run(
-                    $"MATCH (a:{label} {{{property}: $value}}) RETURN count(a)",
-                    new { value })
-                .Single()[0]
-                .As<int>());
+        return session.ExecuteRead(tx => tx.Run(
+                $"MATCH (a:{label} {{{property}: $value}}) RETURN count(a)",
+                new { value })
+            .Single()[0]
+            .As<int>());
     }
 
     protected int CountPerson(string name)
@@ -1098,9 +1091,8 @@ public abstract class BaseExample : IDisposable
     protected void Write(string query, object parameters = null)
     {
         using var session = Driver.Session();
-        session.ExecuteWrite(
-            tx =>
-                tx.Run(query, parameters).Consume());
+        session.ExecuteWrite(tx =>
+            tx.Run(query, parameters).Consume());
     }
 
     protected List<IRecord> Read(string query, object parameters = null)

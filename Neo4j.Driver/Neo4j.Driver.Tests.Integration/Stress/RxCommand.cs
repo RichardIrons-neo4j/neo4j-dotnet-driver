@@ -35,10 +35,9 @@ public abstract class RxCommand : ReactiveTest, IRxCommand
 
     protected IRxSession NewSession(AccessMode mode, StressTestContext context)
     {
-        return _driver.RxSession(
-            o =>
-                o.WithDefaultAccessMode(mode)
-                    .WithBookmarks(_useBookmark ? new[] { context.Bookmarks } : Array.Empty<Bookmarks>()));
+        return _driver.RxSession(o =>
+            o.WithDefaultAccessMode(mode)
+                .WithBookmarks(_useBookmark ? new[] { context.Bookmarks } : Array.Empty<Bookmarks>()));
     }
 
     protected IObservable<IRxTransaction> BeginTransaction(IRxSession session, StressTestContext context)
@@ -46,21 +45,19 @@ public abstract class RxCommand : ReactiveTest, IRxCommand
         if (_useBookmark)
         {
             return session.BeginTransaction()
-                .RetryWhen(
-                    failed =>
+                .RetryWhen(failed =>
+                {
+                    return failed.SelectMany(exc =>
                     {
-                        return failed.SelectMany(
-                            exc =>
-                            {
-                                if (exc is TransientException)
-                                {
-                                    context.BookmarkFailed();
-                                    return Observable.Return(1);
-                                }
+                        if (exc is TransientException)
+                        {
+                            context.BookmarkFailed();
+                            return Observable.Return(1);
+                        }
 
-                                return Observable.Throw<int>(exc);
-                            });
+                        return Observable.Throw<int>(exc);
                     });
+                });
         }
 
         return session.BeginTransaction();

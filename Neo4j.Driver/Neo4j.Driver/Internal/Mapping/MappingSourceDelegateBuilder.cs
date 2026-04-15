@@ -52,5 +52,3 @@ internal class MappingSourceDelegateBuilder : IMappingSourceDelegateBuilder
         };
     }
 }
-
-

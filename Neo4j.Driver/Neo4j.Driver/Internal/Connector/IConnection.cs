@@ -60,7 +60,7 @@ internal interface IConnection : IConnectionDetails, IConnectionRunner
     AuthorizationStatus AuthorizationStatus { get; set; }
     IAuthTokenManager AuthTokenManager { get; }
 
-    public SessionConfig SessionConfig { get; set; }
+    SessionConfig SessionConfig { get; set; }
     bool TelemetryEnabled { get; set; }
 
     bool SsrEnabled { get; set; }

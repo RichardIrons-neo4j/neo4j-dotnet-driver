@@ -16,21 +16,25 @@
 namespace Neo4j.Driver;
 
 /// <summary>
-/// Represents a type unknown to the driver, received from the server.
-/// This type is used, for instance, when a newer DBMS produces a result containing a type that the current version of the
-/// driver does not yet understand.
-///
-/// Note that this type may only be received from the server, but cannot be sent to the server (e.g., as a query parameter).
-/// 
-/// The attributes exposed by this type are meant for displaying and debugging purposes.
-/// They may change in future versions of the server, and should not be relied upon for any logic in your application.
-/// If your application requires handling this type, you must upgrade your driver to a version that supports it.
+/// Represents a type unknown to the driver, received from the server. This type is used, for instance, when a
+/// newer DBMS produces a result containing a type that the current version of the driver does not yet understand. Note
+/// that this type may only be received from the server, but cannot be sent to the server (e.g., as a query parameter). The
+/// attributes exposed by this type are meant for displaying and debugging purposes. They may change in future versions of
+/// the server, and should not be relied upon for any logic in your application. If your application requires handling this
+/// type, you must upgrade your driver to a version that supports it.
 /// </summary>
 public class UnsupportedType
 {
+    internal UnsupportedType(string name, int minimumProtocolMajor, int minimumProtocolMinor, string message)
+    {
+        Name = name;
+        MinimumProtocolVersion = $"{minimumProtocolMajor}.{minimumProtocolMinor}";
+        Message = message;
+    }
+
     /// <summary>
-    /// Gets the name of the unsupported type as provided by the server.
-    /// For example, <c>"UUID"</c> or <c>"Vector"</c>.
+    /// Gets the name of the unsupported type as provided by the server. For example, <c>"UUID"</c> or <c>"Vector"</c>
+    /// .
     /// </summary>
     public string Name { get; }
 
@@ -40,26 +44,19 @@ public class UnsupportedType
     /// To understand which driver version this corresponds to, refer to the driver's release notes or documentation.
     /// <para/>
     /// Note: Bolt version does not correlate directly with Driver version. See
-    /// <see href="https://neo4j.com/docs/dotnet-manual/current/data-types/"/> for which driver version is
-    /// required for new Types.
+    /// <see href="https://neo4j.com/docs/dotnet-manual/current/data-types/"/> for which driver version is required for new
+    /// Types.
     /// </remarks>
     /// </summary>
     public string MinimumProtocolVersion { get; }
 
     /// <summary>
-    /// Gets an optional message from the server with additional information about the unsupported type.
-    /// This may include hints, migration paths, or required configuration options. May be <c>null</c>.
+    /// Gets an optional message from the server with additional information about the unsupported type. This may
+    /// include hints, migration paths, or required configuration options. May be <c>null</c>.
     /// </summary>
     public string Message { get; }
 
-    internal UnsupportedType(string name, int minimumProtocolMajor, int minimumProtocolMinor, string message)
-    {
-        Name = name;
-        MinimumProtocolVersion = $"{minimumProtocolMajor}.{minimumProtocolMinor}";
-        Message = message;
-    }
-
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override string ToString()
     {
         return $"UnsupportedType({Name})";

@@ -98,11 +98,13 @@ internal sealed class PipelinedMessageReader : IMessageReader
         {
             return;
         }
+
         if (!_source.TryReset())
         {
             _source.Dispose();
             _source = new CancellationTokenSource();
         }
+
         _source.CancelAfter(_timeoutInMs);
     }
 

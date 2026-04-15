@@ -64,23 +64,21 @@ public static class InternalRxSessionTests
         [Fact]
         public void ShouldInvokeSessionRunAsyncOnlyOnce()
         {
-            VerifyLazyRunAsync(
-                r =>
-                {
-                    r.Keys().WaitForCompletion();
-                    r.Records().WaitForCompletion();
-                    r.Consume().WaitForCompletion();
-                });
+            VerifyLazyRunAsync(r =>
+            {
+                r.Keys().WaitForCompletion();
+                r.Records().WaitForCompletion();
+                r.Consume().WaitForCompletion();
+            });
         }
 
         private static void VerifyLazyRunAsync(Action<IRxResult> action)
         {
             var asyncSession = new Mock<IInternalAsyncSession>();
-            asyncSession.Setup(
-                    x => x.RunAsync(
-                        It.IsAny<Query>(),
-                        It.IsAny<Action<TransactionConfigBuilder>>(),
-                        It.IsAny<bool>()))
+            asyncSession.Setup(x => x.RunAsync(
+                    It.IsAny<Query>(),
+                    It.IsAny<Action<TransactionConfigBuilder>>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(
                     new ListBasedRecordCursor(
                         new[] { "x" },

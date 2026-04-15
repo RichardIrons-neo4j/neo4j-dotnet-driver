@@ -23,9 +23,11 @@ namespace Neo4j.Driver.Internal.Auth;
 internal sealed class DefaultTlsNegotiator : ITlsNegotiator
 {
     private readonly EncryptionManager _encryptionManager;
-    private readonly INeo4jLogger _neo4JLogger;
-    private readonly IInternalX509CertificateLoader _internalX509CertificateLoader 
+
+    private readonly IInternalX509CertificateLoader _internalX509CertificateLoader
         = new InternalX509CertificateLoader();
+
+    private readonly INeo4jLogger _neo4JLogger;
 
     public DefaultTlsNegotiator(INeo4jLogger neo4JLogger, EncryptionManager encryptionManager)
     {

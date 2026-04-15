@@ -23,7 +23,6 @@ internal class SimpleNeo4JLogger : INeo4jLogger
 
     public void Debug(string message, params object[] args)
     {
-
         Console.ForegroundColor = message[0] == '['
             ? ConsoleColor.DarkMagenta
             : ConsoleColor.DarkGreen;

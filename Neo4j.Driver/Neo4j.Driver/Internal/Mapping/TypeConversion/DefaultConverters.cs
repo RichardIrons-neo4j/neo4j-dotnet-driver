@@ -80,6 +80,7 @@ internal class DefaultConverters : IDefaultConverters
             GetRegisterMethod(vectorType, targetType).Invoke(_manager, [listConverter]);
         }
     }
+
     private static IEnumerable<Type> GetAllVectorConversionTargets(Type vectorType)
     {
         yield return typeof(List<>).MakeGenericType(vectorType);
@@ -92,11 +93,20 @@ internal class DefaultConverters : IDefaultConverters
 
     private MethodInfo GetRegisterMethod(Type fromType, Type toType)
     {
-        var method = typeof(IMappingTypeConversionManager).GetMethod(nameof(
-            IMappingTypeConversionManager.RegisterConverter));
+        var method = typeof(IMappingTypeConversionManager).GetMethod(
+            nameof(
+                IMappingTypeConversionManager.RegisterConverter));
+
         return method!.MakeGenericMethod(fromType, toType);
     }
 
-    private static T[] VectorToArray<T>(Vector<T> vector) where T : struct => vector.Values.ToArray();
-    private static List<T> VectorToList<T>(Vector<T> vector) where T : struct => vector.Values.ToList();
+    private static T[] VectorToArray<T>(Vector<T> vector) where T : struct
+    {
+        return vector.Values.ToArray();
+    }
+
+    private static List<T> VectorToList<T>(Vector<T> vector) where T : struct
+    {
+        return vector.Values.ToList();
+    }
 }

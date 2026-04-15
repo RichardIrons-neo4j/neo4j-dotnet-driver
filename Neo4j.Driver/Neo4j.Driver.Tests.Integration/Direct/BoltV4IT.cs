@@ -242,12 +242,11 @@ public sealed class BoltV4IT : DirectDriverTestBase
     {
         await using var session = Server.Driver.AsyncSession(o => { ConfigureDb(o, name); });
 
-        var summary = await session.ExecuteReadAsync(
-            async txc =>
-            {
-                var cursor = await txc.RunAsync("RETURN 1");
-                return await cursor.ConsumeAsync();
-            });
+        var summary = await session.ExecuteReadAsync(async txc =>
+        {
+            var cursor = await txc.RunAsync("RETURN 1");
+            return await cursor.ConsumeAsync();
+        });
 
         summary.Database.Should().NotBeNull();
         summary.Database.Name.Should().Be(expected);

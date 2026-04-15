@@ -11,10 +11,10 @@
         <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-      <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
-      <SignAssembly>true</SignAssembly>
-      <DelaySign>false</DelaySign>
-      <AssemblyOriginatorKeyFile>..\neo4j.snk</AssemblyOriginatorKeyFile>
+        <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
+        <SignAssembly>true</SignAssembly>
+        <DelaySign>false</DelaySign>
+        <AssemblyOriginatorKeyFile>..\neo4j.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>

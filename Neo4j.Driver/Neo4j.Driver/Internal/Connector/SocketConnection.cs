@@ -34,9 +34,9 @@ internal sealed class SocketConnection : IConnection
     private readonly ISocketClient _client;
     private readonly string _idPrefix;
 
-    private readonly INeo4jLogger _neo4JLogger;
-
     private readonly Queue<IRequestMessage> _messages = new();
+
+    private readonly INeo4jLogger _neo4JLogger;
     private readonly IBoltProtocolFactory _protocolFactory;
     private readonly SemaphoreSlim _recvLock = new(1, 1);
     private readonly IResponsePipeline _responsePipeline;

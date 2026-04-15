@@ -21,7 +21,8 @@ namespace Neo4j.Driver;
 /// Representation for notifications found when executing a query. A notification can be visualized in a client
 /// pinpointing problems or other information about the query.
 /// </summary>
-[Obsolete("This API is deprecated and will be removed in a future release. Use IGqlStatusObject for status information.")]
+[Obsolete(
+    "This API is deprecated and will be removed in a future release. Use IGqlStatusObject for status information.")]
 public interface INotification
 {
     /// <summary>Gets the notification code of the <see cref="INotification"/> instance.</summary>
@@ -40,7 +41,7 @@ public interface INotification
     IInputPosition Position { get; }
 
     /// <summary>Gets the unparsed string value for <see cref="SeverityLevel"/> of the <see cref="INotification"/> instance.</summary>
-    public string RawSeverityLevel { get; }
+    string RawSeverityLevel { get; }
 
     /// <summary>Gets the unparsed string value for <see cref="Category"/> of the <see cref="INotification"/> instance.</summary>
     string RawCategory { get; }

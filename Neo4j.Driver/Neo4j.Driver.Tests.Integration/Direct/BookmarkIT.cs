@@ -76,12 +76,11 @@ public sealed class BookmarkIT : DirectDriverTestBase
         bookmark.Values.Should().NotBeEmpty();
 
         var tx = await session.BeginTransactionAsync();
-        var exc = await Record.ExceptionAsync(
-            async () =>
-            {
-                await tx.RunAsync("RETURN");
-                await tx.CommitAsync();
-            });
+        var exc = await Record.ExceptionAsync(async () =>
+        {
+            await tx.RunAsync("RETURN");
+            await tx.CommitAsync();
+        });
 
         exc.Should().BeOfType<ClientException>();
 

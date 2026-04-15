@@ -120,9 +120,10 @@ internal class CypherParameterValueTransformer : ICypherParameterValueTransforme
                     var converted = enumerable.Cast<object>().Select(Transform);
                     value = new List<object>(converted);
                 }
+
                 break;
             }
-            
+
             default:
             {
                 if (NeedsConversion(valueType))

@@ -35,12 +35,11 @@ public sealed class AsyncWriteCommandTxFunc : AsyncCommand
 
         try
         {
-            var summary = await session.ExecuteWriteAsync(
-                    async tx =>
-                    {
-                        var cursor = await tx.RunAsync("CREATE ()").ConfigureAwait(false);
-                        return await cursor.ConsumeAsync().ConfigureAwait(false);
-                    })
+            var summary = await session.ExecuteWriteAsync(async tx =>
+                {
+                    var cursor = await tx.RunAsync("CREATE ()").ConfigureAwait(false);
+                    return await cursor.ConsumeAsync().ConfigureAwait(false);
+                })
                 .ConfigureAwait(false);
 
             context.Bookmarks = session.LastBookmarks;

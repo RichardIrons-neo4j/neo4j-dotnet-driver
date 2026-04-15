@@ -154,9 +154,8 @@ public class AsyncEnumerableExtensionsTests
         }
 
         var result = await GetRecordsAsync()
-            .ToListAsync(
-                (string name, int age, string city, string country, string job) =>
-                    new { name, age, city, country, job });
+            .ToListAsync((string name, int age, string city, string country, string job) =>
+                new { name, age, city, country, job });
 
         result.Should()
             .BeEquivalentTo(
@@ -195,9 +194,8 @@ public class AsyncEnumerableExtensionsTests
         }
 
         var result = await GetRecordsAsync()
-            .ToListAsync(
-                (string name, int age, string city, string country, string job, string hobby) =>
-                    new { name, age, city, country, job, hobby });
+            .ToListAsync((string name, int age, string city, string country, string job, string hobby) =>
+                new { name, age, city, country, job, hobby });
 
         result.Should()
             .BeEquivalentTo(
@@ -244,9 +242,8 @@ public class AsyncEnumerableExtensionsTests
         }
 
         var result = await GetRecordsAsync()
-            .ToListAsync(
-                (string name, int age, string city, string country, string job, string hobby, string pet) =>
-                    new { name, age, city, country, job, hobby, pet });
+            .ToListAsync((string name, int age, string city, string country, string job, string hobby, string pet) =>
+                new { name, age, city, country, job, hobby, pet });
 
         result.Should()
             .BeEquivalentTo(
@@ -297,9 +294,16 @@ public class AsyncEnumerableExtensionsTests
         }
 
         var result = await GetRecordsAsync()
-            .ToListAsync(
-                (string name, int age, string city, string country, string job, string hobby, string pet, string car) =>
-                    new { name, age, city, country, job, hobby, pet, car });
+            .ToListAsync((
+                    string name,
+                    int age,
+                    string city,
+                    string country,
+                    string job,
+                    string hobby,
+                    string pet,
+                    string car) =>
+                new { name, age, city, country, job, hobby, pet, car });
 
         result.Should()
             .BeEquivalentTo(
@@ -352,17 +356,16 @@ public class AsyncEnumerableExtensionsTests
         }
 
         var result = await GetRecordsAsync()
-            .ToListAsync(
-                (
-                    string name,
-                    int age,
-                    string city,
-                    string country,
-                    string job,
-                    string hobby,
-                    string pet,
-                    string car,
-                    string food) => new { name, age, city, country, job, hobby, pet, car, food });
+            .ToListAsync((
+                string name,
+                int age,
+                string city,
+                string country,
+                string job,
+                string hobby,
+                string pet,
+                string car,
+                string food) => new { name, age, city, country, job, hobby, pet, car, food });
 
         result.Should()
             .BeEquivalentTo(
@@ -417,18 +420,17 @@ public class AsyncEnumerableExtensionsTests
         }
 
         var result = await GetRecordsAsync()
-            .ToListAsync(
-                (
-                    string name,
-                    int age,
-                    string city,
-                    string country,
-                    string job,
-                    string hobby,
-                    string pet,
-                    string car,
-                    string food,
-                    string sport) => new { name, age, city, country, job, hobby, pet, car, food, sport });
+            .ToListAsync((
+                string name,
+                int age,
+                string city,
+                string country,
+                string job,
+                string hobby,
+                string pet,
+                string car,
+                string food,
+                string sport) => new { name, age, city, country, job, hobby, pet, car, food, sport });
 
         result.Should()
             .BeEquivalentTo(

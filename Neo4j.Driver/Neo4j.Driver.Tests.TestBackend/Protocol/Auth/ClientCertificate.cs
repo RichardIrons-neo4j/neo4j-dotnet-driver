@@ -31,8 +31,8 @@ internal class ClientCertificate : ProtocolObject
     /// <inheritdoc/>
     public ClientCertificate()
     {
-        _certificate = new Lazy<X509Certificate2>(
-            () => ClientCertificateLoader.GetCertificate(data.certfile, data.keyfile, data.password));
+        _certificate = new Lazy<X509Certificate2>(() =>
+            ClientCertificateLoader.GetCertificate(data.certfile, data.keyfile, data.password));
     }
 
     public ClientCertificateType data { get; set; } = new();

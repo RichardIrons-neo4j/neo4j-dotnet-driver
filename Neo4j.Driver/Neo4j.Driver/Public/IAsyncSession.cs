@@ -63,32 +63,32 @@ public interface IAsyncSession : IAsyncQueryRunner
     Task<IAsyncTransaction> BeginTransactionAsync(Action<TransactionConfigBuilder> action);
 
     /// <summary>
-    /// Asynchronously begin a new transaction specifying an access mode <see cref="Neo4j.Driver.AccessMode"/>
-    /// A session can have at most one transaction running at a time, if you want to run multiple concurrent transactions,
-    /// you should use multiple concurrent sessions. All data operations in Neo4j are transactional. However, for
-    /// convenience we provide a <see cref="IAsyncQueryRunner.RunAsync(Query)"/> method directly on this session
-    /// interface as well. When you use that method, your query automatically gets wrapped in a transaction. If you want
-    /// to run multiple queries in the same transaction, you should wrap them in a transaction using this method.
+    /// Asynchronously begin a new transaction specifying an access mode <see cref="Neo4j.Driver.AccessMode"/> A
+    /// session can have at most one transaction running at a time, if you want to run multiple concurrent transactions, you
+    /// should use multiple concurrent sessions. All data operations in Neo4j are transactional. However, for convenience we
+    /// provide a <see cref="IAsyncQueryRunner.RunAsync(Query)"/> method directly on this session interface as well. When you
+    /// use that method, your query automatically gets wrapped in a transaction. If you want to run multiple queries in the
+    /// same transaction, you should wrap them in a transaction using this method.
     /// </summary>
     /// <param name="mode">
-    /// Given a <see cref="Neo4j.Driver.AccessMode"/> specifying whether the query should be run on a read or write
-    /// server. 
+    /// Given a <see cref="Neo4j.Driver.AccessMode"/> specifying whether the query should be run on a read
+    /// or write server.
     /// </param>
     /// <returns>A task of a new transaction.</returns>
     Task<IAsyncTransaction> BeginTransactionAsync(AccessMode mode);
 
     /// <summary>
-    /// Asynchronously begin a new transaction specifying an access mode <see cref="Neo4j.Driver.AccessMode"/> and with
-    /// a specific <see cref="TransactionConfig"/> in this session. A session can have at most one transaction running
-    /// at a time, if you want to run multiple concurrent transactions, you should use multiple concurrent sessions. All
-    /// data operations in Neo4j are transactional. However, for convenience we provide a
-    /// <see cref="IAsyncQueryRunner.RunAsync(Query)"/> method directly on this session interface as well. When you use
-    /// that method, your query automatically gets wrapped in a transaction. If you want to run multiple queries in the
-    /// same transaction, you should wrap them in a transaction using this method.
+    /// Asynchronously begin a new transaction specifying an access mode <see cref="Neo4j.Driver.AccessMode"/> and
+    /// with a specific <see cref="TransactionConfig"/> in this session. A session can have at most one transaction running at
+    /// a time, if you want to run multiple concurrent transactions, you should use multiple concurrent sessions. All data
+    /// operations in Neo4j are transactional. However, for convenience we provide a
+    /// <see cref="IAsyncQueryRunner.RunAsync(Query)"/> method directly on this session interface as well. When you use that
+    /// method, your query automatically gets wrapped in a transaction. If you want to run multiple queries in the same
+    /// transaction, you should wrap them in a transaction using this method.
     /// </summary>
     /// <param name="mode">
-    /// Given a <see cref="Neo4j.Driver.AccessMode"/> specifying whether the query should be run on a read or write
-    /// server. 
+    /// Given a <see cref="Neo4j.Driver.AccessMode"/> specifying whether the query should be run on a read
+    /// or write server.
     /// </param>
     /// <param name="action">
     /// Given a <see cref="TransactionConfigBuilder"/>, defines how to set the configurations for the new
@@ -153,9 +153,9 @@ public interface IAsyncSession : IAsyncQueryRunner
 
     /// <summary>
     /// Asynchronously run a query within an AutoCommit transaction. Uses the specific <see cref="TransactionConfig"/>
-    /// and returns a task of result stream. This method accepts a String representing a Cypher query which will be
-    /// compiled into a query object that can be used to efficiently execute this query multiple times. This method
-    /// optionally accepts a set of parameters which will be injected into the query object query by Neo4j.
+    /// and returns a task of result stream. This method accepts a String representing a Cypher query which will be compiled
+    /// into a query object that can be used to efficiently execute this query multiple times. This method optionally accepts a
+    /// set of parameters which will be injected into the query object query by Neo4j.
     /// </summary>
     /// <param name="query">A Cypher query.</param>
     /// <param name="action">
@@ -167,9 +167,9 @@ public interface IAsyncSession : IAsyncQueryRunner
 
     /// <summary>
     /// Asynchronously run a query within an AutoCommit transaction. Uses the specific <see cref="TransactionConfig"/>
-    /// and returns a task of result stream. This method accepts a String representing a Cypher query which will be
-    /// compiled into a query object that can be used to efficiently execute this query multiple times. This method
-    /// optionally accepts a set of parameters which will be injected into the query object query by Neo4j.
+    /// and returns a task of result stream. This method accepts a String representing a Cypher query which will be compiled
+    /// into a query object that can be used to efficiently execute this query multiple times. This method optionally accepts a
+    /// set of parameters which will be injected into the query object query by Neo4j.
     /// </summary>
     /// <param name="query">A Cypher query.</param>
     /// <param name="parameters">Input parameters for the query.</param>

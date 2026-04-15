@@ -29,16 +29,15 @@ public sealed class BlockingReadCommandTxFunc : BlockingCommand
     {
         using var session = NewSession(AccessMode.Read, context);
 
-        session.ExecuteRead(
-            txc =>
-            {
-                var result = txc.Run("MATCH (n) RETURN n LIMIT 1");
-                var record = result.SingleOrDefault();
-                record?[0].Should().BeAssignableTo<INode>();
+        session.ExecuteRead(txc =>
+        {
+            var result = txc.Run("MATCH (n) RETURN n LIMIT 1");
+            var record = result.SingleOrDefault();
+            record?[0].Should().BeAssignableTo<INode>();
 
-                context.NodeRead(result.Consume());
+            context.NodeRead(result.Consume());
 
-                return record;
-            });
+            return record;
+        });
     }
 }

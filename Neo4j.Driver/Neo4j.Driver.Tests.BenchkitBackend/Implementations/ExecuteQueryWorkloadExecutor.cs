@@ -18,7 +18,7 @@ using Neo4j.Driver.Tests.BenchkitBackend.Types;
 
 namespace Neo4j.Driver.Tests.BenchkitBackend.Implementations;
 
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+using ILogger = ILogger;
 
 internal class ExecuteQueryWorkloadExecutor(
     IDriver driver,

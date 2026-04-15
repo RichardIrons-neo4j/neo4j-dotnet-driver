@@ -83,6 +83,16 @@ public class DurationParameterValue
 
 internal class CypherToNative
 {
+    internal static readonly Dictionary<string, Type> SupportedTypeNames = new()
+    {
+        ["i8"] = typeof(sbyte),
+        ["i16"] = typeof(short),
+        ["i32"] = typeof(int),
+        ["i64"] = typeof(long),
+        ["f32"] = typeof(float),
+        ["f64"] = typeof(double)
+    };
+
     //Mapping of object type to a cypher type name string that will be used in the JSON.
     private static Dictionary<string, Type> TypeMap { get; } = new()
     {
@@ -276,16 +286,6 @@ internal class CypherToNative
 
         return byteArray;
     }
-
-    internal static readonly Dictionary<string, Type> SupportedTypeNames = new()
-    {
-        ["i8"] = typeof(sbyte),
-        ["i16"] = typeof(short),
-        ["i32"] = typeof(int),
-        ["i64"] = typeof(long),
-        ["f32"] = typeof(float),
-        ["f64"] = typeof(double)
-    };
 
     private static object CypherDuration(Type objectType, CypherToNativeObject obj)
     {

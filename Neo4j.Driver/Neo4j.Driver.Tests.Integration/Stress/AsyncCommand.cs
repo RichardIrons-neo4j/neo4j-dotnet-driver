@@ -33,9 +33,8 @@ public abstract class AsyncCommand : IAsyncCommand
 
     protected IAsyncSession NewSession(AccessMode mode, StressTestContext context)
     {
-        return _driver.AsyncSession(
-            o =>
-                o.WithDefaultAccessMode(mode)
-                    .WithBookmarks(_useBookmark ? new[] { context.Bookmarks } : Array.Empty<Bookmarks>()));
+        return _driver.AsyncSession(o =>
+            o.WithDefaultAccessMode(mode)
+                .WithBookmarks(_useBookmark ? new[] { context.Bookmarks } : Array.Empty<Bookmarks>()));
     }
 }

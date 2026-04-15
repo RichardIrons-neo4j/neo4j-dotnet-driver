@@ -19,7 +19,7 @@ namespace Neo4j.Driver.Internal.Mapping.ConventionTranslation;
 
 internal class NoOpConventionTranslator : IConventionTranslator
 {
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public string Translate(string input)
     {
         return input;

@@ -31,7 +31,7 @@ internal readonly struct DictionaryAccessWrapper(IDictionary dictionary) : IDict
     public ICollection<string> Keys => dictionary.Keys.Cast<string>().ToList();
     public ICollection<object> Values => dictionary.Values.Cast<object>().ToList();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool ICollection<KeyValuePair<string, object>>.Remove(KeyValuePair<string, object> item)
     {
         throw new NotSupportedException("This dictionary is read-only.");
@@ -40,14 +40,20 @@ internal readonly struct DictionaryAccessWrapper(IDictionary dictionary) : IDict
     public int Count => dictionary.Count;
     public bool IsReadOnly => true;
 
-    public void Add(string key, object value) => throw new NotSupportedException("This dictionary is read-only.");
+    public void Add(string key, object value)
+    {
+        throw new NotSupportedException("This dictionary is read-only.");
+    }
 
     public bool ContainsKey(string key)
     {
         return dictionary.Contains(key);
     }
 
-    public bool Remove(string key) => throw new NotSupportedException("This dictionary is read-only.");
+    public bool Remove(string key)
+    {
+        throw new NotSupportedException("This dictionary is read-only.");
+    }
 
     public bool TryGetValue(string key, out object value)
     {
@@ -61,19 +67,27 @@ internal readonly struct DictionaryAccessWrapper(IDictionary dictionary) : IDict
         return false;
     }
 
-    public void Add(KeyValuePair<string, object> item) =>
+    public void Add(KeyValuePair<string, object> item)
+    {
         throw new NotSupportedException("This dictionary is read-only.");
+    }
 
-    public void Clear() => throw new NotSupportedException("This dictionary is read-only.");
+    public void Clear()
+    {
+        throw new NotSupportedException("This dictionary is read-only.");
+    }
 
     public bool Contains(KeyValuePair<string, object> item)
     {
         return TryGetValue(item.Key, out var value) && Equals(value, item.Value);
     }
 
-    public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex) => throw new NotSupportedException();
+    public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
+    {
+        throw new NotSupportedException();
+    }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IEnumerator<KeyValuePair<string, object>> IEnumerable<KeyValuePair<string, object>>.GetEnumerator()
     {
         foreach (DictionaryEntry entry in dictionary)
@@ -82,7 +96,7 @@ internal readonly struct DictionaryAccessWrapper(IDictionary dictionary) : IDict
         }
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator()
     {
         return ((IEnumerable<KeyValuePair<string, object>>)this).GetEnumerator();

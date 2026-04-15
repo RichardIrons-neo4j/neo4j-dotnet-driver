@@ -21,9 +21,9 @@ namespace Neo4j.Driver.Tests.TestBackend.Protocol.UI;
 
 public class ConsoleTextWriter : TextWriter
 {
+    private const ConsoleColor WriteColor = ConsoleColor.DarkCyan;
     public override Encoding Encoding => Console.Out.Encoding;
     private string Now => DateTime.UtcNow.ToString("HH:mm:ss");
-    private const ConsoleColor WriteColor = ConsoleColor.DarkCyan;
 
     private void DoInColor(Action<TextWriter> action)
     {

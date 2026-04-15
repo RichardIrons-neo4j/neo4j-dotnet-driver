@@ -227,10 +227,9 @@ public class ConnectionPoolTests
         {
             var connMock = new Mock<IPooledConnection>();
             connMock.SetupGet(x => x.Version).Returns(BoltProtocolVersion.V5_0);
-            connMock.Setup(
-                    x => x.InitAsync(
-                        It.IsAny<SessionConfig>(),
-                        It.IsAny<CancellationToken>()))
+            connMock.Setup(x => x.InitAsync(
+                    It.IsAny<SessionConfig>(),
+                    It.IsAny<CancellationToken>()))
                 .Throws<NotImplementedException>();
 
             var connFactory = new MockedConnectionFactory(connMock.Object);
@@ -238,8 +237,11 @@ public class ConnectionPoolTests
                 connFactory,
                 driverContext: TestDriverContext.MockContext);
 
-            var exc = await Record.ExceptionAsync(
-                () => pool.AcquireAsync(AccessMode.Read, null, null, Bookmarks.Empty));
+            var exc = await Record.ExceptionAsync(() => pool.AcquireAsync(
+                AccessMode.Read,
+                null,
+                null,
+                Bookmarks.Empty));
 
             exc.Should().BeOfType<NotImplementedException>();
             connMock.Verify(x => x.DestroyAsync(), Times.Once);
@@ -632,9 +634,8 @@ public class ConnectionPoolTests
                     AuthTokenManagers.None,
                     new Config { ConnectionAcquisitionTimeout = TimeSpan.FromSeconds(5) }));
 
-            var exception = await Record.ExceptionAsync(
-                () =>
-                    pool.AcquireAsync(AccessMode.Read, null, null, Bookmarks.Empty));
+            var exception = await Record.ExceptionAsync(() =>
+                pool.AcquireAsync(AccessMode.Read, null, null, Bookmarks.Empty));
 
             exception.Should()
                 .BeOfType<ClientException>()
@@ -1197,32 +1198,29 @@ public class ConnectionPoolTests
             var waitedTime = 0;
 
             var acquireTasks = Enumerable.Range(0, 100)
-                .Select(
-                    _ => Task.Run(
-                        async () =>
-                        {
-                            var conn = await pool.AcquireAsync(AccessMode.Read, null, null, Bookmarks.Empty);
-                            Interlocked.Increment(ref acquireCounter);
+                .Select(_ => Task.Run(async () =>
+                {
+                    var conn = await pool.AcquireAsync(AccessMode.Read, null, null, Bookmarks.Empty);
+                    Interlocked.Increment(ref acquireCounter);
 
-                            var wait = rnd.Next(1000);
-                            Interlocked.Add(ref waitedTime, wait);
-                            Thread.Sleep(wait);
+                    var wait = rnd.Next(1000);
+                    Interlocked.Add(ref waitedTime, wait);
+                    Thread.Sleep(wait);
 
-                            await conn.CloseAsync();
-                            Interlocked.Increment(ref releaseCounter);
-                        }));
+                    await conn.CloseAsync();
+                    Interlocked.Increment(ref releaseCounter);
+                }));
 
             var reportedSizes = new ConcurrentQueue<int>();
-            var reportTask = Task.Run(
-                () =>
+            var reportTask = Task.Run(() =>
+            {
+                while (stopMarker == 0)
                 {
-                    while (stopMarker == 0)
-                    {
-                        reportedSizes.Enqueue(pool.PoolSize);
+                    reportedSizes.Enqueue(pool.PoolSize);
 
-                        Thread.Sleep(50);
-                    }
-                });
+                    Thread.Sleep(50);
+                }
+            });
 
             await Task.WhenAll(acquireTasks);
 
@@ -1284,32 +1282,29 @@ public class ConnectionPoolTests
             var waitedTime = 0;
 
             var acquireTasks = Enumerable.Range(0, 100)
-                .Select(
-                    _ => Task.Run(
-                        async () =>
-                        {
-                            var conn = await pool.AcquireAsync(AccessMode.Read, null, null, Bookmarks.Empty);
-                            Interlocked.Increment(ref acquireCounter);
+                .Select(_ => Task.Run(async () =>
+                {
+                    var conn = await pool.AcquireAsync(AccessMode.Read, null, null, Bookmarks.Empty);
+                    Interlocked.Increment(ref acquireCounter);
 
-                            var wait = rnd.Next(1000);
-                            Interlocked.Add(ref waitedTime, wait);
-                            await Task.Delay(wait);
+                    var wait = rnd.Next(1000);
+                    Interlocked.Add(ref waitedTime, wait);
+                    await Task.Delay(wait);
 
-                            await conn.CloseAsync();
-                            Interlocked.Increment(ref releaseCounter);
-                        }));
+                    await conn.CloseAsync();
+                    Interlocked.Increment(ref releaseCounter);
+                }));
 
             var reportedSizes = new ConcurrentQueue<int>();
-            var reportTask = Task.Run(
-                () =>
+            var reportTask = Task.Run(() =>
+            {
+                while (stopMarker == 0)
                 {
-                    while (stopMarker == 0)
-                    {
-                        reportedSizes.Enqueue(pool.PoolSize);
+                    reportedSizes.Enqueue(pool.PoolSize);
 
-                        Thread.Sleep(50);
-                    }
-                });
+                    Thread.Sleep(50);
+                }
+            });
 
             var tasks = acquireTasks as Task[] ?? acquireTasks.ToArray();
 

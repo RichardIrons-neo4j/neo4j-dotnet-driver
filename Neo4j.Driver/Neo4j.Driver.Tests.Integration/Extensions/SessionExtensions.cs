@@ -32,7 +32,7 @@ public static class SessionExtensions
 
     public static Task<IRecord> RunAndSingleAsync(this IAsyncQueryRunner runner, string query, object parameters)
     {
-        return RunAndSingleAsync(runner, query, parameters, r => r);
+        return runner.RunAndSingleAsync(query, parameters, r => r);
     }
 
     public static async Task<T> RunAndSingleAsync<T>(

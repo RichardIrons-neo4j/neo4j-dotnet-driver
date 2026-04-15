@@ -15,38 +15,24 @@
 
 namespace Neo4j.Driver.Mapping.ConventionTranslation;
 
-/// <summary>
-/// Represents the various identifier naming conventions supported.
-/// </summary>
+/// <summary>Represents the various identifier naming conventions supported.</summary>
 public enum IdentifierCaseConvention
 {
-    /// <summary>
-    /// Represents the C# identifier naming convention, e.g. exampleFieldName or ExampleFieldName.
-    /// </summary>
+    /// <summary>Represents the C# identifier naming convention, e.g. exampleFieldName or ExampleFieldName.</summary>
     CSharpIdentifier,
 
-    /// <summary>
-    /// Represents the camel case convention, e.g. exampleFieldName.
-    /// </summary>
+    /// <summary>Represents the camel case convention, e.g. exampleFieldName.</summary>
     CamelCase,
 
-    /// <summary>
-    /// Represents the pascal case convention, e.g. ExampleFieldName.
-    /// </summary>
+    /// <summary>Represents the pascal case convention, e.g. ExampleFieldName.</summary>
     PascalCase,
 
-    /// <summary>
-    /// Represents the snake case convention, e.g. example_field_name.
-    /// </summary>
+    /// <summary>Represents the snake case convention, e.g. example_field_name.</summary>
     SnakeCase,
 
-    /// <summary>
-    /// Represents the screaming snake case convention, e.g. EXAMPLE_FIELD_NAME.
-    /// </summary>
+    /// <summary>Represents the screaming snake case convention, e.g. EXAMPLE_FIELD_NAME.</summary>
     ScreamingSnakeCase,
 
-    /// <summary>
-    /// Represents the kebab case convention, e.g. example-field-name.
-    /// </summary>
+    /// <summary>Represents the kebab case convention, e.g. example-field-name.</summary>
     KebabCase
 }

@@ -31,13 +31,12 @@ public sealed class AsyncWrongCommandTxFunc : AsyncCommand
         await using var session = NewSession(AccessMode.Read, context);
         try
         {
-            var result = await session.ExecuteReadAsync(
-                    async tx =>
-                    {
-                        var cursor = await tx.RunAsync("RETURN").ConfigureAwait(false);
-                        await cursor.ConsumeAsync().ConfigureAwait(false);
-                        return false;
-                    })
+            var result = await session.ExecuteReadAsync(async tx =>
+                {
+                    var cursor = await tx.RunAsync("RETURN").ConfigureAwait(false);
+                    await cursor.ConsumeAsync().ConfigureAwait(false);
+                    return false;
+                })
                 .ConfigureAwait(false);
 
             result.Should().BeTrue("If this case is met, the code didn't throw an expected exception in TXFunc");

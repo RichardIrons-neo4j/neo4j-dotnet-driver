@@ -131,12 +131,11 @@ public sealed class CausalCluster : ICausalCluster
                         continue;
                     }
 
-                    onlineMembers = records.Select(
-                            record => record["addresses"]
-                                .As<List<object>>()
-                                .First()
-                                .As<string>()
-                                .Replace("bolt://", ""))
+                    onlineMembers = records.Select(record => record["addresses"]
+                            .As<List<object>>()
+                            .First()
+                            .As<string>()
+                            .Replace("bolt://", ""))
                         .ToArray();
                 }
                 catch (Exception exc)
@@ -172,10 +171,9 @@ public sealed class CausalCluster : ICausalCluster
 
     private static bool DbAvailable(List<IRecord> cluster)
     {
-        return cluster.Any(
-            x => x.Values.TryGetValue("databases", out var y) &&
-                y.As<IDictionary<string, object>>()
-                    .TryGetValue("neo4j", out _));
+        return cluster.Any(x => x.Values.TryGetValue("databases", out var y) &&
+            y.As<IDictionary<string, object>>()
+                .TryGetValue("neo4j", out _));
     }
 
     private void Dispose(bool disposing)

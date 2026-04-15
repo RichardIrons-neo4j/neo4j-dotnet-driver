@@ -19,15 +19,14 @@ using System.Linq;
 
 namespace Neo4j.Driver.Mapping.ConventionTranslation;
 
-/// <summary>
-/// Formats a list of tokens into a string using a specified standard case convention.
-/// </summary>
+/// <summary>Formats a list of tokens into a string using a specified standard case convention.</summary>
 public class StandardCaseFormatter : IFieldFormatter<IEnumerable<string>>
 {
     private readonly FieldCaseConvention _convention;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="StandardCaseFormatter"/> class with the specified case convention.
+    /// Initializes a new instance of the <see cref="StandardCaseFormatter"/> class with the specified case
+    /// convention.
     /// </summary>
     /// <param name="convention">The case convention to use for formatting.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported case convention is provided.</exception>
@@ -41,7 +40,7 @@ public class StandardCaseFormatter : IFieldFormatter<IEnumerable<string>>
         _convention = convention;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public string Format(IEnumerable<string> data)
     {
         var tokens = data.ToList();
@@ -58,8 +57,7 @@ public class StandardCaseFormatter : IFieldFormatter<IEnumerable<string>>
 
     private static string FormatPascalCase(IEnumerable<string> tokens)
     {
-        return string.Concat(
-            tokens.Select(t => char.ToUpper(t[0]) + t.Substring(1).ToLower()));
+        return string.Concat(tokens.Select(t => char.ToUpper(t[0]) + t.Substring(1).ToLower()));
     }
 
     private static string FormatCamelCase(IReadOnlyList<string> tokens)

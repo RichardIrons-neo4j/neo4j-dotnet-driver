@@ -49,28 +49,27 @@ public class GqlStatusObjectsAndNotificationsTests
             .Should()
             .HaveCount(1)
             .And.Subject.Should()
-            .SatisfyRespectively(
-                x =>
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<GqlStatusObject>().Which;
+                var dict = new Dictionary<string, object>
                 {
-                    var first = x.Should().BeOfType<GqlStatusObject>().Which;
-                    var dict = new Dictionary<string, object>
-                    {
-                        ["CURRENT_SCHEMA"] = "/",
-                        ["OPERATION"] = "",
-                        ["OPERATION_CODE"] = "0"
-                    };
+                    ["CURRENT_SCHEMA"] = "/",
+                    ["OPERATION"] = "",
+                    ["OPERATION_CODE"] = "0"
+                };
 
-                    first.GqlStatus.Should().Be(exp.GqlStatus);
-                    first.StatusDescription.Should().Be(exp.StatusDescription);
-                    first.Position.Should().BeNull();
-                    first.Severity.Should().Be(NotificationSeverity.Unknown);
-                    first.RawSeverity.Should().BeNull();
-                    first.Classification.Should().Be(NotificationClassification.Unknown);
-                    first.DiagnosticRecord.Should().BeEquivalentTo(dict);
-                    first.RawClassification.Should().BeNull();
-                    first.IsNotification.Should().BeFalse();
-                    first.Title.Should().BeNull();
-                });
+                first.GqlStatus.Should().Be(exp.GqlStatus);
+                first.StatusDescription.Should().Be(exp.StatusDescription);
+                first.Position.Should().BeNull();
+                first.Severity.Should().Be(NotificationSeverity.Unknown);
+                first.RawSeverity.Should().BeNull();
+                first.Classification.Should().Be(NotificationClassification.Unknown);
+                first.DiagnosticRecord.Should().BeEquivalentTo(dict);
+                first.RawClassification.Should().BeNull();
+                first.IsNotification.Should().BeFalse();
+                first.Title.Should().BeNull();
+            });
     }
 
     public static IEnumerable<object[]> FinalizeStatusObjectsShouldPolyfilData()

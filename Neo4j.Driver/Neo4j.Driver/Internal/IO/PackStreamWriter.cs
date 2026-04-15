@@ -111,8 +111,7 @@ internal sealed class PackStreamWriter
                 break;
 
             default:
-                    throw new ProtocolException(
-                        $"Cannot understand {nameof(value)} with type {value.GetType().FullName}");
+                throw new ProtocolException($"Cannot understand {nameof(value)} with type {value.GetType().FullName}");
         }
     }
 
@@ -228,7 +227,7 @@ internal sealed class PackStreamWriter
             WriteListHeader(value.Count);
             foreach (var item in value)
             {
-                    Write(item);
+                Write(item);
             }
         }
     }

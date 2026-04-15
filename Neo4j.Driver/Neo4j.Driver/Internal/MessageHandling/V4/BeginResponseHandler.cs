@@ -23,8 +23,8 @@ internal sealed class BeginResponseHandler : MetadataCollectingResponseHandler
 {
     private readonly HomeDbCacheKey _cacheKey;
     private readonly IHomeDbCache _homeDbCache;
-    private readonly SessionConfig _sessionConfig;
     private readonly bool _isDefaultDatabase;
+    private readonly SessionConfig _sessionConfig;
 
     public BeginResponseHandler(
         HomeDbCacheKey cacheKey,

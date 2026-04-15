@@ -22,7 +22,6 @@ namespace Neo4j.Driver.Internal.Util;
 
 internal class BytesToTypedArrayHelper
 {
-    private delegate Array BytesConverter(Span<byte> bytes);
     private static readonly ConcurrentDictionary<Type, BytesConverter> Converters = new();
 
     public static Array ConvertBytesToTypedArray(byte[] bytes, Type elementType)
@@ -63,4 +62,6 @@ internal class BytesToTypedArrayHelper
 
         return (BytesConverter)Delegate.CreateDelegate(typeof(BytesConverter), method);
     }
+
+    private delegate Array BytesConverter(Span<byte> bytes);
 }

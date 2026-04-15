@@ -61,11 +61,10 @@ public class BasePackStreamTests : PackStreamTestSpecs
     internal virtual PackStreamWriterMachine CreateWriterMachine(
         IReadOnlyDictionary<Type, IPackStreamSerializer> structHandlers)
     {
-        return new PackStreamWriterMachine(
-            s =>
-                new PackStreamWriter(
-                    new MessageFormat(structHandlers),
-                    s));
+        return new PackStreamWriterMachine(s =>
+            new PackStreamWriter(
+                new MessageFormat(structHandlers),
+                s));
     }
 
     [Fact]

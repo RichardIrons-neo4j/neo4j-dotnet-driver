@@ -19,9 +19,9 @@ namespace Neo4j.Driver.Internal.Util;
 
 internal class VarLong
 {
-    public long Value { get; private set; }
-    private byte _position = 0;
     private const string ExceptionMessage = "VarLong Segment overflow";
+    private byte _position;
+    public long Value { get; private set; }
 
     public void AddSegment(byte segment)
     {
@@ -34,5 +34,5 @@ internal class VarLong
         var shiftedSegment = (long)(segment << (_position * 7));
         Value |= shiftedSegment;
         _position++;
-    }       
+    }
 }

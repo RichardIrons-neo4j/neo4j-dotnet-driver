@@ -79,16 +79,15 @@ public sealed class BoltV4IT : RoutingDriverTestBase
             bookmarks = initial.LastBookmarks;
         }
 
-        await using var session = _driver.AsyncSession(
-            o =>
+        await using var session = _driver.AsyncSession(o =>
+        {
+            if (!string.IsNullOrEmpty(dbname))
             {
-                if (!string.IsNullOrEmpty(dbname))
-                {
-                    o.WithDatabase(dbname);
-                }
+                o.WithDatabase(dbname);
+            }
 
-                o.WithBookmarks(bookmarks ?? Bookmarks.Empty);
-            });
+            o.WithBookmarks(bookmarks ?? Bookmarks.Empty);
+        });
 
         var result = await session.RunAsync(new Query("RETURN 1"));
         var summary = await result.ConsumeAsync();
@@ -115,16 +114,15 @@ public sealed class BoltV4IT : RoutingDriverTestBase
 
     private async Task VerifyDatabaseNameOnSummaryTxFunc(string name, string expected, Bookmarks bookmarks = null)
     {
-        await using var session = _driver.AsyncSession(
-            o =>
+        await using var session = _driver.AsyncSession(o =>
+        {
+            if (!string.IsNullOrEmpty(name))
             {
-                if (!string.IsNullOrEmpty(name))
-                {
-                    o.WithDatabase(name);
-                }
+                o.WithDatabase(name);
+            }
 
-                o.WithBookmarks(bookmarks ?? Bookmarks.Empty);
-            });
+            o.WithBookmarks(bookmarks ?? Bookmarks.Empty);
+        });
 
         var summary =
             await session.ExecuteReadAsync(txc => txc.RunAndConsumeAsync("RETURN 1"));

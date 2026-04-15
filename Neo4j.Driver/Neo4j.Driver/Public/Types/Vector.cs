@@ -23,20 +23,13 @@ using Neo4j.Driver.Internal.Types;
 
 namespace Neo4j.Driver;
 
-/// <summary>
-/// An abstract base class for a mathematical vector with elements of supported numeric types.
-/// </summary>
+/// <summary>An abstract base class for a mathematical vector with elements of supported numeric types.</summary>
 /// <remarks>
-/// Supported element types are: <see cref="float"/>, <see cref="double"/>, <see cref="sbyte"/>, <see cref="short"/>,
-/// <see cref="int"/>, and <see cref="long"/>.
+/// Supported element types are: <see cref="float"/>, <see cref="double"/>, <see cref="sbyte"/>,
+/// <see cref="short"/>, <see cref="int"/>, and <see cref="long"/>.
 /// </remarks>
 public abstract class Vector : IValue, IVector, IEquatable<IVector>
 {
-    /// <summary>
-    /// The set of supported types for vector elements. No other types are allowed.
-    /// </summary>
-    public static IEnumerable<Type> SupportedTypes => TypeNameMap.Keys;
-
     private static readonly Dictionary<Type, string> TypeNameMap = new()
     {
         [typeof(sbyte)] = "INTEGER8",
@@ -44,34 +37,41 @@ public abstract class Vector : IValue, IVector, IEquatable<IVector>
         [typeof(int)] = "INTEGER32",
         [typeof(long)] = "INTEGER",
         [typeof(float)] = "FLOAT32",
-        [typeof(double)] = "FLOAT",
+        [typeof(double)] = "FLOAT"
     };
 
-    /// <summary>
-    /// Determines whether the specified type is supported for use as a vector element.
-    /// </summary>
+    private static readonly MethodInfo CreateMethodInfo = typeof(Vector).GetMethod(nameof(Create));
+
+    /// <summary>The set of supported types for vector elements. No other types are allowed.</summary>
+    public static IEnumerable<Type> SupportedTypes => TypeNameMap.Keys;
+
+    /// <summary>Gets the number of elements in the vector.</summary>
+    public abstract int Count { get; }
+
+    /// <inheritdoc/>
+    public bool Equals(IVector other)
+    {
+        return other != null && UntypedValues.SequenceEqual(other.UntypedValues);
+    }
+
+    /// <summary>Gets the elements of the vector as an array of objects, regardless of their underlying type.</summary>
+    public IEnumerable<object> UntypedValues { get; protected set; }
+
+    /// <summary>Gets the original byte stream from which the vector was deserialized, if applicable.</summary>
+    public byte[] OriginalByteStream { get; protected set; }
+
+    /// <summary>Gets the type of the elements contained in the vector.</summary>
+    public abstract Type ElementType { get; }
+
+    /// <summary>Determines whether the specified type is supported for use as a vector element.</summary>
     /// <param name="type">The type to check for support.</param>
-    /// <returns>
-    /// <c>true</c> if the specified type is supported; otherwise, <c>false</c>.
-    /// </returns>
+    /// <returns><c>true</c> if the specified type is supported; otherwise, <c>false</c>.</returns>
     public static bool IsSupported(Type type)
     {
         return TypeNameMap.ContainsKey(type);
     }
 
-    /// <summary>
-    /// Gets the elements of the vector as an array of objects, regardless of their underlying type.
-    /// </summary>
-    public IEnumerable<object> UntypedValues { get; protected set; }
-
-    /// <summary>
-    /// Gets the original byte stream from which the vector was deserialized, if applicable.
-    /// </summary>
-    public byte[] OriginalByteStream { get; protected set; }
-
-    /// <summary>
-    /// Creates a new <see cref="Vector{T}"/> instance from the specified collection of values.
-    /// </summary>
+    /// <summary>Creates a new <see cref="Vector{T}"/> instance from the specified collection of values.</summary>
     /// <typeparam name="T">The type of the vector elements. Must be a supported numeric type.</typeparam>
     /// <param name="values">The collection of values to initialize the vector with.</param>
     /// <param name="originalByteStream">The original byte stream from which the vector was deserialized, if applicable.</param>
@@ -86,8 +86,6 @@ public abstract class Vector : IValue, IVector, IEquatable<IVector>
 
         return new Vector<T>(values, originalByteStream);
     }
-
-    private static readonly MethodInfo CreateMethodInfo = typeof(Vector).GetMethod(nameof(Create));
 
     internal static Vector CreateDynamic(Array values, byte[] originalByteStream = null)
     {
@@ -107,23 +105,7 @@ public abstract class Vector : IValue, IVector, IEquatable<IVector>
         return CreateDynamic(values.Select(v => v.AsType(elementType)).ToArray(), originalByteStream);
     }
 
-    /// <summary>
-    /// Gets the type of the elements contained in the vector.
-    /// </summary>
-    public abstract Type ElementType { get; }
-
-    /// <summary>
-    /// Gets the number of elements in the vector.
-    /// </summary>
-    public abstract int Count { get; }
-
-    /// <inheritdoc />
-    public bool Equals(IVector other)
-    {
-        return other != null && UntypedValues.SequenceEqual(other.UntypedValues);
-    }
-
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override string ToString()
     {
         var elementType = GetTypeString(ElementType);

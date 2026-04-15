@@ -111,17 +111,16 @@ public class ResultCursorTests
 
             var count = 0;
             var cursor = new ResultCursor(stream.Object);
-            var t = Task.Factory.StartNew(
-                async () =>
+            var t = Task.Factory.StartNew(async () =>
+            {
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                while (await cursor.FetchAsync())
                 {
-                    // ReSharper disable once LoopCanBeConvertedToQuery
-                    while (await cursor.FetchAsync())
-                    {
-                        count++;
-                    }
+                    count++;
+                }
 
-                    count.Should().Be(10);
-                });
+                count.Should().Be(10);
+            });
 
             while (count < 5)
             {

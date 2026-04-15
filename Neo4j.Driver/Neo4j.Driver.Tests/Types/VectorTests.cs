@@ -93,7 +93,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new sbyte[] { }, "vector([], 0, INTEGER8 NOT NULL)")]
+    [InlineData(new sbyte[] {}, "vector([], 0, INTEGER8 NOT NULL)")]
     [InlineData(new sbyte[] { 0 }, "vector([0], 1, INTEGER8 NOT NULL)")]
     [InlineData(new sbyte[] { 1, -2, 127 }, "vector([1, -2, 127], 3, INTEGER8 NOT NULL)")]
     public void ToString_ReturnsCorrectFormat_SByte(sbyte[] values, string expected)
@@ -104,7 +104,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new short[] { }, "vector([], 0, INTEGER16 NOT NULL)")]
+    [InlineData(new short[] {}, "vector([], 0, INTEGER16 NOT NULL)")]
     [InlineData(new short[] { 0, 100, -32768 }, "vector([0, 100, -32768], 3, INTEGER16 NOT NULL)")]
     public void ToString_ReturnsCorrectFormat_Short(short[] values, string expected)
     {
@@ -114,7 +114,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new int[] { }, "vector([], 0, INTEGER32 NOT NULL)")]
+    [InlineData(new int[] {}, "vector([], 0, INTEGER32 NOT NULL)")]
     [InlineData(new[] { 42, -1000 }, "vector([42, -1000], 2, INTEGER32 NOT NULL)")]
     public void ToString_ReturnsCorrectFormat_Int(int[] values, string expected)
     {
@@ -124,7 +124,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new long[] { }, "vector([], 0, INTEGER NOT NULL)")]
+    [InlineData(new long[] {}, "vector([], 0, INTEGER NOT NULL)")]
     [InlineData(new[] { 0, 9223372036854775807L }, "vector([0, 9223372036854775807], 2, INTEGER NOT NULL)")]
     public void ToString_ReturnsCorrectFormat_Long(long[] values, string expected)
     {
@@ -134,7 +134,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new float[] { }, "vector([], 0, FLOAT32 NOT NULL)")]
+    [InlineData(new float[] {}, "vector([], 0, FLOAT32 NOT NULL)")]
     [InlineData(new[] { 0.5f }, "vector([0.5], 1, FLOAT32 NOT NULL)")]
     [InlineData(new[] { -1.5f, 3f }, "vector([-1.5, 3], 2, FLOAT32 NOT NULL)")]
     public void ToString_ReturnsCorrectFormat_Float(float[] values, string expected)
@@ -145,7 +145,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new double[] { }, "vector([], 0, FLOAT NOT NULL)")]
+    [InlineData(new double[] {}, "vector([], 0, FLOAT NOT NULL)")]
     [InlineData(new[] { 0.0 }, "vector([0], 1, FLOAT NOT NULL)")]
     [InlineData(new[] { 1.23, -4.56 }, "vector([1.23, -4.56], 2, FLOAT NOT NULL)")]
     public void ToString_ReturnsCorrectFormat_Double(double[] values, string expected)
@@ -156,7 +156,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new sbyte[] { }, "vector([], 0, INTEGER8 NOT NULL)")]
+    [InlineData(new sbyte[] {}, "vector([], 0, INTEGER8 NOT NULL)")]
     public void ToString_HandlesSpecialFloatValues_SByte(sbyte[] values, string expected)
     {
         var vector = new Vector<sbyte>(values);
@@ -165,7 +165,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new short[] { }, "vector([], 0, INTEGER16 NOT NULL)")]
+    [InlineData(new short[] {}, "vector([], 0, INTEGER16 NOT NULL)")]
     public void ToString_HandlesSpecialFloatValues_Short(short[] values, string expected)
     {
         var vector = new Vector<short>(values);
@@ -174,7 +174,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new int[] { }, "vector([], 0, INTEGER32 NOT NULL)")]
+    [InlineData(new int[] {}, "vector([], 0, INTEGER32 NOT NULL)")]
     public void ToString_HandlesSpecialFloatValues_Int(int[] values, string expected)
     {
         var vector = new Vector<int>(values);
@@ -183,7 +183,7 @@ public class VectorTests
     }
 
     [Theory]
-    [InlineData(new long[] { }, "vector([], 0, INTEGER NOT NULL)")]
+    [InlineData(new long[] {}, "vector([], 0, INTEGER NOT NULL)")]
     public void ToString_HandlesSpecialFloatValues_Long(long[] values, string expected)
     {
         var vector = new Vector<long>(values);
@@ -206,7 +206,9 @@ public class VectorTests
     [InlineData(new[] { double.NaN }, "vector([NaN], 1, FLOAT NOT NULL)")]
     [InlineData(new[] { double.PositiveInfinity }, "vector([Infinity], 1, FLOAT NOT NULL)")]
     [InlineData(new[] { double.NegativeInfinity }, "vector([-Infinity], 1, FLOAT NOT NULL)")]
-    [InlineData(new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity }, "vector([NaN, Infinity, -Infinity], 3, FLOAT NOT NULL)")]
+    [InlineData(
+        new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity },
+        "vector([NaN, Infinity, -Infinity], 3, FLOAT NOT NULL)")]
     public void ToString_HandlesSpecialFloatValues_Double(double[] values, string expected)
     {
         var vector = new Vector<double>(values);

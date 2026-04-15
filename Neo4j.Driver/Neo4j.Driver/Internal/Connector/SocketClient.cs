@@ -100,7 +100,10 @@ internal sealed class SocketClient : ISocketClient
         }
         catch (Exception ex)
         {
-            _neo4JLogger.Warn(ex, $"Unable to send message to server {_uri}, connection will be terminated. ({ex.Message})");
+            _neo4JLogger.Warn(
+                ex,
+                $"Unable to send message to server {_uri}, connection will be terminated. ({ex.Message})");
+
             await DisposeAsync().ConfigureAwait(false);
             throw;
         }
@@ -125,6 +128,7 @@ internal sealed class SocketClient : ISocketClient
             _neo4JLogger.Error(
                 ex,
                 $"Unable to read message from server {_uri}, connection will be terminated. ({ex.Message})");
+
             await DisposeAsync().ConfigureAwait(false);
             throw;
         }

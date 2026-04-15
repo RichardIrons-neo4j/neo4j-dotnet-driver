@@ -47,9 +47,8 @@ public class DelegateMapperTests
     public void ShouldMap_03_Properties()
     {
         var record = TestRecord.Create(("field1", 1), ("field2", "value2"), ("field3", true));
-        var result = record.AsObject(
-            (int field1, string field2, bool field3) =>
-                new { property1 = field1, property2 = field2, property3 = field3 });
+        var result = record.AsObject((int field1, string field2, bool field3) =>
+            new { property1 = field1, property2 = field2, property3 = field3 });
 
         result.property1.Should().Be(1);
         result.property2.Should().Be("value2");
@@ -60,9 +59,8 @@ public class DelegateMapperTests
     public void ShouldMap_04_Properties()
     {
         var record = TestRecord.Create(("field1", 1), ("field2", "value2"), ("field3", true), ("field4", 3.14));
-        var result = record.AsObject(
-            (int field1, string field2, bool field3, double field4) => new
-                { property1 = field1, property2 = field2, property3 = field3, property4 = field4 });
+        var result = record.AsObject((int field1, string field2, bool field3, double field4) => new
+            { property1 = field1, property2 = field2, property3 = field3, property4 = field4 });
 
         result.property1.Should().Be(1);
         result.property2.Should().Be("value2");
@@ -80,9 +78,8 @@ public class DelegateMapperTests
             ("field4", 3.14),
             ("field5", 10L));
 
-        var result = record.AsObject(
-            (int field1, string field2, bool field3, double field4, long field5) => new
-                { property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5 });
+        var result = record.AsObject((int field1, string field2, bool field3, double field4, long field5) => new
+            { property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5 });
 
         result.property1.Should().Be(1);
         result.property2.Should().Be("value2");
@@ -102,8 +99,8 @@ public class DelegateMapperTests
             ("field5", 10L),
             ("field6", "value6"));
 
-        var result = record.AsObject(
-            (int field1, string field2, bool field3, double field4, long field5, string field6) => new
+        var result =
+            record.AsObject((int field1, string field2, bool field3, double field4, long field5, string field6) => new
             {
                 property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
                 property6 = field6
@@ -129,12 +126,18 @@ public class DelegateMapperTests
             ("field6", "value6"),
             ("field7", "value7"));
 
-        var result = record.AsObject(
-            (int field1, string field2, bool field3, double field4, long field5, string field6, string field7) => new
-            {
-                property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
-                property6 = field6, property7 = field7
-            });
+        var result = record.AsObject((
+            int field1,
+            string field2,
+            bool field3,
+            double field4,
+            long field5,
+            string field6,
+            string field7) => new
+        {
+            property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
+            property6 = field6, property7 = field7
+        });
 
         result.property1.Should().Be(1);
         result.property2.Should().Be("value2");
@@ -158,20 +161,19 @@ public class DelegateMapperTests
             ("field7", "value7"),
             ("field8", "value8"));
 
-        var result = record.AsObject(
-            (
-                int field1,
-                string field2,
-                bool field3,
-                double field4,
-                long field5,
-                string field6,
-                string field7,
-                string field8) => new
-            {
-                property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
-                property6 = field6, property7 = field7, property8 = field8
-            });
+        var result = record.AsObject((
+            int field1,
+            string field2,
+            bool field3,
+            double field4,
+            long field5,
+            string field6,
+            string field7,
+            string field8) => new
+        {
+            property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
+            property6 = field6, property7 = field7, property8 = field8
+        });
 
         result.property1.Should().Be(1);
         result.property2.Should().Be("value2");
@@ -197,21 +199,20 @@ public class DelegateMapperTests
             ("field8", "value8"),
             ("field9", "value9"));
 
-        var result = record.AsObject(
-            (
-                int field1,
-                string field2,
-                bool field3,
-                double field4,
-                long field5,
-                string field6,
-                string field7,
-                string field8,
-                string field9) => new
-            {
-                property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
-                property6 = field6, property7 = field7, property8 = field8, property9 = field9
-            });
+        var result = record.AsObject((
+            int field1,
+            string field2,
+            bool field3,
+            double field4,
+            long field5,
+            string field6,
+            string field7,
+            string field8,
+            string field9) => new
+        {
+            property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
+            property6 = field6, property7 = field7, property8 = field8, property9 = field9
+        });
 
         result.property1.Should().Be(1);
         result.property2.Should().Be("value2");
@@ -239,22 +240,21 @@ public class DelegateMapperTests
             ("field9", "value9"),
             ("field10", "value10"));
 
-        var result = record.AsObject(
-            (
-                int field1,
-                string field2,
-                bool field3,
-                double field4,
-                long field5,
-                string field6,
-                string field7,
-                string field8,
-                string field9,
-                string field10) => new
-            {
-                property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
-                property6 = field6, property7 = field7, property8 = field8, property9 = field9, property10 = field10
-            });
+        var result = record.AsObject((
+            int field1,
+            string field2,
+            bool field3,
+            double field4,
+            long field5,
+            string field6,
+            string field7,
+            string field8,
+            string field9,
+            string field10) => new
+        {
+            property1 = field1, property2 = field2, property3 = field3, property4 = field4, property5 = field5,
+            property6 = field6, property7 = field7, property8 = field8, property9 = field9, property10 = field10
+        });
 
         result.property1.Should().Be(1);
         result.property2.Should().Be("value2");
@@ -302,9 +302,8 @@ public class DelegateMapperTests
     {
         var record = TestRecord.Create(("isTrue", true), ("description", "This is true"));
 
-        var spokenStatement = record.AsObject(
-            (bool isTrue, string description) =>
-                isTrue ? new Truth(description) : (SpokenStatement)new Myth(description));
+        var spokenStatement = record.AsObject((bool isTrue, string description) =>
+            isTrue ? new Truth(description) : (SpokenStatement)new Myth(description));
 
         spokenStatement.Should().BeOfType<Truth>();
         spokenStatement.Description.Should().Be("This is true");
@@ -355,16 +354,15 @@ public class DelegateMapperTests
     {
         var record = TestRecord.Create(("x", 69));
 
-        var act = () => record.AsObject(
-            (int x) =>
+        var act = () => record.AsObject((int x) =>
+        {
+            if (x == 69)
             {
-                if (x == 69)
-                {
-                    throw new Exception("Test exception");
-                }
+                throw new Exception("Test exception");
+            }
 
-                return new string('A', x);
-            });
+            return new string('A', x);
+        });
 
         act.Should().Throw<MappingFailedException>().WithInnerException<Exception>().WithMessage("Test exception");
     }

@@ -37,7 +37,7 @@ internal class InternalBookmarks : Bookmarks
             return false;
         }
 
-        return Values.Except(other.Values).Any() == false;
+        return !Values.Except(other.Values).Any();
     }
 
     public override bool Equals(object obj)

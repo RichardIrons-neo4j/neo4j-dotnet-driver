@@ -44,7 +44,6 @@ internal class InternalX509CertificateLoader : IInternalX509CertificateLoader
         return new X509Certificate2(rawData, password, flags);
 #endif
     }
-    
 
     public X509Certificate2 LoadCertificate(string filename)
     {

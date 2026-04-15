@@ -29,7 +29,7 @@ public class MappingDefaultValueAttribute(object defaultValue) : MappingOptional
     /// <summary>The default value to use if the property is not present in the record.</summary>
     public object DefaultValue => defaultValue;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override void Mutate(MappingBinding binding)
     {
         base.Mutate(binding);

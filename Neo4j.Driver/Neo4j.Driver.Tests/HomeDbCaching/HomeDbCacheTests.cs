@@ -80,7 +80,7 @@ public class HomeDbCacheTests
     {
         // Arrange
         var cache = new HomeDbCache();
-        for (int i = 0; i < 10_001; i++)
+        for (var i = 0; i < 10_001; i++)
         {
             var key = new HomeDbCacheKey($"test-key-{i}");
             cache.AddOrUpdate(key, $"database-{i}");
@@ -106,7 +106,7 @@ public class HomeDbCacheTests
         cache.AddOrUpdate(key2, "database-2");
 
         // Act
-        cache.TryGetCached(key1, out _); // Access key1
+        cache.TryGetCached(key1, out var _); // Access key1
         cache.AddOrUpdate(new HomeDbCacheKey("test-key-3"), "database-3");
 
         // Assert
@@ -123,34 +123,33 @@ public class HomeDbCacheTests
         var random = new Random();
 
         // Act
-        for (int i = 0; i < 4; i++)
+        for (var i = 0; i < 4; i++)
         {
-            var task = Task.Run(
-                () =>
+            var task = Task.Run(() =>
+            {
+                for (var j = 0; j < 250; j++)
                 {
-                    for (int j = 0; j < 250; j++)
+                    var key = new HomeDbCacheKey($"key-{random.Next(0, 50)}");
+                    var value = $"database-{random.Next(0, 50)}";
+
+                    // Randomly perform one of the operations
+                    switch (random.Next(0, 3))
                     {
-                        var key = new HomeDbCacheKey($"key-{random.Next(0, 50)}");
-                        var value = $"database-{random.Next(0, 50)}";
+                        case 0: // Add or update
+                            cache.AddOrUpdate(key, value);
+                            break;
 
-                        // Randomly perform one of the operations
-                        switch (random.Next(0, 3))
-                        {
-                            case 0: // Add or update
-                                cache.AddOrUpdate(key, value);
-                                break;
+                        case 1: // Try to retrieve
+                            cache.TryGetCached(key, out var _);
+                            break;
 
-                            case 1: // Try to retrieve
-                                cache.TryGetCached(key, out _);
-                                break;
-
-                            case 2: // both
-                                cache.AddOrUpdate(key, value);
-                                cache.TryGetCached(key, out _);
-                                break;
-                        }
+                        case 2: // both
+                            cache.AddOrUpdate(key, value);
+                            cache.TryGetCached(key, out var _);
+                            break;
                     }
-                });
+                }
+            });
 
             tasks.Add(task);
         }

@@ -208,12 +208,11 @@ public class ResultCursorExtensionsTests
                 .Returns(enumerator.Object);
 
             var index = 0;
-            await mockCursor.Object.ForEachAsync(
-                r =>
-                {
-                    index++;
-                    r.Should().BeSameAs(index == 1 ? mockRecord.Object : mockRecord2.Object);
-                });
+            await mockCursor.Object.ForEachAsync(r =>
+            {
+                index++;
+                r.Should().BeSameAs(index == 1 ? mockRecord.Object : mockRecord2.Object);
+            });
         }
     }
 }

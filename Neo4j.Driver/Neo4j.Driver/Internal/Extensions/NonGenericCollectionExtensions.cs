@@ -28,7 +28,7 @@ internal static class NonGenericCollectionExtensions
         {
             var dictStrings = dict.Keys.Cast<object>()
                 .Select(key => $"{{{key.ToContentString()}, {dict[key].ToContentString()}}}");
-    
+
             return $"[{string.Join(separator, dictStrings)}]";
         }
     }
@@ -42,4 +42,3 @@ internal static class NonGenericCollectionExtensions
         }
     }
 }
-

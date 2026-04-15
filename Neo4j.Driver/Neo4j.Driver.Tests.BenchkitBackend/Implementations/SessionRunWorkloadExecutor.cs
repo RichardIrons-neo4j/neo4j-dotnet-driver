@@ -18,7 +18,7 @@ using Neo4j.Driver.Tests.BenchkitBackend.Types;
 
 namespace Neo4j.Driver.Tests.BenchkitBackend.Implementations;
 
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+using ILogger = ILogger;
 
 internal class SessionRunWorkloadExecutor(
     IDriver driver,
@@ -48,17 +48,16 @@ internal class SessionRunWorkloadExecutor(
             var queryToRun = new Query(query.Text, query.Parameters);
             logger.LogDebug("Starting query {Query} in parallel session", queryToRun.Text);
             tasks.Add(
-                Task.Run(
-                    async () =>
-                    {
-                        // create a new session in parallel for each query
-                        await using var session = sessionBuilder.BuildSession(driver, workload);
+                Task.Run(async () =>
+                {
+                    // create a new session in parallel for each query
+                    await using var session = sessionBuilder.BuildSession(driver, workload);
 
-                        var resultCursor = await session.RunAsync(queryToRun);
-                        var records = await resultCursor.ToListAsync();
-                        logger.LogDebug("Received {RecordCount} records", records.Count);
-                        recordConsumer.ConsumeRecords(records);
-                    }));
+                    var resultCursor = await session.RunAsync(queryToRun);
+                    var records = await resultCursor.ToListAsync();
+                    logger.LogDebug("Received {RecordCount} records", records.Count);
+                    recordConsumer.ConsumeRecords(records);
+                }));
         }
 
         logger.LogDebug("Waiting for {TaskCount} parallel tasks to complete", tasks.Count);

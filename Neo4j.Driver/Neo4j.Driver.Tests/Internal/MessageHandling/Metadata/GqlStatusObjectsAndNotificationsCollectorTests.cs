@@ -120,37 +120,36 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.GqlStatusObjects.Should()
-            .SatisfyRespectively(
-                x =>
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<GqlStatusObject>().Which;
+                var dict = new Dictionary<string, object>
                 {
-                    var first = x.Should().BeOfType<GqlStatusObject>().Which;
-                    var dict = new Dictionary<string, object>
+                    ["CURRENT_SCHEMA"] = "/",
+                    ["OPERATION"] = "",
+                    ["OPERATION_CODE"] = "0",
+                    ["_severity"] = "WARNING",
+                    ["_classification"] = "PERFORMANCE",
+                    ["_position"] = new Dictionary<string, object>
                     {
-                        ["CURRENT_SCHEMA"] = "/",
-                        ["OPERATION"] = "",
-                        ["OPERATION_CODE"] = "0",
-                        ["_severity"] = "WARNING",
-                        ["_classification"] = "PERFORMANCE",
-                        ["_position"] = new Dictionary<string, object>
-                        {
-                            ["offset"] = 1L,
-                            ["line"] = 2L,
-                            ["column"] = 3L
-                        }
-                    };
+                        ["offset"] = 1L,
+                        ["line"] = 2L,
+                        ["column"] = 3L
+                    }
+                };
 
-                    first.GqlStatus.Should().Be("000000");
-                    first.StatusDescription.Should().Be("it is a status");
-                    first.Position.Should().Be(new InputPosition(1, 2, 3));
-                    first.Severity.Should().Be(NotificationSeverity.Warning);
-                    first.RawSeverity.Should().Be("WARNING");
-                    first.Classification.Should().Be(NotificationClassification.Performance);
-                    first.DiagnosticRecord.Should().BeEquivalentTo(dict);
-                    first.RawClassification.Should().Be("PERFORMANCE");
-                    first.RawDiagnosticRecord.Should().Be(dict.ToContentString());
-                    first.IsNotification.Should().BeTrue();
-                    first.Title.Should().Be("blah");
-                });
+                first.GqlStatus.Should().Be("000000");
+                first.StatusDescription.Should().Be("it is a status");
+                first.Position.Should().Be(new InputPosition(1, 2, 3));
+                first.Severity.Should().Be(NotificationSeverity.Warning);
+                first.RawSeverity.Should().Be("WARNING");
+                first.Classification.Should().Be(NotificationClassification.Performance);
+                first.DiagnosticRecord.Should().BeEquivalentTo(dict);
+                first.RawClassification.Should().Be("PERFORMANCE");
+                first.RawDiagnosticRecord.Should().Be(dict.ToContentString());
+                first.IsNotification.Should().BeTrue();
+                first.Title.Should().Be("blah");
+            });
     }
 
     [Fact]
@@ -173,28 +172,27 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.GqlStatusObjects.Should()
-            .SatisfyRespectively(
-                x =>
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<GqlStatusObject>().Which;
+                var dict = new Dictionary<string, object>
                 {
-                    var first = x.Should().BeOfType<GqlStatusObject>().Which;
-                    var dict = new Dictionary<string, object>
-                    {
-                        ["CURRENT_SCHEMA"] = "/",
-                        ["OPERATION"] = "",
-                        ["OPERATION_CODE"] = "0"
-                    };
+                    ["CURRENT_SCHEMA"] = "/",
+                    ["OPERATION"] = "",
+                    ["OPERATION_CODE"] = "0"
+                };
 
-                    first.GqlStatus.Should().Be("030000");
-                    first.StatusDescription.Should().Be("it is a status");
-                    first.Position.Should().BeNull();
-                    first.Severity.Should().Be(NotificationSeverity.Unknown);
-                    first.RawSeverity.Should().BeNull();
-                    first.Classification.Should().Be(NotificationClassification.Unknown);
-                    first.DiagnosticRecord.Should().BeEquivalentTo(dict);
-                    first.RawClassification.Should().BeNull();
-                    first.IsNotification.Should().BeFalse();
-                    first.Title.Should().BeNull();
-                });
+                first.GqlStatus.Should().Be("030000");
+                first.StatusDescription.Should().Be("it is a status");
+                first.Position.Should().BeNull();
+                first.Severity.Should().Be(NotificationSeverity.Unknown);
+                first.RawSeverity.Should().BeNull();
+                first.Classification.Should().Be(NotificationClassification.Unknown);
+                first.DiagnosticRecord.Should().BeEquivalentTo(dict);
+                first.RawClassification.Should().BeNull();
+                first.IsNotification.Should().BeFalse();
+                first.Title.Should().BeNull();
+            });
     }
 
     [Fact]
@@ -222,20 +220,19 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.GqlStatusObjects.Should()
-            .SatisfyRespectively(
-                x =>
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<GqlStatusObject>().Which;
+                var dict = new Dictionary<string, object>
                 {
-                    var first = x.Should().BeOfType<GqlStatusObject>().Which;
-                    var dict = new Dictionary<string, object>
-                    {
-                        ["Example"] = "blah-de-blah",
-                        ["CURRENT_SCHEMA"] = "/",
-                        ["OPERATION"] = "OP!",
-                        ["OPERATION_CODE"] = "0"
-                    };
+                    ["Example"] = "blah-de-blah",
+                    ["CURRENT_SCHEMA"] = "/",
+                    ["OPERATION"] = "OP!",
+                    ["OPERATION_CODE"] = "0"
+                };
 
-                    first.DiagnosticRecord.Should().BeEquivalentTo(dict);
-                });
+                first.DiagnosticRecord.Should().BeEquivalentTo(dict);
+            });
     }
 
     [Fact]
@@ -272,19 +269,18 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.Notifications.Should()
-            .SatisfyRespectively(
-                x =>
-                {
-                    var first = x.Should().BeOfType<Notification>().Which;
-                    first.Code.Should().Be("Neo.Transient");
-                    first.Title.Should().Be("blah");
-                    first.Description.Should().Be("it is a vintage status");
-                    first.Position.Should().Be(new InputPosition(1, 2, 3));
-                    first.SeverityLevel.Should().Be(NotificationSeverity.Warning);
-                    first.RawSeverityLevel.Should().Be("WARNING");
-                    first.Category.Should().Be(NotificationCategory.Performance);
-                    first.RawCategory.Should().Be("PERFORMANCE");
-                });
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<Notification>().Which;
+                first.Code.Should().Be("Neo.Transient");
+                first.Title.Should().Be("blah");
+                first.Description.Should().Be("it is a vintage status");
+                first.Position.Should().Be(new InputPosition(1, 2, 3));
+                first.SeverityLevel.Should().Be(NotificationSeverity.Warning);
+                first.RawSeverityLevel.Should().Be("WARNING");
+                first.Category.Should().Be(NotificationCategory.Performance);
+                first.RawCategory.Should().Be("PERFORMANCE");
+            });
     }
 
     [Fact]
@@ -316,19 +312,18 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.Notifications.Should()
-            .SatisfyRespectively(
-                x =>
-                {
-                    var first = x.Should().BeOfType<Notification>().Which;
-                    first.Code.Should().Be("Neo.Transient");
-                    first.Title.Should().Be("blah");
-                    first.Description.Should().Be("it is a vintage status");
-                    first.Position.Should().Be(new InputPosition(1, 2, 3));
-                    first.SeverityLevel.Should().Be(NotificationSeverity.Warning);
-                    first.RawSeverityLevel.Should().Be("WARNING");
-                    first.Category.Should().Be(NotificationCategory.Performance);
-                    first.RawCategory.Should().Be("PERFORMANCE");
-                });
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<Notification>().Which;
+                first.Code.Should().Be("Neo.Transient");
+                first.Title.Should().Be("blah");
+                first.Description.Should().Be("it is a vintage status");
+                first.Position.Should().Be(new InputPosition(1, 2, 3));
+                first.SeverityLevel.Should().Be(NotificationSeverity.Warning);
+                first.RawSeverityLevel.Should().Be("WARNING");
+                first.Category.Should().Be(NotificationCategory.Performance);
+                first.RawCategory.Should().Be("PERFORMANCE");
+            });
     }
 
     [Fact]
@@ -359,19 +354,18 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.Notifications.Should()
-            .SatisfyRespectively(
-                x =>
-                {
-                    var first = x.Should().BeOfType<Notification>().Which;
-                    first.Code.Should().Be("Neo.Transient");
-                    first.Title.Should().Be("blah");
-                    first.Description.Should().Be("it is a vintage status");
-                    first.Position.Should().Be(new InputPosition(1, 2, 3));
-                    first.SeverityLevel.Should().Be(NotificationSeverity.Warning);
-                    first.RawSeverityLevel.Should().Be("WARNING");
-                    first.Category.Should().Be(NotificationCategory.Unknown);
-                    first.RawCategory.Should().BeNull();
-                });
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<Notification>().Which;
+                first.Code.Should().Be("Neo.Transient");
+                first.Title.Should().Be("blah");
+                first.Description.Should().Be("it is a vintage status");
+                first.Position.Should().Be(new InputPosition(1, 2, 3));
+                first.SeverityLevel.Should().Be(NotificationSeverity.Warning);
+                first.RawSeverityLevel.Should().Be("WARNING");
+                first.Category.Should().Be(NotificationCategory.Unknown);
+                first.RawCategory.Should().BeNull();
+            });
     }
 
     [Fact]
@@ -390,19 +384,18 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.Notifications.Should()
-            .SatisfyRespectively(
-                x =>
-                {
-                    var first = x.Should().BeOfType<Notification>().Which;
-                    first.Code.Should().Be("");
-                    first.Title.Should().Be("");
-                    first.Description.Should().Be("");
-                    first.Position.Should().BeNull();
-                    first.SeverityLevel.Should().Be(NotificationSeverity.Unknown);
-                    first.RawSeverityLevel.Should().Be("");
-                    first.Category.Should().Be(NotificationCategory.Unknown);
-                    first.RawCategory.Should().BeNull();
-                });
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<Notification>().Which;
+                first.Code.Should().Be("");
+                first.Title.Should().Be("");
+                first.Description.Should().Be("");
+                first.Position.Should().BeNull();
+                first.SeverityLevel.Should().Be(NotificationSeverity.Unknown);
+                first.RawSeverityLevel.Should().Be("");
+                first.Category.Should().Be(NotificationCategory.Unknown);
+                first.RawCategory.Should().BeNull();
+            });
     }
 
     [Fact]
@@ -421,27 +414,26 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.GqlStatusObjects.Should()
-            .SatisfyRespectively(
-                x =>
+            .SatisfyRespectively(x =>
+            {
+                var dict = new Dictionary<string, object>
                 {
-                    var dict = new Dictionary<string, object>
-                    {
-                        ["CURRENT_SCHEMA"] = "/",
-                        ["OPERATION"] = "",
-                        ["OPERATION_CODE"] = "0"
-                    };
+                    ["CURRENT_SCHEMA"] = "/",
+                    ["OPERATION"] = "",
+                    ["OPERATION_CODE"] = "0"
+                };
 
-                    var first = x.Should().BeOfType<GqlStatusObject>().Which;
-                    first.GqlStatus.Should().Be("03N42");
-                    first.Title.Should().BeNull();
-                    first.StatusDescription.Should().Be("info: unknown notification");
-                    first.Position.Should().BeNull();
-                    first.Severity.Should().Be(NotificationSeverity.Unknown);
-                    first.RawSeverity.Should().BeNull();
-                    first.Classification.Should().Be(NotificationClassification.Unknown);
-                    first.RawClassification.Should().BeNull();
-                    first.DiagnosticRecord.Should().BeEquivalentTo(dict);
-                });
+                var first = x.Should().BeOfType<GqlStatusObject>().Which;
+                first.GqlStatus.Should().Be("03N42");
+                first.Title.Should().BeNull();
+                first.StatusDescription.Should().Be("info: unknown notification");
+                first.Position.Should().BeNull();
+                first.Severity.Should().Be(NotificationSeverity.Unknown);
+                first.RawSeverity.Should().BeNull();
+                first.Classification.Should().Be(NotificationClassification.Unknown);
+                first.RawClassification.Should().BeNull();
+                first.DiagnosticRecord.Should().BeEquivalentTo(dict);
+            });
     }
 
     [Fact]
@@ -472,34 +464,33 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         var collected = collector.Collected;
 
         collected.GqlStatusObjects.Should()
-            .SatisfyRespectively(
-                x =>
+            .SatisfyRespectively(x =>
+            {
+                var dict = new Dictionary<string, object>
                 {
-                    var dict = new Dictionary<string, object>
+                    ["_severity"] = "WARNING",
+                    ["_position"] = new Dictionary<string, object>
                     {
-                        ["_severity"] = "WARNING",
-                        ["_position"] = new Dictionary<string, object>
-                        {
-                            ["offset"] = 1L,
-                            ["line"] = 2L,
-                            ["column"] = 3L
-                        },
-                        ["CURRENT_SCHEMA"] = "/",
-                        ["OPERATION"] = "",
-                        ["OPERATION_CODE"] = "0"
-                    };
+                        ["offset"] = 1L,
+                        ["line"] = 2L,
+                        ["column"] = 3L
+                    },
+                    ["CURRENT_SCHEMA"] = "/",
+                    ["OPERATION"] = "",
+                    ["OPERATION_CODE"] = "0"
+                };
 
-                    var first = x.Should().BeOfType<GqlStatusObject>().Which;
-                    first.GqlStatus.Should().Be("01N42");
-                    first.Title.Should().Be("blah");
-                    first.StatusDescription.Should().Be("it is a vintage status");
-                    first.Position.Should().Be(new InputPosition(1, 2, 3));
-                    first.Severity.Should().Be(NotificationSeverity.Warning);
-                    first.RawSeverity.Should().Be("WARNING");
-                    first.Classification.Should().Be(NotificationClassification.Unknown);
-                    first.RawClassification.Should().BeNull();
-                    first.DiagnosticRecord.Should().BeEquivalentTo(dict);
-                });
+                var first = x.Should().BeOfType<GqlStatusObject>().Which;
+                first.GqlStatus.Should().Be("01N42");
+                first.Title.Should().Be("blah");
+                first.StatusDescription.Should().Be("it is a vintage status");
+                first.Position.Should().Be(new InputPosition(1, 2, 3));
+                first.Severity.Should().Be(NotificationSeverity.Warning);
+                first.RawSeverity.Should().Be("WARNING");
+                first.Classification.Should().Be(NotificationClassification.Unknown);
+                first.RawClassification.Should().BeNull();
+                first.DiagnosticRecord.Should().BeEquivalentTo(dict);
+            });
     }
 
     [Fact]
@@ -554,53 +545,51 @@ public class GqlStatusObjectsAndNotificationsCollectorTests
         collected.Notifications.Should()
             .HaveCount(1)
             .And
-            .SatisfyRespectively(
-                x =>
-                {
-                    var first = x.Should().BeOfType<Notification>().Which;
-                    first.Code.Should().Be("Neo.Transient");
-                    first.Title.Should().Be("blah");
-                    first.Description.Should().Be("it is a vintage status");
-                    first.Position.Should().Be(new InputPosition(1, 2, 3));
-                    first.SeverityLevel.Should().Be(NotificationSeverity.Warning);
-                    first.RawSeverityLevel.Should().Be("WARNING");
-                    first.Category.Should().Be(NotificationCategory.Unknown);
-                    first.RawCategory.Should().Be(null);
-                });
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<Notification>().Which;
+                first.Code.Should().Be("Neo.Transient");
+                first.Title.Should().Be("blah");
+                first.Description.Should().Be("it is a vintage status");
+                first.Position.Should().Be(new InputPosition(1, 2, 3));
+                first.SeverityLevel.Should().Be(NotificationSeverity.Warning);
+                first.RawSeverityLevel.Should().Be("WARNING");
+                first.Category.Should().Be(NotificationCategory.Unknown);
+                first.RawCategory.Should().Be(null);
+            });
 
         collected.GqlStatusObjects.Should()
             .HaveCount(1)
             .And
-            .SatisfyRespectively(
-                x =>
+            .SatisfyRespectively(x =>
+            {
+                var first = x.Should().BeOfType<GqlStatusObject>().Which;
+                var dict = new Dictionary<string, object>
                 {
-                    var first = x.Should().BeOfType<GqlStatusObject>().Which;
-                    var dict = new Dictionary<string, object>
+                    ["CURRENT_SCHEMA"] = "/",
+                    ["OPERATION"] = "",
+                    ["OPERATION_CODE"] = "0",
+                    ["_severity"] = "INFORMATION",
+                    ["_classification"] = "HINT",
+                    ["_position"] = new Dictionary<string, object>
                     {
-                        ["CURRENT_SCHEMA"] = "/",
-                        ["OPERATION"] = "",
-                        ["OPERATION_CODE"] = "0",
-                        ["_severity"] = "INFORMATION",
-                        ["_classification"] = "HINT",
-                        ["_position"] = new Dictionary<string, object>
-                        {
-                            ["offset"] = 4L,
-                            ["line"] = 5L,
-                            ["column"] = 6L
-                        }
-                    };
+                        ["offset"] = 4L,
+                        ["line"] = 5L,
+                        ["column"] = 6L
+                    }
+                };
 
-                    first.GqlStatus.Should().Be("000000");
-                    first.StatusDescription.Should().Be("it is a status");
-                    first.Position.Should().Be(new InputPosition(4, 5, 6));
-                    first.Severity.Should().Be(NotificationSeverity.Information);
-                    first.RawSeverity.Should().Be("INFORMATION");
-                    first.Classification.Should().Be(NotificationClassification.Hint);
-                    first.DiagnosticRecord.Should().BeEquivalentTo(dict);
-                    first.RawClassification.Should().Be("HINT");
-                    first.RawDiagnosticRecord.Should().Be(dict.ToContentString());
-                    first.IsNotification.Should().BeTrue();
-                    first.Title.Should().Be("blah");
-                });
+                first.GqlStatus.Should().Be("000000");
+                first.StatusDescription.Should().Be("it is a status");
+                first.Position.Should().Be(new InputPosition(4, 5, 6));
+                first.Severity.Should().Be(NotificationSeverity.Information);
+                first.RawSeverity.Should().Be("INFORMATION");
+                first.Classification.Should().Be(NotificationClassification.Hint);
+                first.DiagnosticRecord.Should().BeEquivalentTo(dict);
+                first.RawClassification.Should().Be("HINT");
+                first.RawDiagnosticRecord.Should().Be(dict.ToContentString());
+                first.IsNotification.Should().BeTrue();
+                first.Title.Should().Be("blah");
+            });
     }
 }

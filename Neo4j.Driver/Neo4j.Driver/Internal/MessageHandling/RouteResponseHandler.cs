@@ -23,8 +23,8 @@ internal sealed class RouteResponseHandler : MetadataCollectingResponseHandler
 {
     private readonly HomeDbCacheKey _cacheKey;
     private readonly IHomeDbCache _homeDbCache;
-    private readonly SessionConfig _sessionConfig;
     private readonly bool _isDefaultRequest;
+    private readonly SessionConfig _sessionConfig;
 
     public RouteResponseHandler(
         HomeDbCacheKey cacheKey,
@@ -45,10 +45,12 @@ internal sealed class RouteResponseHandler : MetadataCollectingResponseHandler
     {
         base.OnSuccess(metadata);
 
-        if(_isDefaultRequest && metadata?["rt"] is IDictionary<string, object> rt && rt.TryGetValue("db", out var db))
+        if (_isDefaultRequest && metadata?["rt"] is IDictionary<string, object> rt && rt.TryGetValue("db", out var db))
         {
-            var dbName = (string) db;
-            _sessionConfig?.DriverContext?.Neo4JLogger?.Debug($"Caching database name '{dbName}' for key '{_cacheKey}'");
+            var dbName = (string)db;
+            _sessionConfig?.DriverContext?.Neo4JLogger?.Debug(
+                $"Caching database name '{dbName}' for key '{_cacheKey}'");
+
             _homeDbCache.AddOrUpdate(_cacheKey, dbName);
             _sessionConfig?.PinDatabase(dbName);
         }

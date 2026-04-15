@@ -186,26 +186,25 @@ public sealed class CausalClusterStressTests : StressTest
 
     private static ClusterAddresses CreateAutonomousClusterAddresses(List<IRecord> records)
     {
-        var neoDbs = records.Select(
-                x =>
+        var neoDbs = records.Select(x =>
+            {
+                object role = null;
+                var exists = x.Values.TryGetValue("databases", out var y) &&
+                    y.As<IDictionary<string, object>>().TryGetValue("neo4j", out role);
+
+                if (!exists)
                 {
-                    object role = null;
-                    var exists = x.Values.TryGetValue("databases", out var y) &&
-                        y.As<IDictionary<string, object>>().TryGetValue("neo4j", out role);
+                    return (address: null, role: null);
+                }
 
-                    if (!exists)
-                    {
-                        return (address: null, role: null);
-                    }
+                var address = x.Values["addresses"]
+                    .As<IList<object>>()
+                    .FirstOrDefault()
+                    ?.As<string>()
+                    .Replace("bolt://", "");
 
-                    var address = x.Values["addresses"]
-                        .As<IList<object>>()
-                        .FirstOrDefault()
-                        ?.As<string>()
-                        .Replace("bolt://", "");
-
-                    return (address, role: role.As<string>());
-                })
+                return (address, role: role.As<string>());
+            })
             .Where(x => x.role != null)
             .ToList();
 

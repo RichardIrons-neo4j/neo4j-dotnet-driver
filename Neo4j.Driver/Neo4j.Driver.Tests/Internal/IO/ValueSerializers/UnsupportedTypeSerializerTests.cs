@@ -70,7 +70,8 @@ public class UnsupportedTypeSerializerTests : PackStreamSerializerTests
 
         FluentActions.Invoking(() =>
                 SerializerUnderTest.Deserialize(BoltProtocolVersion.V6_0, reader, 0x01, 4))
-            .Should().Throw<ProtocolException>();
+            .Should()
+            .Throw<ProtocolException>();
     }
 
     [Fact]
@@ -89,7 +90,8 @@ public class UnsupportedTypeSerializerTests : PackStreamSerializerTests
 
         FluentActions.Invoking(() =>
                 SerializerUnderTest.Deserialize(BoltProtocolVersion.V6_0, reader, (byte)'?', 3))
-            .Should().Throw<ClientException>();
+            .Should()
+            .Throw<ClientException>();
     }
 
     [Fact]
@@ -100,7 +102,7 @@ public class UnsupportedTypeSerializerTests : PackStreamSerializerTests
 
         writer.WriteStructHeader(4, (byte)'?'); // '?' is the signature for UnsupportedType
         writer.WriteString("the_type"); // Name
-        writer.WriteByte(6);// Major version
+        writer.WriteByte(6); // Major version
         writer.WriteByte(0); // Minor version
         writer.WriteMapHeader(1); // One key-value pair in the map
         writer.WriteString("message"); // Key
@@ -111,7 +113,8 @@ public class UnsupportedTypeSerializerTests : PackStreamSerializerTests
 
         FluentActions.Invoking(() =>
                 SerializerUnderTest.Deserialize(BoltProtocolVersion.V6_0, reader, (byte)'?', 4))
-            .Should().Throw<ProtocolException>();
+            .Should()
+            .Throw<ProtocolException>();
     }
 
     [Fact]
@@ -119,7 +122,8 @@ public class UnsupportedTypeSerializerTests : PackStreamSerializerTests
     {
         FluentActions.Invoking(() =>
                 SerializerUnderTest.Serialize(BoltProtocolVersion.V6_0, null, new object()))
-            .Should().Throw<NotImplementedException>();
+            .Should()
+            .Throw<NotImplementedException>();
     }
 
     [Fact]

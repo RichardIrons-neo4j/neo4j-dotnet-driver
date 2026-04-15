@@ -48,7 +48,10 @@ internal static class TaskExtensions
         }
     }
 
-    public static async Task<T> Timeout<T>(this Task<T> task, TimeSpan timeout, CancellationToken cancellationToken,
+    public static async Task<T> Timeout<T>(
+        this Task<T> task,
+        TimeSpan timeout,
+        CancellationToken cancellationToken,
         Action onTimeout = null)
     {
         using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

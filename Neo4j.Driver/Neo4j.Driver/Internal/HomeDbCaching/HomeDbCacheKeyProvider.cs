@@ -19,7 +19,7 @@ internal static class HomeDbCacheKeyProvider
 {
     public static HomeDbCacheKey GetCacheKey(IAuthToken driverLevelAuthToken, SessionConfig sessionConfig)
     {
-        if(!string.IsNullOrWhiteSpace(sessionConfig?.ImpersonatedUser))
+        if (!string.IsNullOrWhiteSpace(sessionConfig?.ImpersonatedUser))
         {
             // if an impersonated user is set, we should use the impersonated user as the cache key
             return new HomeDbCacheKey($"basic:{sessionConfig.ImpersonatedUser}");

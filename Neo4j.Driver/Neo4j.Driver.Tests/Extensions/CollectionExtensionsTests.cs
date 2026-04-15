@@ -15,6 +15,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Neo4j.Driver.Internal;
 using Xunit;
@@ -80,11 +81,11 @@ public class CollectionExtensionsTests
         {
             var dict = new Dictionary<string, object> { { "any", new List<object> { 11 } } };
             var gotValue = dict.GetValue("any", new List<object>());
-            
+
             // use linq methods as static invocations because `using System.Linq` brings in
             // another `.ToDictionary()` method that ends up with failing tests
-            var actual = System.Linq.Enumerable.ToList(System.Linq.Enumerable.Cast<int>(gotValue));
-            
+            var actual = Enumerable.ToList(Enumerable.Cast<int>(gotValue));
+
             actual.Should().BeOfType<List<int>>();
             actual.Should().ContainInOrder(11);
         }

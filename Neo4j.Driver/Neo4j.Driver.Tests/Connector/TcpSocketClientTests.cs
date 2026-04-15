@@ -41,11 +41,10 @@ public class TcpSocketClientTests
 
             // use non-routable IP address to mimic a connect timeout
             // https://stackoverflow.com/questions/100841/artificially-create-a-connection-timeout-error
-            var exception = await Record.ExceptionAsync(
-                () =>
-                    client.ConnectSocketAsync(
-                        IPAddress.Parse("192.168.0.0"),
-                        9999));
+            var exception = await Record.ExceptionAsync(() =>
+                client.ConnectSocketAsync(
+                    IPAddress.Parse("192.168.0.0"),
+                    9999));
 
             exception
                 .Should()
@@ -69,8 +68,8 @@ public class TcpSocketClientTests
 
             // We fail to connect the first time as there is no server to connect to
             // ReSharper disable once PossibleNullReferenceException
-            var exception = await Record.ExceptionAsync(
-                async () => await client.ConnectSocketAsync(IPAddress.Parse("127.0.0.1"), 54321));
+            var exception = await Record.ExceptionAsync(async () =>
+                await client.ConnectSocketAsync(IPAddress.Parse("127.0.0.1"), 54321));
             // start a server on port 20003
 
             var serverSocket = new TcpListener(new IPEndPoint(IPAddress.Loopback, 54321));

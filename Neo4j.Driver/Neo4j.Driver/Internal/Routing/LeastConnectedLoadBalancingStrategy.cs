@@ -85,12 +85,12 @@ internal class LeastConnectedLoadBalancingStrategy : ILoadBalancingStrategy
             }
         } while (index != startIndex);
 
-        string logMessage = cachedDatabase == null
+        var logMessage = cachedDatabase == null
             ? $"Selected {addressType} for database '{forDatabase}' with least connected address: " +
-                $"'{leastConnectedAddress}' and active connections: {leastActiveConnections}"
+            $"'{leastConnectedAddress}' and active connections: {leastActiveConnections}"
             : $"Selected {addressType} for database '{forDatabase}' (using cached routing table for " +
-                $"'{cachedDatabase}') with least connected address: '{leastConnectedAddress}' and active " +
-                $"connections: {leastActiveConnections}";
+            $"'{cachedDatabase}') with least connected address: '{leastConnectedAddress}' and active " +
+            $"connections: {leastActiveConnections}";
 
         LogDebug(logMessage);
 

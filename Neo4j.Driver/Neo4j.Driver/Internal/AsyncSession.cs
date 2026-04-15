@@ -68,7 +68,8 @@ internal partial class AsyncSession : AsyncQueryRunner, IInternalAsyncSession
         _neo4JLogger = neo4JLogger;
         _retryLogic = retryLogic;
         _reactive = reactive;
-        _driverContext = config.DriverContext;;
+        _driverContext = config.DriverContext;
+        ;
 
         _database = config.Database;
         _defaultMode = config.DefaultAccessMode;
@@ -90,25 +91,6 @@ internal partial class AsyncSession : AsyncQueryRunner, IInternalAsyncSession
         TelemetryEnabled = telemetryEnabled;
 
         config.OnPinDatabase = OnPinDatabase;
-    }
-
-    private void OnPinDatabase(string db)
-    {
-        if(_connectionProvider.IsDirectDriver)
-        {
-            // don't pin
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_database))
-        {
-            _neo4JLogger.Info($"Database '{db}' is pinned to the session.");
-            _database = db;
-        }
-        else
-        {
-            _neo4JLogger.Info($"Database {_database} is already pinned to the session, ignoring {db}.");
-        }
     }
 
     internal bool TelemetryEnabled { get; set; }
@@ -251,6 +233,51 @@ internal partial class AsyncSession : AsyncQueryRunner, IInternalAsyncSession
             new TransactionInfo(QueryApiType.DriverLevel, TelemetryEnabled, false));
     }
 
+    public Task ExecuteReadAsync(Func<IAsyncQueryRunner, Task> work, Action<TransactionConfigBuilder> action = null)
+    {
+        return RunTransactionAsync(AccessMode.Read, work, BuildTransactionConfig(action));
+    }
+
+    public Task<T> ExecuteReadAsync<T>(
+        Func<IAsyncQueryRunner, Task<T>> work,
+        Action<TransactionConfigBuilder> action = null)
+    {
+        return RunTransactionAsync(AccessMode.Read, work, BuildTransactionConfig(action));
+    }
+
+    public Task ExecuteWriteAsync(
+        Func<IAsyncQueryRunner, Task> work,
+        Action<TransactionConfigBuilder> action = null)
+    {
+        return RunTransactionAsync(AccessMode.Write, work, BuildTransactionConfig(action));
+    }
+
+    public Task<T> ExecuteWriteAsync<T>(
+        Func<IAsyncQueryRunner, Task<T>> work,
+        Action<TransactionConfigBuilder> action = null)
+    {
+        return RunTransactionAsync(AccessMode.Write, work, BuildTransactionConfig(action));
+    }
+
+    private void OnPinDatabase(string db)
+    {
+        if (_connectionProvider.IsDirectDriver)
+        {
+            // don't pin
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_database))
+        {
+            _neo4JLogger.Info($"Database '{db}' is pinned to the session.");
+            _database = db;
+        }
+        else
+        {
+            _neo4JLogger.Info($"Database {_database} is already pinned to the session, ignoring {db}.");
+        }
+    }
+
     public Task<T> ReadTransactionAsync<T>(
         Func<IAsyncTransaction, Task<T>> work,
         Action<TransactionConfigBuilder> action = null)
@@ -274,32 +301,6 @@ internal partial class AsyncSession : AsyncQueryRunner, IInternalAsyncSession
 
     public Task WriteTransactionAsync(
         Func<IAsyncTransaction, Task> work,
-        Action<TransactionConfigBuilder> action = null)
-    {
-        return RunTransactionAsync(AccessMode.Write, work, BuildTransactionConfig(action));
-    }
-
-    public Task ExecuteReadAsync(Func<IAsyncQueryRunner, Task> work, Action<TransactionConfigBuilder> action = null)
-    {
-        return RunTransactionAsync(AccessMode.Read, work, BuildTransactionConfig(action));
-    }
-
-    public Task<T> ExecuteReadAsync<T>(
-        Func<IAsyncQueryRunner, Task<T>> work,
-        Action<TransactionConfigBuilder> action = null)
-    {
-        return RunTransactionAsync(AccessMode.Read, work, BuildTransactionConfig(action));
-    }
-
-    public Task ExecuteWriteAsync(
-        Func<IAsyncQueryRunner, Task> work,
-        Action<TransactionConfigBuilder> action = null)
-    {
-        return RunTransactionAsync(AccessMode.Write, work, BuildTransactionConfig(action));
-    }
-
-    public Task<T> ExecuteWriteAsync<T>(
-        Func<IAsyncQueryRunner, Task<T>> work,
         Action<TransactionConfigBuilder> action = null)
     {
         return RunTransactionAsync(AccessMode.Write, work, BuildTransactionConfig(action));
@@ -352,32 +353,31 @@ internal partial class AsyncSession : AsyncQueryRunner, IInternalAsyncSession
         transactionInfo ??= new TransactionInfo(QueryApiType.TransactionFunction, TelemetryEnabled, true);
         return TryExecuteAsync(
             _neo4JLogger,
-            () => _retryLogic.RetryAsync(
-                async () =>
+            () => _retryLogic.RetryAsync(async () =>
+            {
+                var tx = await BeginTransactionWithoutLoggingAsync(mode, config, true, transactionInfo)
+                    .ConfigureAwait(false);
+
+                try
                 {
-                    var tx = await BeginTransactionWithoutLoggingAsync(mode, config, true, transactionInfo)
-                        .ConfigureAwait(false);
-
-                    try
+                    var result = await work(tx).ConfigureAwait(false);
+                    if (tx.IsOpen)
                     {
-                        var result = await work(tx).ConfigureAwait(false);
-                        if (tx.IsOpen)
-                        {
-                            await tx.CommitAsync().ConfigureAwait(false);
-                        }
-
-                        return result;
+                        await tx.CommitAsync().ConfigureAwait(false);
                     }
-                    catch
+
+                    return result;
+                }
+                catch
+                {
+                    if (tx.IsOpen)
                     {
-                        if (tx.IsOpen)
-                        {
-                            await tx.RollbackAsync().ConfigureAwait(false);
-                        }
-
-                        throw;
+                        await tx.RollbackAsync().ConfigureAwait(false);
                     }
-                }));
+
+                    throw;
+                }
+            }));
     }
 
     private async Task<IInternalAsyncTransaction> BeginTransactionWithoutLoggingAsync(

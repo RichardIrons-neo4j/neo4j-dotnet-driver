@@ -137,15 +137,14 @@ public class HelloMessageTests
     [InlineData(6, 0)]
     public void ShouldThrowIfPassingAuthToHelloMessageAbove51(int major, int minor)
     {
-        var exception = Record.Exception(
-            () =>
-            {
-                new HelloMessage(
-                    new BoltProtocolVersion(major, minor),
-                    null,
-                    AuthTokens.Basic("jeff", "hidden").AsDictionary(),
-                    null);
-            });
+        var exception = Record.Exception(() =>
+        {
+            new HelloMessage(
+                new BoltProtocolVersion(major, minor),
+                null,
+                AuthTokens.Basic("jeff", "hidden").AsDictionary(),
+                null);
+        });
 
         exception.Should().BeOfType<ArgumentOutOfRangeException>();
     }

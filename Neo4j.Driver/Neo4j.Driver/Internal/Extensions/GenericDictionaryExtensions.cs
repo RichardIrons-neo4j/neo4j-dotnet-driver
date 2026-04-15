@@ -35,7 +35,7 @@ internal static class GenericDictionaryExtensions
             var missing = other
                 .Keys
                 .Where(key => !dict.ContainsKey(key));
-            
+
             foreach (var key in missing)
             {
                 dict[key] = other[key];

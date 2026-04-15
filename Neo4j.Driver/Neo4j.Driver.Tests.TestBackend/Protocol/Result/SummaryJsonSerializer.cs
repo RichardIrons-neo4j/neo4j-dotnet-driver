@@ -169,25 +169,10 @@ internal static class SummaryJsonSerializer
         {
             return null;
         }
-        
+
         if (notifications.All(x => x.Position == null))
         {
-            return notifications.Select(
-                    x => new
-                    {
-                        rawCategory = x.RawCategory ?? string.Empty,
-                        category = x.Category.ToString().ToUpper(),
-                        rawSeverityLevel = x.RawSeverityLevel ?? string.Empty,
-                        severityLevel = x.SeverityLevel.ToString().ToUpper(),
-                        description = x.Description,
-                        code = x.Code,
-                        title = x.Title
-                    })
-                .ToList();
-        }
-
-        return notifications.Select(
-                x => new
+            return notifications.Select(x => new
                 {
                     rawCategory = x.RawCategory ?? string.Empty,
                     category = x.Category.ToString().ToUpper(),
@@ -195,16 +180,29 @@ internal static class SummaryJsonSerializer
                     severityLevel = x.SeverityLevel.ToString().ToUpper(),
                     description = x.Description,
                     code = x.Code,
-                    title = x.Title,
-                    position = x.Position == null
-                        ? null
-                        : new
-                        {
-                            column = x.Position.Column,
-                            offset = x.Position.Offset,
-                            line = x.Position.Line
-                        }
+                    title = x.Title
                 })
+                .ToList();
+        }
+
+        return notifications.Select(x => new
+            {
+                rawCategory = x.RawCategory ?? string.Empty,
+                category = x.Category.ToString().ToUpper(),
+                rawSeverityLevel = x.RawSeverityLevel ?? string.Empty,
+                severityLevel = x.SeverityLevel.ToString().ToUpper(),
+                description = x.Description,
+                code = x.Code,
+                title = x.Title,
+                position = x.Position == null
+                    ? null
+                    : new
+                    {
+                        column = x.Position.Column,
+                        offset = x.Position.Offset,
+                        line = x.Position.Line
+                    }
+            })
             .ToList();
     }
 
@@ -217,27 +215,26 @@ internal static class SummaryJsonSerializer
 
         return statusObjects
             .OfType<GqlStatusObject>()
-            .Select(
-                x => new Dictionary<string, object>
-                {
-                    ["gqlStatus"] = x.GqlStatus,
-                    ["statusDescription"] = x.StatusDescription,
-                    ["diagnosticRecord"] = x.DiagnosticRecord.ToDictionary(
-                        y => y.Key,
-                        y => NativeToCypher.Convert(y.Value)),
-                    ["classification"] = x.Classification.ToString().ToUpper(),
-                    ["rawClassification"] = x.RawClassification,
-                    ["rawSeverity"] = x.RawSeverity,
-                    ["severity"] = x.Severity.ToString().ToUpper(),
-                    ["position"] = x.Position == null
-                        ? null
-                        : new
-                        {
-                            column = x.Position.Column,
-                            offset = x.Position.Offset,
-                            line = x.Position.Line
-                        },
-                    ["isNotification"] = x.IsNotification
-                });
+            .Select(x => new Dictionary<string, object>
+            {
+                ["gqlStatus"] = x.GqlStatus,
+                ["statusDescription"] = x.StatusDescription,
+                ["diagnosticRecord"] = x.DiagnosticRecord.ToDictionary(
+                    y => y.Key,
+                    y => NativeToCypher.Convert(y.Value)),
+                ["classification"] = x.Classification.ToString().ToUpper(),
+                ["rawClassification"] = x.RawClassification,
+                ["rawSeverity"] = x.RawSeverity,
+                ["severity"] = x.Severity.ToString().ToUpper(),
+                ["position"] = x.Position == null
+                    ? null
+                    : new
+                    {
+                        column = x.Position.Column,
+                        offset = x.Position.Offset,
+                        line = x.Position.Line
+                    },
+                ["isNotification"] = x.IsNotification
+            });
     }
 }

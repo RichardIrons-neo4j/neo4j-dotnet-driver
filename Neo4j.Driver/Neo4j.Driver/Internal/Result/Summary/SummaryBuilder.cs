@@ -60,7 +60,7 @@ internal sealed class SummaryBuilder
             Database = builder.Database ?? new DatabaseInfo();
 
             var finalizedNotifications = builder.StatusAndNotifications?.FinalizeNotifications(cursorMetadata);
-            
+
 #pragma warning disable CS0618 // Type or member is obsolete
             Notifications = finalizedNotifications == null ? null : new List<INotification>(finalizedNotifications);
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -73,9 +73,10 @@ internal sealed class SummaryBuilder
         public bool HasProfile => Profile != null;
         public IPlan Plan { get; }
         public IProfiledPlan Profile { get; }
-        
+
         [Obsolete("This API is deprecated and will be removed in a future release. Use GqlStatusObjects instead.")]
         public IList<INotification> Notifications { get; }
+
         public IList<IGqlStatusObject> GqlStatusObjects { get; }
         public TimeSpan ResultAvailableAfter { get; }
         public TimeSpan ResultConsumedAfter { get; }

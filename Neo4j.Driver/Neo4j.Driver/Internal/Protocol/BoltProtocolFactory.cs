@@ -29,7 +29,6 @@ internal class BoltProtocolFactory : IBoltProtocolFactory
 {
     private const int HTTPReservedMajorVersion = 80;
     private const int HTTPReservedMinorVersion = 84;
-    public static readonly BoltProtocolVersion HttpReservedVersion = new(HTTPReservedMajorVersion, HTTPReservedMinorVersion);
 
     private const string HttpErrorMessage =
         "Server responded HTTP. Make sure you are not trying to connect to the http endpoint " +
@@ -39,27 +38,19 @@ internal class BoltProtocolFactory : IBoltProtocolFactory
         "The Neo4j server does not support any of the protocol versions supported by this client. " +
         "Ensure that you are using driver and server versions that are compatible with one another.";
 
+    public static readonly BoltProtocolVersion HttpReservedVersion = new(
+        HTTPReservedMajorVersion,
+        HTTPReservedMinorVersion);
+
     internal static readonly BoltProtocolFactory Default = new();
 
-    public static readonly BoltProtocolVersion[] SupportedVersions = new BoltProtocolVersion[]
+    public static readonly BoltProtocolVersion[] SupportedVersions = new[]
     {
         //NOTE: CHANGE WHEN ADDING A BOLT PROTOCOL VERSION
-        BoltProtocolVersion.V3_0
-        ,BoltProtocolVersion.V4_0
-        ,BoltProtocolVersion.V4_1
-        ,BoltProtocolVersion.V4_2
-        ,BoltProtocolVersion.V4_3
-        ,BoltProtocolVersion.V4_4
-        ,BoltProtocolVersion.V5_0
-        ,BoltProtocolVersion.V5_1
-        ,BoltProtocolVersion.V5_2
-        ,BoltProtocolVersion.V5_3
-        ,BoltProtocolVersion.V5_4
-        ,BoltProtocolVersion.V5_5
-        ,BoltProtocolVersion.V5_6
-        ,BoltProtocolVersion.V5_7
-        ,BoltProtocolVersion.V5_8
-        ,BoltProtocolVersion.V6_0
+        BoltProtocolVersion.V3_0, BoltProtocolVersion.V4_0, BoltProtocolVersion.V4_1, BoltProtocolVersion.V4_2,
+        BoltProtocolVersion.V4_3, BoltProtocolVersion.V4_4, BoltProtocolVersion.V5_0, BoltProtocolVersion.V5_1,
+        BoltProtocolVersion.V5_2, BoltProtocolVersion.V5_3, BoltProtocolVersion.V5_4, BoltProtocolVersion.V5_5,
+        BoltProtocolVersion.V5_6, BoltProtocolVersion.V5_7, BoltProtocolVersion.V5_8, BoltProtocolVersion.V6_0
     };
 
     private static readonly Lazy<byte[]> HandshakeBytesLazy =
@@ -119,7 +110,7 @@ internal class BoltProtocolFactory : IBoltProtocolFactory
     {
         var packedInt = PackStreamBitConverter.ToInt32(data);
         return (BoltProtocolVersion.FromPackedInt(packedInt),
-                BoltProtocolVersion.RangeFromPackedInt(packedInt));
+            BoltProtocolVersion.RangeFromPackedInt(packedInt));
     }
 
     public static byte[] PackSupportedVersions()

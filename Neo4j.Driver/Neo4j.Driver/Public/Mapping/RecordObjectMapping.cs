@@ -39,9 +39,9 @@ public interface IMappingRegistry
 
 internal interface IRecordObjectMapping : IMappingRegistry
 {
+    IMappingTypeConversionManager TypeConversionManager { get; }
     object Map(IRecord record, Type type);
     TResult MapFromBlueprint<TResult>(IRecord record, TResult blueprint);
-    IMappingTypeConversionManager TypeConversionManager { get; }
     void RegisterTypeConverter<TFrom, TTo>(Func<TFrom, TTo> converter);
     MethodInfo GetMapMethodForType(Type type);
     void TranslateIdentifiers(IConventionTranslator conventionTranslator, bool translateCypherParameters = false);
@@ -52,11 +52,12 @@ internal delegate object MapDelegate(IRecord record);
 /// <summary>Controls global record mapping configuration.</summary>
 public class RecordObjectMapping : IRecordObjectMapping
 {
+    internal static readonly RecordObjectMapping Instance = new();
     private readonly ConcurrentDictionary<Type, MethodInfo> _mapMethods = new();
     private readonly ConcurrentDictionary<Type, object> _mappers = new();
     private readonly IMappingTypeConversionManager _typeConversionManager = new MappingTypeConversionManager();
-    private IDefaultConverters _defaultConverters;
     private IConventionTranslator _conventionTranslator = new NoOpConventionTranslator();
+    private IDefaultConverters _defaultConverters;
     private bool _translateCypherParameterNames;
 
     private RecordObjectMapping()
@@ -64,8 +65,6 @@ public class RecordObjectMapping : IRecordObjectMapping
         _defaultConverters = new DefaultConverters(_typeConversionManager);
         _defaultConverters.Register();
     }
-
-    internal static readonly RecordObjectMapping Instance = new();
 
     IMappingRegistry IMappingRegistry.RegisterMapping<T>(Action<IMappingBuilder<T>> mappingBuilder)
     {
@@ -106,10 +105,36 @@ public class RecordObjectMapping : IRecordObjectMapping
     }
 
     /// <summary>
-    /// Registers a type converter. This will replace any existing converter for the same type.
+    /// Uses the supplied <see cref="IConventionTranslator"/> to translate identifiers from the  naming convention
+    /// used in the code to the naming convention used in the database.
     /// </summary>
-    /// <param name="converter">The function that will convert from <typeparamref name="TFrom"/> to
-    /// <typeparamref name="TTo"/>.</param>
+    /// <param name="conventionTranslator"></param>
+    /// <param name="translateCypherParameters"></param>
+    void IRecordObjectMapping.TranslateIdentifiers(
+        IConventionTranslator conventionTranslator,
+        bool translateCypherParameters)
+    {
+        _conventionTranslator = conventionTranslator;
+        _translateCypherParameterNames = translateCypherParameters;
+    }
+
+    /// <summary>Gets the map method for the given type.</summary>
+    /// <param name="type">The type to get the map method for.</param>
+    /// <returns>The map method.</returns>
+    public MethodInfo GetMapMethodForType(Type type)
+    {
+        return _mapMethods.GetOrAdd(type, GetMapMethod);
+
+        MethodInfo GetMapMethod(Type t)
+        {
+            var typedInterface = typeof(IRecordMapper<>).MakeGenericType(t);
+            var methodInfo = typedInterface.GetMethod(nameof(IRecordMapper<object>.Map));
+            return methodInfo;
+        }
+    }
+
+    /// <summary>Registers a type converter. This will replace any existing converter for the same type.</summary>
+    /// <param name="converter">The function that will convert from <typeparamref name="TFrom"/> to <typeparamref name="TTo"/>.</param>
     /// <typeparam name="TFrom">The type to convert from.</typeparam>
     /// <typeparam name="TTo">The type to convert to.</typeparam>
     public static void RegisterTypeConverter<TFrom, TTo>(Func<TFrom, TTo> converter)
@@ -124,23 +149,9 @@ public class RecordObjectMapping : IRecordObjectMapping
 
     internal string GetTranslatedCypherParameterName(string propertyName)
     {
-        return _translateCypherParameterNames 
-            ? _conventionTranslator.Translate(propertyName) 
+        return _translateCypherParameterNames
+            ? _conventionTranslator.Translate(propertyName)
             : propertyName;
-    }
-
-    /// <summary>
-    /// Uses the supplied <see cref="IConventionTranslator"/> to translate identifiers from the  naming
-    /// convention used in the code to the naming convention used in the database.
-    /// </summary>
-    /// <param name="conventionTranslator"></param>
-    /// <param name="translateCypherParameters"></param>
-    void IRecordObjectMapping.TranslateIdentifiers(
-        IConventionTranslator conventionTranslator,
-        bool translateCypherParameters)
-    {
-        _conventionTranslator = conventionTranslator;
-        _translateCypherParameterNames = translateCypherParameters;
     }
 
     private static void TranslateIdentifiers(IConventionTranslator conventionTranslator, bool translateCypherParameters)
@@ -149,40 +160,48 @@ public class RecordObjectMapping : IRecordObjectMapping
     }
 
     /// <summary>
-    /// Uses the supplied <see cref="IdentifierCaseConvention"/> to translate identifiers from the
-    /// specified convention to camelCase database identifiers.
+    /// Uses the supplied <see cref="IdentifierCaseConvention"/> to translate identifiers from the specified
+    /// convention to camelCase database identifiers.
     /// </summary>
     /// <param name="identifierConvention">The convention to use for parsing the identifiers.</param>
-    /// <param name="translateCypherParameters">Whether to translate names of object properties to be
-    /// used as Cypher parameters.</param>
-    public static void TranslateIdentifiers(IdentifierCaseConvention identifierConvention,
+    /// <param name="translateCypherParameters">
+    /// Whether to translate names of object properties to be used as Cypher
+    /// parameters.
+    /// </param>
+    public static void TranslateIdentifiers(
+        IdentifierCaseConvention identifierConvention,
         bool translateCypherParameters = false)
     {
         var translator = new ConventionTranslator<IEnumerable<string>>(
             new StandardCaseParser(identifierConvention),
             new StandardCaseFormatter(FieldCaseConvention.CamelCase));
+
         TranslateIdentifiers(translator, translateCypherParameters);
     }
 
     /// <summary>
-    /// Uses the supplied <see cref="FieldCaseConvention"/> to translate identifiers from standard
-    /// C# identifiers to the specified database field naming convention.
+    /// Uses the supplied <see cref="FieldCaseConvention"/> to translate identifiers from standard C# identifiers to
+    /// the specified database field naming convention.
     /// </summary>
     public static void TranslateIdentifiers(FieldCaseConvention fieldConvention, bool translateCypherParameters = false)
     {
         var translator = new ConventionTranslator<IEnumerable<string>>(
             new StandardCaseParser(IdentifierCaseConvention.CSharpIdentifier),
             new StandardCaseFormatter(fieldConvention));
+
         TranslateIdentifiers(translator, translateCypherParameters);
     }
 
     /// <summary>
-    /// Translates identifiers using the specified <see cref="IdentifierCaseConvention"/> and <see cref="FieldCaseConvention"/>.
+    /// Translates identifiers using the specified <see cref="IdentifierCaseConvention"/> and
+    /// <see cref="FieldCaseConvention"/>.
     /// </summary>
     /// <param name="identifierConvention">The convention to use for parsing the identifiers.</param>
     /// <param name="fieldConvention">The convention to use for formatting the record fields.</param>
-    /// <param name="translateCypherParameters">Whether to translate names of object properties to be
-    /// used as Cypher parameters.</param>
+    /// <param name="translateCypherParameters">
+    /// Whether to translate names of object properties to be used as Cypher
+    /// parameters.
+    /// </param>
     public static void TranslateIdentifiers(
         IdentifierCaseConvention identifierConvention,
         FieldCaseConvention fieldConvention,
@@ -196,26 +215,27 @@ public class RecordObjectMapping : IRecordObjectMapping
     }
 
     /// <summary>
-    /// Translates identifiers using the default configuration.
-    /// By default, it uses the <see cref="IdentifierCaseConvention.CSharpIdentifier"/> for parsing object identifiers
-    /// and the <see cref="FieldCaseConvention.CamelCase"/> for formatting record fields.
+    /// Translates identifiers using the default configuration. By default, it uses the
+    /// <see cref="IdentifierCaseConvention.CSharpIdentifier"/> for parsing object identifiers and the
+    /// <see cref="FieldCaseConvention.CamelCase"/> for formatting record fields.
     /// </summary>
     public static void TranslateIdentifiers(bool translateCypherParameters = false)
     {
         var translator = new ConventionTranslator<IEnumerable<string>>(
             new StandardCaseParser(IdentifierCaseConvention.CSharpIdentifier),
             new StandardCaseFormatter(FieldCaseConvention.CamelCase));
+
         TranslateIdentifiers(translator, translateCypherParameters);
     }
 
-    /// <summary>
-    /// Translates identifiers using a custom object identifier parser and record field formatter.
-    /// </summary>
+    /// <summary>Translates identifiers using a custom object identifier parser and record field formatter.</summary>
     /// <typeparam name="TParseResult">The type of data returned by the parse.</typeparam>
     /// <param name="objectIdentifierParser">The parser used to parse object identifiers.</param>
     /// <param name="recordFieldFormatter">The formatter used to format record fields.</param>
-    /// <param name="translateCypherParameters">Whether to translate names of object properties to be
-    /// used as Cypher parameters.</param>
+    /// <param name="translateCypherParameters">
+    /// Whether to translate names of object properties to be used as Cypher
+    /// parameters.
+    /// </param>
     public static void TranslateIdentifiers<TParseResult>(
         IIdentifierParser<TParseResult> objectIdentifierParser,
         IFieldFormatter<TParseResult> recordFieldFormatter,
@@ -286,23 +306,6 @@ public class RecordObjectMapping : IRecordObjectMapping
     public static void RegisterProvider(IMappingProvider provider)
     {
         provider.CreateMappers(Instance);
-    }
-
-    /// <summary>
-    /// Gets the map method for the given type.
-    /// </summary>
-    /// <param name="type">The type to get the map method for.</param>
-    /// <returns>The map method.</returns>
-    public MethodInfo GetMapMethodForType(Type type)
-    {
-        return _mapMethods.GetOrAdd(type, GetMapMethod);
-
-        MethodInfo GetMapMethod(Type t)
-        {
-            var typedInterface = typeof(IRecordMapper<>).MakeGenericType(t);
-            var methodInfo = typedInterface.GetMethod(nameof(IRecordMapper<object>.Map));
-            return methodInfo;
-        }
     }
 
     /// <summary>Maps a record to an object of the given type according to the global mapping configuration.</summary>

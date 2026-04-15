@@ -22,5 +22,5 @@ public interface IWorkloadExecutorSelector
 {
     /// <summary>Gets the correct executor for the workload.</summary>
     /// <param name="workload">The workload to execute.</param>
-    public IWorkloadExecutor GetExecutor(Workload workload);
+    IWorkloadExecutor GetExecutor(Workload workload);
 }

@@ -19,7 +19,7 @@ using Neo4j.Driver.Tests.BenchkitBackend.Types;
 
 namespace Neo4j.Driver.Tests.BenchkitBackend.Controllers;
 
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+using ILogger = ILogger;
 
 /// <summary>Define and run workloads in the Neo4j driver.</summary>
 [ApiController]

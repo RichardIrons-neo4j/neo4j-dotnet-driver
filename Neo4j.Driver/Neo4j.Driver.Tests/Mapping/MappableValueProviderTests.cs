@@ -155,8 +155,6 @@ public class MappableValueProviderTests
         result.Should().Be(expected);
     }
 
-
-
     [Fact]
     public void ShouldReturnNullWhenValueIsNull()
     {

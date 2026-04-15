@@ -36,14 +36,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 10; i++)
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        p(i);
-                    }
-                });
+                    p(i);
+                }
+            });
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
 
@@ -60,14 +59,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 10; i++)
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        p(i);
-                    }
-                })
+                    p(i);
+                }
+            })
             .ReturnsAsync(new ExecutionSummary(null, null));
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
@@ -86,14 +84,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 10; i++)
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        p(i);
-                    }
-                })
+                    p(i);
+                }
+            })
             .ReturnsAsync(new ExecutionSummary(null, null));
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
@@ -119,14 +116,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 10; i++)
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        p(i);
-                    }
-                })
+                    p(i);
+                }
+            })
             .ReturnsAsync(new ExecutionSummary(summary, keys));
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
@@ -148,14 +144,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 10; i++)
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        p(i);
-                    }
-                })
+                    p(i);
+                }
+            })
             .ReturnsAsync(new ExecutionSummary(null, null));
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
@@ -175,14 +170,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 100; i++)
                 {
-                    for (var i = 0; i < 100; i++)
-                    {
-                        p(i);
-                    }
-                })
+                    p(i);
+                }
+            })
             .ReturnsAsync(new ExecutionSummary(null, null));
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
@@ -206,14 +200,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 10; i++)
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        p(i);
-                    }
-                })
+                    p(i);
+                }
+            })
             .ReturnsAsync(new ExecutionSummary(null, null));
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
@@ -232,14 +225,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 10; i++)
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        p(i);
-                    }
-                })
+                    p(i);
+                }
+            })
             .ReturnsAsync(new ExecutionSummary(null, null));
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
@@ -259,14 +251,13 @@ public class ExecutableQueryTests
 
         autoMock.GetMock<IQueryRowSource<int>>()
             .Setup(x => x.GetRowsAsync(It.IsAny<Action<int>>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (Action<int> p, CancellationToken _) =>
+            .Callback((Action<int> p, CancellationToken _) =>
+            {
+                for (var i = 0; i < 10; i++)
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        p(i);
-                    }
-                })
+                    p(i);
+                }
+            })
             .ReturnsAsync(new ExecutionSummary(null, null));
 
         var subject = new ExecutableQuery<int, int>(autoMock.GetMock<IQueryRowSource<int>>().Object, i => i);
@@ -359,34 +350,31 @@ public class ExecutableQueryTests
 
         var driverMock = autoMock.GetMock<IDriverRowSource<int>>();
         driverMock
-            .Setup(
-                x => x.ProcessStreamAsync(
-                    It.IsAny<Func<IAsyncEnumerable<int>, Task<int>>>(),
-                    It.IsAny<CancellationToken>()))
-            .Returns<Func<IAsyncEnumerable<int>, Task<int>>, CancellationToken>(
-                (p, _) =>
-                    Task.FromResult(
-                        new EagerResult<int>(
-                            p(GetInts(0, 10)).GetAwaiter().GetResult(),
-                            null,
-                            null)));
+            .Setup(x => x.ProcessStreamAsync(
+                It.IsAny<Func<IAsyncEnumerable<int>, Task<int>>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns<Func<IAsyncEnumerable<int>, Task<int>>, CancellationToken>((p, _) =>
+                Task.FromResult(
+                    new EagerResult<int>(
+                        p(GetInts(0, 10)).GetAwaiter().GetResult(),
+                        null,
+                        null)));
 
         var subject = new ExecutableQuery<int, int>(driverMock.Object, i => i);
 
         var rnd = Random.Shared.Next();
 
-        var queryExecution = await subject.WithStreamProcessor(
-                async stream =>
+        var queryExecution = await subject.WithStreamProcessor(async stream =>
+            {
+                var result = rnd;
+
+                await foreach (var i in stream)
                 {
-                    var result = rnd;
+                    result += i;
+                }
 
-                    await foreach (var i in stream)
-                    {
-                        result += i;
-                    }
-
-                    return result;
-                })
+                return result;
+            })
             .ExecuteAsync();
 
         queryExecution.Result.Should().Be(45 + rnd);
@@ -453,12 +441,6 @@ public class ExecutableQueryTests
             .BeEquivalentTo(person);
     }
 
-    public class Person
-    {
-        public string Name { get; set; }
-        public int Age { get; set; }
-    }
-
     [Fact]
     public async Task ShouldGetCorrectTransactionConfig()
     {
@@ -481,5 +463,11 @@ public class ExecutableQueryTests
         await subject.WithConfig(qc).ExecuteAsync();
 
         configPassed.Should().Be(tc);
+    }
+
+    public class Person
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
     }
 }

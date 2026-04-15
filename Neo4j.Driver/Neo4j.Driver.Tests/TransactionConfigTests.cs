@@ -92,8 +92,8 @@ public class TransactionConfigTests
         [MemberData(nameof(InvalidTimeSpanValues))]
         public void ShouldThrowExceptionIfAssigningValueLessThanZero(TimeSpan input)
         {
-            var error = Record.Exception(
-                () => new TransactionConfigBuilder(null, TransactionConfig.Default).WithTimeout(input));
+            var error = Record.Exception(() =>
+                new TransactionConfigBuilder(null, TransactionConfig.Default).WithTimeout(input));
 
             error.Should().BeOfType<ArgumentOutOfRangeException>();
             error.Message.Should().Contain("not be negative");
@@ -135,8 +135,8 @@ public class TransactionConfigTests
         [Fact]
         public void ShouldThrowExceptionIfAssigningNull()
         {
-            var error = Record.Exception(
-                () => new TransactionConfigBuilder(null, TransactionConfig.Default).WithMetadata(null));
+            var error = Record.Exception(() =>
+                new TransactionConfigBuilder(null, TransactionConfig.Default).WithMetadata(null));
 
             error.Should().BeOfType<ArgumentNullException>();
             error.Message.Should().Contain("should not be null");

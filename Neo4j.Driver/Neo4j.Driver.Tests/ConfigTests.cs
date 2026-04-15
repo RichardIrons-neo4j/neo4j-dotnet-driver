@@ -400,7 +400,7 @@ public class ConfigTests
             var configBuilder = new ConfigBuilder(new Config());
 
             // this line would fail to compile before the fix
-            configBuilder.WithNotifications(Severity.Warning, null);
+            configBuilder.WithNotifications(Severity.Warning);
 
             var config = configBuilder.Build()
                 .NotificationsConfig.Should()
@@ -449,7 +449,7 @@ public class ConfigTests
             var configBuilder = new ConfigBuilder(new Config());
 
             // this line would fail to compile before the fix
-            configBuilder.WithNotifications(Severity.Warning, null);
+            configBuilder.WithNotifications(Severity.Warning);
 
             var config = configBuilder.Build()
                 .NotificationsConfig.Should()

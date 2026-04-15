@@ -18,10 +18,10 @@ using System;
 namespace Neo4j.Driver;
 
 /// <summary>
-/// The new <see cref="INeo4jLogger"/> differs from the legacy one in the message format the logging methods are accepting. In
-/// <see cref="INeo4jLogger"/>, each logging method accepts a message which specifies how the message would be formatted and one
-/// or many arguments that are used to replace placeholders in the message string. The following example shows a simplified
-/// version of how the <see cref="INeo4jLogger"/> is used in this driver:
+/// The new <see cref="INeo4jLogger"/> differs from the legacy one in the message format the logging methods are accepting.
+/// In <see cref="INeo4jLogger"/>, each logging method accepts a message which specifies how the message would be formatted
+/// and one or many arguments that are used to replace placeholders in the message string. The following example shows a
+/// simplified version of how the <see cref="INeo4jLogger"/> is used in this driver:
 /// <code>
 /// logger.Info("Hello {0}, {1}", "Alice", "Bob");
 /// </code>

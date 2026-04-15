@@ -22,9 +22,10 @@ namespace Neo4j.Driver.Internal;
 internal static class ObjectExtensions
 {
     private const string DefaultItemSeparator = ", ";
-    
-    private static readonly IObjectToCypherParameterDictionaryConverter ObjectToCypherParameterParameterDictionaryConverter = 
-        new ObjectToCypherParameterDictionaryConverter();
+
+    private static readonly IObjectToCypherParameterDictionaryConverter
+        ObjectToCypherParameterParameterDictionaryConverter =
+            new ObjectToCypherParameterDictionaryConverter();
 
     extension(object obj)
     {
@@ -46,4 +47,3 @@ internal static class ObjectExtensions
         }
     }
 }
-

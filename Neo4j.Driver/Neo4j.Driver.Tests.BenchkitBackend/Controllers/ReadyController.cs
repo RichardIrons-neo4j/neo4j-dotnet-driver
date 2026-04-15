@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Neo4j.Driver.Tests.BenchkitBackend.Controllers;
 
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+using ILogger = ILogger;
 
 /// <summary>Check if the service is ready.</summary>
 [ApiController]

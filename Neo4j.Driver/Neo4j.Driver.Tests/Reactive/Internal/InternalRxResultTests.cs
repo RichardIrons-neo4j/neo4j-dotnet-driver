@@ -442,16 +442,15 @@ public static class InternalRxResultTests
                 .WaitForCompletion()
                 .AssertEqual(
                     Enumerable.Range(1, recordsCount)
-                        .Select(
-                            r =>
-                                OnNext(
-                                    0,
-                                    MatchesRecord(
-                                        keys,
-                                        Enumerable.Range(1, keys.Length)
-                                            .Select(f => $"{r:D3}_{f:D2}")
-                                            .Cast<object>()
-                                            .ToArray())))
+                        .Select(r =>
+                            OnNext(
+                                0,
+                                MatchesRecord(
+                                    keys,
+                                    Enumerable.Range(1, keys.Length)
+                                        .Select(f => $"{r:D3}_{f:D2}")
+                                        .Cast<object>()
+                                        .ToArray())))
                         .Concat(new[] { OnCompleted<IRecord>(0) }));
         }
 
@@ -465,16 +464,15 @@ public static class InternalRxResultTests
                 .WaitForCompletion()
                 .AssertEqual(
                     Enumerable.Range(1, recordsCount)
-                        .Select(
-                            r =>
-                                OnNext(
-                                    0,
-                                    MatchesRecord(
-                                        keys,
-                                        Enumerable.Range(1, keys.Length)
-                                            .Select(f => $"{r:D3}_{f:D2}")
-                                            .Cast<object>()
-                                            .ToArray())))
+                        .Select(r =>
+                            OnNext(
+                                0,
+                                MatchesRecord(
+                                    keys,
+                                    Enumerable.Range(1, keys.Length)
+                                        .Select(f => $"{r:D3}_{f:D2}")
+                                        .Cast<object>()
+                                        .ToArray())))
                         .Concat(new[] { OnError<IRecord>(0, failure) }));
         }
 
@@ -503,9 +501,8 @@ public static class InternalRxResultTests
                 .AssertEqual(
                     OnError<T>(
                         0,
-                        MatchesException<ResultConsumedException>(
-                            e =>
-                                e.Message.StartsWith("Streaming has already started and/or finished"))));
+                        MatchesException<ResultConsumedException>(e =>
+                            e.Message.StartsWith("Streaming has already started and/or finished"))));
         }
 
         public static void VerifyNoError<T>(IObservable<T> observable)

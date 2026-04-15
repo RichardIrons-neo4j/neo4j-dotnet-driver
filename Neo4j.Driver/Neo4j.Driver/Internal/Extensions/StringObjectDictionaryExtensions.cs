@@ -30,7 +30,7 @@ internal static class StringObjectDictionaryExtensions
                 ? (T)value
                 : throw exceptionFact($"Expected key '{key}' to be present in the dictionary, but could not find.");
         }
-    
+
         public T GetValue<T>(string key, T defaultValue)
         {
             return dict.TryGetValue(key, out var value) ? (T)value : defaultValue;
@@ -49,4 +49,3 @@ internal static class StringObjectDictionaryExtensions
         }
     }
 }
-

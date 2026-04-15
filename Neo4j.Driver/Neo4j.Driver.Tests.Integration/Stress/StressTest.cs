@@ -403,18 +403,17 @@ public abstract class StressTest : IDisposable
         {
             for (var batchIndex = 0; batchIndex < batchCount; batchIndex++)
             {
-                await session.ExecuteWriteAsync(
-                    async tx =>
-                    {
-                        // 1-500, 501-1000
-                        var batches = Enumerable.Range(batchIndex * batchSize + 1, batchSize).Batch(queryBatchSize);
+                await session.ExecuteWriteAsync(async tx =>
+                {
+                    // 1-500, 501-1000
+                    var batches = Enumerable.Range(batchIndex * batchSize + 1, batchSize).Batch(queryBatchSize);
 
-                        foreach (var batch in batches)
-                        {
-                            var cursor = await tx.RunAsync(CreateBatchNodesQuery(batch));
-                            await cursor.ConsumeAsync();
-                        }
-                    });
+                    foreach (var batch in batches)
+                    {
+                        var cursor = await tx.RunAsync(CreateBatchNodesQuery(batch));
+                        await cursor.ConsumeAsync();
+                    }
+                });
             }
         }
         finally
@@ -433,16 +432,15 @@ public abstract class StressTest : IDisposable
             "UNWIND $values AS props CREATE (n:Test:Node) SET n = props",
             new
             {
-                values = batch.Select(
-                    nodeIndex => new
-                    {
-                        index = nodeIndex,
-                        name = $"name-{nodeIndex}",
-                        surname = $"surname-{nodeIndex}",
-                        longList = Enumerable.Repeat((long)nodeIndex, 10),
-                        doubleList = Enumerable.Repeat((double)nodeIndex, 10),
-                        boolList = Enumerable.Repeat(nodeIndex % 2 == 0, 10)
-                    })
+                values = batch.Select(nodeIndex => new
+                {
+                    index = nodeIndex,
+                    name = $"name-{nodeIndex}",
+                    surname = $"surname-{nodeIndex}",
+                    longList = Enumerable.Repeat((long)nodeIndex, 10),
+                    doubleList = Enumerable.Repeat((double)nodeIndex, 10),
+                    boolList = Enumerable.Repeat(nodeIndex % 2 == 0, 10)
+                })
             });
     }
 
@@ -453,43 +451,41 @@ public abstract class StressTest : IDisposable
         var session = driver.AsyncSession(o => o.WithDefaultAccessMode(AccessMode.Read).WithBookmarks(bookmarks));
         try
         {
-            await session.ExecuteReadAsync(
-                async txc =>
-                {
-                    var records = await txc.RunAsync("MATCH (n:Node) RETURN n ORDER BY n.index")
-                        .ContinueWith(r => r.Result.ToListAsync())
-                        .Unwrap();
+            await session.ExecuteReadAsync(async txc =>
+            {
+                var records = await txc.RunAsync("MATCH (n:Node) RETURN n ORDER BY n.index")
+                    .ContinueWith(r => r.Result.ToListAsync())
+                    .Unwrap();
 
-                    records.Select(r => r[0].As<INode>())
-                        .Should()
-                        .BeEquivalentTo(
-                            Enumerable.Range(1, expectedNodes)
-                                .Select(
-                                    index =>
-                                        new
+                records.Select(r => r[0].As<INode>())
+                    .Should()
+                    .BeEquivalentTo(
+                        Enumerable.Range(1, expectedNodes)
+                            .Select(index =>
+                                new
+                                {
+                                    Labels = new[] { "Test", "Node" },
+                                    Properties = new Dictionary<string, object>(6)
+                                    {
+                                        { "index", (long)index },
+                                        { "name", $"name-{index}" },
+                                        { "surname", $"surname-{index}" },
                                         {
-                                            Labels = new[] { "Test", "Node" },
-                                            Properties = new Dictionary<string, object>(6)
-                                            {
-                                                { "index", (long)index },
-                                                { "name", $"name-{index}" },
-                                                { "surname", $"surname-{index}" },
-                                                {
-                                                    "longList",
-                                                    Enumerable.Repeat((long)index, 10)
-                                                },
-                                                {
-                                                    "doubleList",
-                                                    Enumerable.Repeat((double)index, 10)
-                                                },
-                                                {
-                                                    "boolList",
-                                                    Enumerable.Repeat(index % 2 == 0, 10)
-                                                }
-                                            }
-                                        }),
-                            opts => opts.Including(x => x.Labels).Including(x => x.Properties));
-                });
+                                            "longList",
+                                            Enumerable.Repeat((long)index, 10)
+                                        },
+                                        {
+                                            "doubleList",
+                                            Enumerable.Repeat((double)index, 10)
+                                        },
+                                        {
+                                            "boolList",
+                                            Enumerable.Repeat(index % 2 == 0, 10)
+                                        }
+                                    }
+                                }),
+                        opts => opts.Including(x => x.Labels).Including(x => x.Properties));
+            });
         }
         finally
         {
@@ -520,13 +516,12 @@ public abstract class StressTest : IDisposable
             {
                 var index = batchIndex;
 
-                session.ExecuteWrite(
-                    txc =>
-                        Enumerable.Range(1, batchSize)
-                            .Select(item => index * batchSize + item)
-                            .Batch(batchBuffer)
-                            .Select(indices => txc.Run(CreateBatchNodesQuery(indices)).Consume())
-                            .ToArray());
+                session.ExecuteWrite(txc =>
+                    Enumerable.Range(1, batchSize)
+                        .Select(item => index * batchSize + item)
+                        .Batch(batchBuffer)
+                        .Select(indices => txc.Run(CreateBatchNodesQuery(indices)).Consume())
+                        .ToArray());
             }
 
             _output.WriteLine("Creating nodes with Sync API took: {0}ms", timer.ElapsedMilliseconds);
@@ -541,34 +536,32 @@ public abstract class StressTest : IDisposable
 
         using (var session = driver.Session(o => o.WithDefaultAccessMode(AccessMode.Read).WithBookmarks(bookmarks)))
         {
-            session.ExecuteRead(
-                txc =>
-                {
-                    var result = txc.Run("MATCH (n:Node) RETURN n ORDER BY n.index");
+            session.ExecuteRead(txc =>
+            {
+                var result = txc.Run("MATCH (n:Node) RETURN n ORDER BY n.index");
 
-                    result.Select(r => r[0].As<INode>())
-                        .Should()
-                        .BeEquivalentTo(
-                            Enumerable.Range(1, expectedNodes)
-                                .Select(
-                                    index =>
-                                        new
-                                        {
-                                            Labels = new[] { "Test", "Node" },
-                                            Properties = new Dictionary<string, object>(6)
-                                            {
-                                                { "index", (long)index },
-                                                { "name", $"name-{index}" },
-                                                { "surname", $"surname-{index}" },
-                                                { "longList", Enumerable.Repeat((long)index, 10) },
-                                                { "doubleList", Enumerable.Repeat((double)index, 10) },
-                                                { "boolList", Enumerable.Repeat(index % 2 == 0, 10) }
-                                            }
-                                        }),
-                            opts => opts.Including(x => x.Labels).Including(x => x.Properties));
+                result.Select(r => r[0].As<INode>())
+                    .Should()
+                    .BeEquivalentTo(
+                        Enumerable.Range(1, expectedNodes)
+                            .Select(index =>
+                                new
+                                {
+                                    Labels = new[] { "Test", "Node" },
+                                    Properties = new Dictionary<string, object>(6)
+                                    {
+                                        { "index", (long)index },
+                                        { "name", $"name-{index}" },
+                                        { "surname", $"surname-{index}" },
+                                        { "longList", Enumerable.Repeat((long)index, 10) },
+                                        { "doubleList", Enumerable.Repeat((double)index, 10) },
+                                        { "boolList", Enumerable.Repeat(index % 2 == 0, 10) }
+                                    }
+                                }),
+                        opts => opts.Including(x => x.Labels).Including(x => x.Properties));
 
-                    return result.Consume();
-                });
+                return result.Consume();
+            });
         }
 
         _output.WriteLine("Reading nodes with Sync API took: {0}ms", timer.ElapsedMilliseconds);
@@ -590,13 +583,11 @@ public abstract class StressTest : IDisposable
         var session = driver.RxSession();
 
         Observable.Range(0, batchCount)
-            .Select(
-                batchIndex =>
-                    session.ExecuteWrite(
-                        txc => Observable.Range(1, batchSize)
-                            .Select(index => batchIndex * batchSize + index)
-                            .Buffer(batchBuffer)
-                            .SelectMany(batch => txc.Run(CreateBatchNodesQuery(batch)).Consume())))
+            .Select(batchIndex =>
+                session.ExecuteWrite(txc => Observable.Range(1, batchSize)
+                    .Select(index => batchIndex * batchSize + index)
+                    .Buffer(batchBuffer)
+                    .SelectMany(batch => txc.Run(CreateBatchNodesQuery(batch)).Consume())))
             .Concat()
             .Concat(session.Close<IResultSummary>())
             .CatchAndThrow(_ => session.Close<IResultSummary>())
@@ -613,42 +604,40 @@ public abstract class StressTest : IDisposable
 
         var session = driver.RxSession(o => o.WithDefaultAccessMode(AccessMode.Read).WithBookmarks(bookmarks));
 
-        session.ExecuteRead(
-                txc =>
-                    txc.Run("MATCH (n:Node) RETURN n ORDER BY n.index")
-                        .Records()
-                        .Select(r => r[0].As<INode>())
-                        .Do(
-                            n =>
-                            {
-                                var index = n.Properties["index"].As<int>();
+        session.ExecuteRead(txc =>
+                txc.Run("MATCH (n:Node) RETURN n ORDER BY n.index")
+                    .Records()
+                    .Select(r => r[0].As<INode>())
+                    .Do(n =>
+                    {
+                        var index = n.Properties["index"].As<int>();
 
-                                n.Should()
-                                    .BeEquivalentTo(
-                                        new
+                        n.Should()
+                            .BeEquivalentTo(
+                                new
+                                {
+                                    Labels = new[] { "Test", "Node" },
+                                    Properties = new Dictionary<string, object>(6)
+                                    {
+                                        { "index", (long)index },
+                                        { "name", $"name-{index}" },
+                                        { "surname", $"surname-{index}" },
                                         {
-                                            Labels = new[] { "Test", "Node" },
-                                            Properties = new Dictionary<string, object>(6)
-                                            {
-                                                { "index", (long)index },
-                                                { "name", $"name-{index}" },
-                                                { "surname", $"surname-{index}" },
-                                                {
-                                                    "longList",
-                                                    Enumerable.Repeat((long)index, 10)
-                                                },
-                                                {
-                                                    "doubleList",
-                                                    Enumerable.Repeat((double)index, 10)
-                                                },
-                                                {
-                                                    "boolList",
-                                                    Enumerable.Repeat(index % 2 == 0, 10)
-                                                }
-                                            }
+                                            "longList",
+                                            Enumerable.Repeat((long)index, 10)
                                         },
-                                        opts => opts.Including(x => x.Labels).Including(x => x.Properties));
-                            }))
+                                        {
+                                            "doubleList",
+                                            Enumerable.Repeat((double)index, 10)
+                                        },
+                                        {
+                                            "boolList",
+                                            Enumerable.Repeat(index % 2 == 0, 10)
+                                        }
+                                    }
+                                },
+                                opts => opts.Including(x => x.Labels).Including(x => x.Properties));
+                    }))
             .Concat(session.Close<INode>())
             .CatchAndThrow(_ => session.Close<INode>())
             .Wait();

@@ -102,13 +102,12 @@ internal class ExecuteQuery : ProtocolObject
     public override string Respond()
     {
         var mappedList = Result.Result
-            .Select(
-                x => new
-                {
-                    values = x.Values
-                        .Select(y => NativeToCypher.Convert(y.Value))
-                        .ToList()
-                })
+            .Select(x => new
+            {
+                values = x.Values
+                    .Select(y => NativeToCypher.Convert(y.Value))
+                    .ToList()
+            })
             .ToList();
 
         return new ProtocolResponse(

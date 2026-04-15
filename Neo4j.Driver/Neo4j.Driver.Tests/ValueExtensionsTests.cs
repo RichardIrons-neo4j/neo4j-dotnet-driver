@@ -248,7 +248,7 @@ public class ValueExtensionsTests
         [Fact]
         public void ShouldThrowExceptionWhenCastFromNonVectorToVector()
         {
-            object value = (int)10;
+            object value = 10;
             var ex = Record.Exception(() => value.As<Vector<int>>());
             ex.Should().BeOfType<InvalidCastException>();
         }

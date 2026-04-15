@@ -36,6 +36,16 @@ internal class NativeToCypherObject
 
 internal static class NativeToCypher
 {
+    internal static readonly Dictionary<Type, string> VectorTypeMap = new()
+    {
+        [typeof(sbyte)] = "i8",
+        [typeof(short)] = "i16",
+        [typeof(int)] = "i32",
+        [typeof(long)] = "i64",
+        [typeof(float)] = "f32",
+        [typeof(double)] = "f64"
+    };
+
     //Mapping of object type to a conversion delegate that will return a NativeToCypherObject that can be serialized to JSON.
     private static Dictionary<Type, Func<string, object, NativeToCypherObject>> FunctionMap { get; } = new()
     {
@@ -70,12 +80,12 @@ internal static class NativeToCypher
             return new NativeToCypherObject { name = "CypherNull" };
         }
 
-        if(sourceObject is IVector)
+        if (sourceObject is IVector)
         {
             return FunctionMap[typeof(IVector)]("CypherVector", sourceObject);
         }
-        
-        if(sourceObject is UnsupportedType)
+
+        if (sourceObject is UnsupportedType)
         {
             return FunctionMap[typeof(UnsupportedType)]("CypherUnsupportedType", sourceObject);
         }
@@ -200,16 +210,6 @@ internal static class NativeToCypher
             { name = cypherType, data = new NativeToCypherObject.DataType { value = result } };
     }
 
-    internal static readonly Dictionary<Type, string> VectorTypeMap = new()
-    {
-        [typeof(sbyte)] = "i8",
-        [typeof(short)] = "i16",
-        [typeof(int)] = "i32",
-        [typeof(long)] = "i64",
-        [typeof(float)] = "f32",
-        [typeof(double)] = "f64"
-    };
-
     public static NativeToCypherObject CypherVector(string cypherType, object obj)
     {
         var vector = (IVector)obj;
@@ -219,13 +219,13 @@ internal static class NativeToCypher
             ["data"] = ByteStreamToHexString(VectorSerializer.GetByteStream(vector))
         };
 
-        return new NativeToCypherObject()
+        return new NativeToCypherObject
         {
             data = result,
             name = cypherType
         };
     }
-    
+
     public static NativeToCypherObject CypherUnsupportedType(string cypherType, object obj)
     {
         var unsupported = (UnsupportedType)obj;
@@ -242,7 +242,7 @@ internal static class NativeToCypher
 
         return new NativeToCypherObject
         {
-            name = cypherType, 
+            name = cypherType,
             data = data
         };
     }

@@ -52,7 +52,6 @@ public interface IDriver : IDisposable, IAsyncDisposable
     /// <returns>An <see cref="IAsyncSession"/> that could be used to execute queries.</returns>
     IAsyncSession AsyncSession(Action<SessionConfigBuilder> action);
 
-
     /// <summary>
     /// Asynchronously verify if the driver can connect to the remote server returning server info. If the driver
     /// fails to connect to the remote server, an error will be thrown, which can be used to further understand the cause of
@@ -63,9 +62,7 @@ public interface IDriver : IDisposable, IAsyncDisposable
     Task<IServerInfo> GetServerInfoAsync();
 
     /// <summary>Asynchronously verify if the driver can connect to the remote server.</summary>
-    /// <remarks>
-    /// Even if this method returns false, the driver still need to be disposed to free up all resources.
-    /// </remarks>
+    /// <remarks>Even if this method returns false, the driver still need to be disposed to free up all resources.</remarks>
     /// <returns>
     /// A task that represents the asynchronous operation.<br/> The task result contains if the driver successfully
     /// connected to the remote server.
@@ -122,11 +119,10 @@ public interface IDriver : IDisposable, IAsyncDisposable
     Task<bool> VerifyAuthenticationAsync(IAuthToken authToken);
 
     /// <summary>
-    /// Returns an IBookmarkManager interface to the bookmark manager that the driver is using to ensure causal consistency
-    /// between calls to the ExecutableQuery interface. This can be used to have causal consistency
-    /// when using the API interfaces supplied by Session objects alongside calls to ExecutableQuery.
+    /// Returns an IBookmarkManager interface to the bookmark manager that the driver is using to ensure causal
+    /// consistency between calls to the ExecutableQuery interface. This can be used to have causal consistency when using the
+    /// API interfaces supplied by Session objects alongside calls to ExecutableQuery.
     /// </summary>
     /// <returns> An <see cref='Neo4j.Driver.IBookmarkManager'/> that can be used for causal consistency</returns>
     IBookmarkManager GetExecutableQueryBookmarkManager();
 }
-

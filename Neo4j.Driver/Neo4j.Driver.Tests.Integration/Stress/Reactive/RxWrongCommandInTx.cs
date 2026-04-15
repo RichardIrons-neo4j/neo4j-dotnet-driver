@@ -35,12 +35,11 @@ public sealed class RxWrongCommandInTx : RxCommand
 
         var result = await
             BeginTransaction(session, context)
-                .SelectMany(
-                    txc => txc
-                        .Run("RETURN")
-                        .Records()
-                        .CatchAndThrow(_ => txc.Rollback<IRecord>())
-                        .Concat(txc.Commit<IRecord>()))
+                .SelectMany(txc => txc
+                    .Run("RETURN")
+                    .Records()
+                    .CatchAndThrow(_ => txc.Rollback<IRecord>())
+                    .Concat(txc.Commit<IRecord>()))
                 .CatchAndThrow(_ => session.Close<IRecord>())
                 .Concat(session.Close<IRecord>())
                 .Materialize()

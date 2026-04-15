@@ -64,13 +64,12 @@ public class StreamExtensionTests
         moqMemoryStream.Setup(x => x.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(100, TimeSpan.FromMilliseconds(100));
 
-        var ex = await Record.ExceptionAsync(
-            () =>
-                moqMemoryStream.Object.ReadWithTimeoutAsync(
-                    It.IsAny<byte[]>(),
-                    It.IsAny<int>(),
-                    It.IsAny<int>(),
-                    timeout));
+        var ex = await Record.ExceptionAsync(() =>
+            moqMemoryStream.Object.ReadWithTimeoutAsync(
+                It.IsAny<byte[]>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                timeout));
 
         ex.Should().BeNull();
     }
@@ -82,13 +81,12 @@ public class StreamExtensionTests
         moqMemoryStream.Setup(x => x.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(100, TimeSpan.FromMilliseconds(100));
 
-        var ex = await Record.ExceptionAsync(
-            () =>
-                moqMemoryStream.Object.ReadWithTimeoutAsync(
-                    It.IsAny<byte[]>(),
-                    It.IsAny<int>(),
-                    It.IsAny<int>(),
-                    -1));
+        var ex = await Record.ExceptionAsync(() =>
+            moqMemoryStream.Object.ReadWithTimeoutAsync(
+                It.IsAny<byte[]>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                -1));
 
         ex.Should().BeNull();
     }

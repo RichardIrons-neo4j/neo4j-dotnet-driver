@@ -62,7 +62,10 @@ internal sealed class SocketClientIoFactory : IConnectionIoFactory
         return new PipelinedMessageReader(client.ReaderStream, context);
     }
 
-    public (IChunkWriter, IMessageWriter) Writers(ITcpSocketClient client, DriverContext context, INeo4jLogger neo4JLogger)
+    public (IChunkWriter, IMessageWriter) Writers(
+        ITcpSocketClient client,
+        DriverContext context,
+        INeo4jLogger neo4JLogger)
     {
         var chunkWriter = new ChunkWriter(client.WriterStream, context, neo4JLogger);
         var messageWriter = new MessageWriter(chunkWriter);

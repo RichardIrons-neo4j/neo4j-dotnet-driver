@@ -22,10 +22,9 @@ namespace Neo4j.Driver.Internal.IO.ValueSerializers.Temporal;
 
 internal sealed class LocalTimeSerializer : IPackStreamSerializer
 {
-    internal static readonly LocalTimeSerializer Instance = new();
-
     public const byte StructType = (byte)'t';
     public const int StructSize = 1;
+    internal static readonly LocalTimeSerializer Instance = new();
 
     public byte[] ReadableStructs => new[] { StructType };
     public IEnumerable<Type> WritableTypes => new[] { typeof(LocalTime), typeof(TimeOnly) };
@@ -46,6 +45,7 @@ internal sealed class LocalTimeSerializer : IPackStreamSerializer
             WriteTimeOnly(writer, time);
             return;
         }
+
         WriteLocalTime(writer, value);
     }
 

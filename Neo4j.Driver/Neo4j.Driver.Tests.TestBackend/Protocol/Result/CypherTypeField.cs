@@ -76,8 +76,10 @@ internal class CypherTypeField : ProtocolObject
         {
             var property = type
                 .GetProperties()
-                .Single(
-                    x => string.Equals(x.Name.ToLower(), field.ToLower(), StringComparison.CurrentCultureIgnoreCase));
+                .Single(x => string.Equals(
+                    x.Name.ToLower(),
+                    field.ToLower(),
+                    StringComparison.CurrentCultureIgnoreCase));
 
             return property.GetValue(obj);
         }

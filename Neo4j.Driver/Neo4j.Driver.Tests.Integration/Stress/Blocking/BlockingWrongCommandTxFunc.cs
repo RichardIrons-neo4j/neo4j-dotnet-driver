@@ -29,17 +29,16 @@ public sealed class BlockingWrongCommandTxFunc : BlockingCommand
     {
         using var session = NewSession(AccessMode.Read, context);
 
-        session.ExecuteRead(
-            txc =>
-            {
-                var result = txc.Run("RETURN");
-                var exc = Record.Exception(() => result.Consume());
-                exc.Should()
-                    .BeOfType<ClientException>()
-                    .Which.Code.Should()
-                    .Be("Neo.ClientError.Statement.SyntaxError");
+        session.ExecuteRead(txc =>
+        {
+            var result = txc.Run("RETURN");
+            var exc = Record.Exception(() => result.Consume());
+            exc.Should()
+                .BeOfType<ClientException>()
+                .Which.Code.Should()
+                .Be("Neo.ClientError.Statement.SyntaxError");
 
-                return result;
-            });
+            return result;
+        });
     }
 }

@@ -32,8 +32,8 @@ public class TranslatorTests
         var fruits = new List<string> { "Apple", "Banana", "Cherry" };
 
         _mocker.GetMock<IIdentifierParser<IReadOnlyList<string>>>()
-                .Setup(x => x.ParseIdentifier("AppleBananaCherry"))
-                .Returns(fruits);
+            .Setup(x => x.ParseIdentifier("AppleBananaCherry"))
+            .Returns(fruits);
 
         _mocker.GetMock<IFieldFormatter<IReadOnlyList<string>>>()
             .Setup(x => x.Format(fruits))

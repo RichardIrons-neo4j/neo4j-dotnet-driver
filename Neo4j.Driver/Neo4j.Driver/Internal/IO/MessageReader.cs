@@ -26,8 +26,8 @@ internal sealed class MessageReader : IMessageReader
 {
     private readonly IChunkReader _chunkReader;
     private readonly int _defaultBufferSize;
-    private readonly INeo4jLogger _neo4JLogger;
     private readonly int _maxBufferSize;
+    private readonly INeo4jLogger _neo4JLogger;
     private readonly ByteBuffers _readerBuffers;
     private int _shrinkCounter;
 

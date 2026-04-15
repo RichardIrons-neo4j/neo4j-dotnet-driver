@@ -43,15 +43,14 @@ internal sealed record GqlStatusObjectsAndNotifications(
             // * A “no data” (`02xxx`) has precedence over a warning;
             // * A warning (`01xxx`) has precedence over a success.
             // * A success (`00xxx`) has precedence over anything informational (`03xxx`)
-            .OrderBy(
-                x => GetStatusOrderingValue(x) switch
-                {
-                    "02" => 0,
-                    "01" => 1,
-                    "00" => 2,
-                    "03" => 3,
-                    _ => int.MaxValue
-                })
+            .OrderBy(x => GetStatusOrderingValue(x) switch
+            {
+                "02" => 0,
+                "01" => 1,
+                "00" => 2,
+                "03" => 3,
+                _ => int.MaxValue
+            })
             .ToList();
     }
 

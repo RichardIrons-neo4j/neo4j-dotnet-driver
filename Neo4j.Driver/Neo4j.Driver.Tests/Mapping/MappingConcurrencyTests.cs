@@ -29,32 +29,6 @@ namespace Neo4j.Driver.Tests.Mapping;
 
 public class MappingConcurrencyTests(ITestOutputHelper testOutputHelper)
 {
-    private interface ITestTask
-    {
-        Task Start();
-    }
-
-    private class TestTask<T> : ITestTask
-    {
-        public Task Start()
-        {
-            return Task.Run(
-                () =>
-                {
-                    for (var i = 0; i < 50; i++)
-                    {
-                        DefaultMapper.Get<T>();
-                        DefaultMapper.Reset();
-                    }
-                });
-        }
-    }
-
-    private record DummyType1(string Name, int Age);
-    private record DummyType2(string Name, int Age);
-    private record DummyType3(string Name, int Age);
-    private record DummyType4(string Name, int Age);
-
     [Fact]
     public async void DefaultMapperShouldBeThreadSafe()
     {
@@ -132,4 +106,32 @@ public class MappingConcurrencyTests(ITestOutputHelper testOutputHelper)
         var instance = Activator.CreateInstance(emittedType);
         return instance;
     }
+
+    private interface ITestTask
+    {
+        Task Start();
+    }
+
+    private class TestTask<T> : ITestTask
+    {
+        public Task Start()
+        {
+            return Task.Run(() =>
+            {
+                for (var i = 0; i < 50; i++)
+                {
+                    DefaultMapper.Get<T>();
+                    DefaultMapper.Reset();
+                }
+            });
+        }
+    }
+
+    private record DummyType1(string Name, int Age);
+
+    private record DummyType2(string Name, int Age);
+
+    private record DummyType3(string Name, int Age);
+
+    private record DummyType4(string Name, int Age);
 }

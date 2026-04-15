@@ -15,15 +15,11 @@
 
 namespace Neo4j.Driver.Mapping.ConventionTranslation;
 
-/// <summary>
-/// Formats data into a string that can be used to identify a field.
-/// </summary>
+/// <summary>Formats data into a string that can be used to identify a field.</summary>
 public interface IFieldFormatter<in T>
 {
-    /// <summary>
-    /// Format the data into a string that can be used to identify a field.
-    /// </summary>
+    /// <summary>Format the data into a string that can be used to identify a field.</summary>
     /// <param name="data"></param>
     /// <returns></returns>
-    public string Format(T data);
+    string Format(T data);
 }

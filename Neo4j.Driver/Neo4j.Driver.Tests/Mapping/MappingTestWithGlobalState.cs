@@ -32,7 +32,7 @@ public class MappingTestWithGlobalState : IDisposable
         RecordObjectMapping.Reset();
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public void Dispose()
     {
         RecordObjectMapping.Reset();

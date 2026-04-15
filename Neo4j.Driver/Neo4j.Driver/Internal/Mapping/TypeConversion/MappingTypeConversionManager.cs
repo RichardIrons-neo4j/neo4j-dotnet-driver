@@ -23,9 +23,12 @@ internal class MappingTypeConversionManager : IMappingTypeConversionManager
 {
     private readonly ConcurrentDictionary<(Type From, Type To), Func<object, object>> _converters = new();
 
-    public void Clear() => _converters.Clear();
+    public void Clear()
+    {
+        _converters.Clear();
+    }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public void RegisterDefaultConverters()
     {
     }
@@ -42,7 +45,7 @@ internal class MappingTypeConversionManager : IMappingTypeConversionManager
         return false;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public bool TryConvert<TFrom, TTo>(TFrom from, out TTo to)
     {
         var success = TryConvert(typeof(TFrom), typeof(TTo), from, out var result);
@@ -56,7 +59,7 @@ internal class MappingTypeConversionManager : IMappingTypeConversionManager
         return false;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public void RegisterConverter<TFrom, TTo>(Func<TFrom, TTo> converter)
     {
         Trace.WriteLine("Registering converter in " + GetHashCode());

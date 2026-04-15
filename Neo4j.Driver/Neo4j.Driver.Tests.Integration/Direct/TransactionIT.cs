@@ -38,11 +38,9 @@ public sealed class TransactionIT : DirectDriverTestBase
         await using var session = Driver.AsyncSession();
         var timer = Stopwatch.StartNew();
 
-        var exc = await Record.ExceptionAsync(
-            () =>
-                session.ExecuteWriteAsync(
-                    _ =>
-                        throw new SessionExpiredException($"Failed at {timer.Elapsed}")));
+        var exc = await Record.ExceptionAsync(() =>
+            session.ExecuteWriteAsync(_ =>
+                throw new SessionExpiredException($"Failed at {timer.Elapsed}")));
 
         timer.Stop();
 
@@ -62,15 +60,13 @@ public sealed class TransactionIT : DirectDriverTestBase
     {
         await using var session = Driver.AsyncSession();
         var createResult =
-            await session.ExecuteWriteAsync(
-                tx =>
-                    tx.RunAndSingleAsync("CREATE (n) RETURN count(n)", null));
+            await session.ExecuteWriteAsync(tx =>
+                tx.RunAndSingleAsync("CREATE (n) RETURN count(n)", null));
 
         // the read operation should see the commited write tx
         var matchResult =
-            await session.ExecuteReadAsync(
-                tx =>
-                    tx.RunAndSingleAsync("MATCH (n) RETURN count(n)", null));
+            await session.ExecuteReadAsync(tx =>
+                tx.RunAndSingleAsync("MATCH (n) RETURN count(n)", null));
 
         createResult.Should().BeEquivalentTo(matchResult);
     }
@@ -82,16 +78,15 @@ public sealed class TransactionIT : DirectDriverTestBase
         await using var session = Driver.AsyncSession();
         try
         {
-            await session.ExecuteWriteAsync(
-                async tx =>
-                {
-                    createResult = await tx.RunAndSingleAsync(
-                        "CREATE (n) RETURN count(n)",
-                        null,
-                        r => r[0].As<int>());
+            await session.ExecuteWriteAsync(async tx =>
+            {
+                createResult = await tx.RunAndSingleAsync(
+                    "CREATE (n) RETURN count(n)",
+                    null,
+                    r => r[0].As<int>());
 
-                    throw new InvalidOperationException("Throw in a transaction");
-                });
+                throw new InvalidOperationException("Throw in a transaction");
+            });
         }
         catch (InvalidOperationException)
         {
@@ -101,9 +96,8 @@ public sealed class TransactionIT : DirectDriverTestBase
 
         // the read operation should not see the rolled back write tx
         var matchResult =
-            await session.ExecuteReadAsync(
-                tx =>
-                    tx.RunAndSingleAsync("MATCH (n) RETURN count(n)", null, r => r[0].As<int>()));
+            await session.ExecuteReadAsync(tx =>
+                tx.RunAndSingleAsync("MATCH (n) RETURN count(n)", null, r => r[0].As<int>()));
 
         createResult.Should().Be(matchResult + 1);
     }
@@ -112,21 +106,18 @@ public sealed class TransactionIT : DirectDriverTestBase
     public async Task ShouldNotCommitIfError()
     {
         await using var session = Driver.AsyncSession();
-        var exc = await Record.ExceptionAsync(
-            () => session.ExecuteWriteAsync(
-                async tx =>
-                {
-                    await tx.RunAsync("CREATE (n) RETURN count(n)");
-                    throw new ProtocolException("Broken");
-                }));
+        var exc = await Record.ExceptionAsync(() => session.ExecuteWriteAsync(async tx =>
+        {
+            await tx.RunAsync("CREATE (n) RETURN count(n)");
+            throw new ProtocolException("Broken");
+        }));
 
         exc.Should().NotBeNull();
 
         // the read operation should not see the rolled back write tx
         var matchResult =
-            await session.ExecuteReadAsync(
-                tx =>
-                    tx.RunAndSingleAsync("MATCH (n) RETURN count(n)", null, r => r[0].As<int>()));
+            await session.ExecuteReadAsync(tx =>
+                tx.RunAndSingleAsync("MATCH (n) RETURN count(n)", null, r => r[0].As<int>()));
 
         matchResult.Should().Be(0);
     }
@@ -302,11 +293,10 @@ public sealed class TransactionIT : DirectDriverTestBase
         var txc1 = await session.BeginTransactionAsync();
         var cursor1 = await txc1.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
 
-        await cursor1.ForEachAsync(
-            r =>
-                txc1.RunAsync(
-                    "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
-                    new { x = r["x"].As<int>() }));
+        await cursor1.ForEachAsync(r =>
+            txc1.RunAsync(
+                "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
+                new { x = r["x"].As<int>() }));
 
         var count = await (await txc1.RunAsync("MATCH (n:Node) RETURN count(n)")).SingleAsync();
         count[0].As<int>().Should().Be(size);

@@ -70,7 +70,7 @@ public class DefaultResolverTests
         ipAddresses.Should().Contain(IPAddress.Parse("[::1]"));
         ipAddresses.Should().Contain(IPAddress.Parse("127.0.0.1"));
     }
-    
+
     [Fact]
     public void ShouldParseLoopback()
     {
@@ -79,7 +79,7 @@ public class DefaultResolverTests
 
         ipAddresses.Should().HaveCount(2).And.ContainInOrder(IPAddress.IPv6Loopback, IPAddress.Loopback);
     }
-    
+
     [Fact]
     public async void ShouldParseLoopbackAsync()
     {
@@ -105,8 +105,8 @@ public class DefaultResolverTests
         var ipAddresses = await resolver.ResolveAsync("[::1]");
 
         ipAddresses.Should().HaveCount(1).And.Contain(IPAddress.IPv6Loopback);
-    }        
-    
+    }
+
     [MonoFact]
     public void ShouldNotResolveLocalhostOnMono()
     {

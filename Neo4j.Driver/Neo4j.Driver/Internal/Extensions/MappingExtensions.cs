@@ -26,7 +26,7 @@ internal static class MappingExtensions
         typeof(ValueExtensions).GetMethod(nameof(ValueExtensions.As), [typeof(object)]);
 
     private static readonly ConcurrentDictionary<Type, MethodInfo> AsMethods = new();
-    
+
     internal static void ResetAsMethods()
     {
         AsMethods.Clear();
@@ -48,8 +48,7 @@ internal static class MappingExtensions
                 _ => ex
             };
 
-            throw new MappingFailedException(
-                $"Failed to map value to type {type.Name}.", inner);
+            throw new MappingFailedException($"Failed to map value to type {type.Name}.", inner);
         }
     }
 }

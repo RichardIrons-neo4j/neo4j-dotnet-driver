@@ -23,15 +23,14 @@ internal class WorkloadSessionBuilder : IWorkloadSessionBuilder
     /// <inheritdoc/>
     public IAsyncSession BuildSession(IDriver driver, Workload workload)
     {
-        return driver.AsyncSession(
-            x =>
+        return driver.AsyncSession(x =>
+        {
+            if (!string.IsNullOrWhiteSpace(workload.Database))
             {
-                if (!string.IsNullOrWhiteSpace(workload.Database))
-                {
-                    x.WithDatabase(workload.Database);
-                }
+                x.WithDatabase(workload.Database);
+            }
 
-                x.WithDefaultAccessMode(workload.Routing.ToAccessMode());
-            });
+            x.WithDefaultAccessMode(workload.Routing.ToAccessMode());
+        });
     }
 }

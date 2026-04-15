@@ -169,32 +169,31 @@ internal class InternalSession : ISession
 
     internal T RunTransaction<T>(AccessMode mode, Func<ITransaction, T> work, Action<TransactionConfigBuilder> action)
     {
-        return _retryLogic.Retry(
-            () =>
+        return _retryLogic.Retry(() =>
+        {
+            using (var txc = BeginTransaction(mode, action))
             {
-                using (var txc = BeginTransaction(mode, action))
+                try
                 {
-                    try
+                    var result = work(txc);
+                    if (txc.IsOpen)
                     {
-                        var result = work(txc);
-                        if (txc.IsOpen)
-                        {
-                            txc.Commit();
-                        }
-
-                        return result;
+                        txc.Commit();
                     }
-                    catch
-                    {
-                        if (txc.IsOpen)
-                        {
-                            txc.Rollback();
-                        }
 
-                        throw;
-                    }
+                    return result;
                 }
-            });
+                catch
+                {
+                    if (txc.IsOpen)
+                    {
+                        txc.Rollback();
+                    }
+
+                    throw;
+                }
+            }
+        });
     }
 
 #endregion

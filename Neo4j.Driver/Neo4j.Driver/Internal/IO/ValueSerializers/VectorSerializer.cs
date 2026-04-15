@@ -23,21 +23,34 @@ namespace Neo4j.Driver.Internal.IO.ValueSerializers;
 
 internal class VectorSerializer : IPackStreamSerializer
 {
-    public static VectorSerializer Instance { get; } = new ();
-
     private const byte VectorStructType = (byte)'V';
     private const int VectorStructSize = 2;
 
-    /// <inheritdoc />
+    private static readonly Dictionary<Type, byte> TypeToMarker = new()
+    {
+        { typeof(sbyte), PackStream.Int8 },
+        { typeof(short), PackStream.Int16 },
+        { typeof(int), PackStream.Int32 },
+        { typeof(long), PackStream.Int64 },
+        { typeof(float), PackStream.Float32 },
+        { typeof(double), PackStream.Float64 }
+    };
+
+    private static readonly Dictionary<byte, Type> MarkerToType =
+        TypeToMarker.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+
+    public static VectorSerializer Instance { get; } = new();
+
+    /// <inheritdoc/>
     public byte[] ReadableStructs => [VectorStructType];
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public IEnumerable<Type> WritableTypes => [typeof(Vector)];
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public object Deserialize(BoltProtocolVersion version, PackStreamReader reader, byte signature, long size)
     {
-        if(signature != VectorStructType)
+        if (signature != VectorStructType)
         {
             throw new ProtocolException(
                 $"Unsupported struct signature {signature} passed to {nameof(VectorSerializer)}!");
@@ -55,14 +68,6 @@ internal class VectorSerializer : IPackStreamSerializer
         return Vector.CreateDynamic(typedArray, byteArray);
     }
 
-    public static byte[] GetByteStream(IVector vector)
-    {
-        var byteConverter = GetByteConverter(vector.ElementType);
-        var byteArray = vector.UntypedValues.Select(byteConverter).ToArray();
-        var flattened = byteArray.SelectMany(b => b).ToArray();
-        return flattened;
-    }
-
     public void Serialize(BoltProtocolVersion version, PackStreamWriter writer, object value)
     {
         var vector = value.CastOrThrow<Vector>();
@@ -76,8 +81,12 @@ internal class VectorSerializer : IPackStreamSerializer
         writer.WriteByteArray(byteStream);
     }
 
-    /// <inheritdoc />
-    public (object, int) DeserializeSpan(BoltProtocolVersion version, SpanPackStreamReader reader, byte signature, int size)
+    /// <inheritdoc/>
+    public (object, int) DeserializeSpan(
+        BoltProtocolVersion version,
+        SpanPackStreamReader reader,
+        byte signature,
+        int size)
     {
         if (signature != VectorStructType)
         {
@@ -98,18 +107,13 @@ internal class VectorSerializer : IPackStreamSerializer
         return (Vector.CreateDynamic(typedArray, originalByteStream), reader.Index);
     }
 
-    private static readonly Dictionary<Type, byte> TypeToMarker = new()
+    public static byte[] GetByteStream(IVector vector)
     {
-        { typeof(sbyte), PackStream.Int8 },
-        { typeof(short), PackStream.Int16 },
-        { typeof(int), PackStream.Int32 },
-        { typeof(long), PackStream.Int64 },
-        { typeof(float), PackStream.Float32 },
-        { typeof(double), PackStream.Float64 }
-    };
-
-    private static readonly Dictionary<byte, Type> MarkerToType =
-        TypeToMarker.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+        var byteConverter = GetByteConverter(vector.ElementType);
+        var byteArray = vector.UntypedValues.Select(byteConverter).ToArray();
+        var flattened = byteArray.SelectMany(b => b).ToArray();
+        return flattened;
+    }
 
     private static Func<object, byte[]> GetByteConverter(Type type)
     {

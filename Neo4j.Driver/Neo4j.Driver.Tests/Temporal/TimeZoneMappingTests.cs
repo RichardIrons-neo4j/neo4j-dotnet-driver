@@ -92,9 +92,8 @@ public class TimeZoneMappingTests
     [InlineData("tr-TR")]
     public void ShouldThrowExceptionWhenNonExistent(string culture)
     {
-        var exc = Record.Exception(
-            () =>
-                ExecuteWithCulture(culture, () => TimeZoneMapping.Get("Some non-existent time zone id")));
+        var exc = Record.Exception(() =>
+            ExecuteWithCulture(culture, () => TimeZoneMapping.Get("Some non-existent time zone id")));
 
         // System.TimeZoneNotFoundException is not public in .net standard 1.3
         exc.Should().NotBeNull();

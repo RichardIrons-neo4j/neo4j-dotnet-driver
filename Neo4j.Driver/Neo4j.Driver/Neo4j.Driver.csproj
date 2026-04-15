@@ -49,8 +49,8 @@
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-      <DebugType>full</DebugType>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <DebugType>full</DebugType>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="Internal\Temporal\windowsZones.xml"/>
@@ -60,6 +60,6 @@
         <EmbeddedResource Include="Internal\Temporal\windowsZones.xml"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
+        <PackageReference Include="System.IO.Pipelines" Version="8.0.0"/>
     </ItemGroup>
 </Project>

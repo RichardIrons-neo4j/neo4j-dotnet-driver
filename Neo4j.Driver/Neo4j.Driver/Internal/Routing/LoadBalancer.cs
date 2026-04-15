@@ -132,48 +132,6 @@ internal class LoadBalancer : IConnectionProvider, IErrorHandler, IClusterConnec
             .ConfigureAwait(false);
     }
 
-    private async Task<IConnection> AcquireConnectionInternalAsync(
-        AccessMode mode,
-        string database,
-        SessionConfig sessionConfig,
-        Bookmarks bookmarks,
-        bool forceAuth,
-        CancellationToken cancellationToken = default)
-    {
-        if (IsClosed)
-        {
-            throw new ObjectDisposedException(
-                nameof(LoadBalancer),
-                "Failed to acquire a new connection as the driver has already been disposed.");
-        }
-
-        _neo4JLogger.Debug($"LoadBalancer - Acquiring connection for '{database}'");
-        var conn = await AcquireConnectionAsync(mode, database, sessionConfig, bookmarks, forceAuth, cancellationToken)
-            .ConfigureAwait(false);
-
-        //If a non ssr connection is detected then the connection is not used and returned to the pool. Connection
-        //acquisition is then repeated with the cache not being used.
-        if (_clusterConnectionPool.ConnectionCausesCacheDisable(conn))
-        {
-            _neo4JLogger.Debug(
-                $"LoadBalancer - Mixed cluster detected, some connections have no SSR. Re-acquiring " +
-                $"connection without homeDB cache");
-
-            await conn.CloseAsync().ConfigureAwait(false);
-            conn = await AcquireConnectionAsync(mode, database, sessionConfig, bookmarks, forceAuth)
-                .ConfigureAwait(false);
-        }
-
-        if (IsClosed)
-        {
-            throw new ObjectDisposedException(
-                nameof(LoadBalancer),
-                "Failed to acquire a new connection as the driver has already been disposed.");
-        }
-
-        return conn;
-    }
-
     public async Task<IServerInfo> VerifyConnectivityAndGetInfoAsync()
     {
         try
@@ -198,7 +156,7 @@ internal class LoadBalancer : IConnectionProvider, IErrorHandler, IClusterConnec
             "ensure the database is running and that there is a working network connection to it.");
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public bool IsDirectDriver => false;
 
     public DriverContext DriverContext { get; }
@@ -239,6 +197,48 @@ internal class LoadBalancer : IConnectionProvider, IErrorHandler, IClusterConnec
     public void OnWriteError(Uri uri, string database)
     {
         _routingTableManager.ForgetWriter(uri, database);
+    }
+
+    private async Task<IConnection> AcquireConnectionInternalAsync(
+        AccessMode mode,
+        string database,
+        SessionConfig sessionConfig,
+        Bookmarks bookmarks,
+        bool forceAuth,
+        CancellationToken cancellationToken = default)
+    {
+        if (IsClosed)
+        {
+            throw new ObjectDisposedException(
+                nameof(LoadBalancer),
+                "Failed to acquire a new connection as the driver has already been disposed.");
+        }
+
+        _neo4JLogger.Debug($"LoadBalancer - Acquiring connection for '{database}'");
+        var conn = await AcquireConnectionAsync(mode, database, sessionConfig, bookmarks, forceAuth, cancellationToken)
+            .ConfigureAwait(false);
+
+        //If a non ssr connection is detected then the connection is not used and returned to the pool. Connection
+        //acquisition is then repeated with the cache not being used.
+        if (_clusterConnectionPool.ConnectionCausesCacheDisable(conn))
+        {
+            _neo4JLogger.Debug(
+                $"LoadBalancer - Mixed cluster detected, some connections have no SSR. Re-acquiring " +
+                $"connection without homeDB cache");
+
+            await conn.CloseAsync().ConfigureAwait(false);
+            conn = await AcquireConnectionAsync(mode, database, sessionConfig, bookmarks, forceAuth)
+                .ConfigureAwait(false);
+        }
+
+        if (IsClosed)
+        {
+            throw new ObjectDisposedException(
+                nameof(LoadBalancer),
+                "Failed to acquire a new connection as the driver has already been disposed.");
+        }
+
+        return conn;
     }
 
     private async Task<T> CheckConnectionSupport<T>(Func<IConnection, T> check)
@@ -345,7 +345,7 @@ internal class LoadBalancer : IConnectionProvider, IErrorHandler, IClusterConnec
                     bookmarks,
                     forceAuth)
                 .ConfigureAwait(false);
-           
+
             if (conn != null)
             {
                 return conn;

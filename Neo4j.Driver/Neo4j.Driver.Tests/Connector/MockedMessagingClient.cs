@@ -72,30 +72,28 @@ internal class MockedMessagingClientV3
             .Returns(Task.FromResult(new Mock<IBoltProtocol>().Object));
 
         ClientMock.Setup(x => x.SendAsync(It.IsAny<IEnumerable<IRequestMessage>>()))
-            .Callback<IEnumerable<IRequestMessage>>(
-                msg =>
+            .Callback<IEnumerable<IRequestMessage>>(msg =>
+            {
+                foreach (var m in msg)
                 {
-                    foreach (var m in msg)
-                    {
-                        m.ToString().Should().Be(_requestMessages[_requestCount].ToString());
-                        _requestCount++;
-                    }
-                });
+                    m.ToString().Should().Be(_requestMessages[_requestCount].ToString());
+                    _requestCount++;
+                }
+            });
 
         ClientMock.Setup(x => x.ReceiveOneAsync(It.IsAny<IResponsePipeline>()))
-            .Callback<IResponsePipeline>(
-                pipeline =>
+            .Callback<IResponsePipeline>(pipeline =>
+            {
+                if (_responseCount < _responseMessages.Count)
                 {
-                    if (_responseCount < _responseMessages.Count)
-                    {
-                        _responseMessages[_responseCount].Dispatch(pipeline);
-                        _responseCount++;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Not enough response message to provide");
-                    }
-                });
+                    _responseMessages[_responseCount].Dispatch(pipeline);
+                    _responseCount++;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Not enough response message to provide");
+                }
+            });
 
         ClientMock.Setup(x => x.IsOpen).Returns(() => _responseCount < _responseMessages.Count);
     }

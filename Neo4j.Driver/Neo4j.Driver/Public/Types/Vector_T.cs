@@ -20,21 +20,15 @@ using System.Linq;
 
 namespace Neo4j.Driver;
 
-/// <summary>
-/// Represents a mathematical vector with elements of a specific supported numeric type.
-/// </summary>
+/// <summary>Represents a mathematical vector with elements of a specific supported numeric type.</summary>
 /// <typeparam name="T">
 /// The type of the vector elements. Must be one of the supported numeric types: <see cref="float"/>,
 /// <see cref="double"/>, <see cref="sbyte"/>, <see cref="short"/>, <see cref="int"/>, or <see cref="long"/>.
 /// </typeparam>
 public class Vector<T> : Vector, IVector<T> where T : struct
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Vector{T}"/> class.
-    /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// Thrown if <typeparamref name="T"/> is not a supported numeric type.
-    /// </exception>
+    /// <summary>Initializes a new instance of the <see cref="Vector{T}"/> class.</summary>
+    /// <exception cref="NotSupportedException">Thrown if <typeparamref name="T"/> is not a supported numeric type.</exception>
     public Vector()
     {
         if (!IsSupported(typeof(T)))
@@ -43,9 +37,7 @@ public class Vector<T> : Vector, IVector<T> where T : struct
         }
     }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Vector{T}"/> class with the specified values.
-    /// </summary>
+    /// <summary>Initializes a new instance of the <see cref="Vector{T}"/> class with the specified values.</summary>
     /// <param name="values">The array of values to initialize the vector with. Must not be null or empty.</param>
     /// <param name="originalByteStream">The original byte stream from which the vector was deserialized, if applicable.</param>
     /// <exception cref="ArgumentException">Thrown if <paramref name="values"/> is null or empty.</exception>
@@ -57,23 +49,27 @@ public class Vector<T> : Vector, IVector<T> where T : struct
         UntypedValues = Values.Select(x => (object)x);
     }
 
-    /// <summary>
-    /// Gets the array of values contained in the vector.
-    /// </summary>
+    /// <summary>Gets the array of values contained in the vector.</summary>
     public IReadOnlyList<T> Values { get; }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override Type ElementType => typeof(T);
 
-    /// <inheritdoc />
-    public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
+    /// <inheritdoc/>
+    public IEnumerator<T> GetEnumerator()
+    {
+        return Values.GetEnumerator();
+    }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override int Count => Values.Count;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public T this[int index] => Values[index];
 
-    /// <inheritdoc />
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    /// <inheritdoc/>
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 }

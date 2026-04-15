@@ -148,17 +148,16 @@ public static class ResultTests
                     new ListBasedRecordCursor(TestRecordYielder.Keys, () => recordYielder.Records),
                     new BlockingExecutor());
 
-            var t = Task.Factory.StartNew(
-                () =>
+            var t = Task.Factory.StartNew(() =>
+            {
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                foreach (var item in cursor)
                 {
-                    // ReSharper disable once LoopCanBeConvertedToQuery
-                    foreach (var item in cursor)
-                    {
-                        count++;
-                    }
+                    count++;
+                }
 
-                    count.Should().Be(10);
-                });
+                count.Should().Be(10);
+            });
 
             while (count < 5)
             {

@@ -34,17 +34,16 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var cursor1 = await session.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
-        var error = await Record.ExceptionAsync(
-            async () =>
+        var error = await Record.ExceptionAsync(async () =>
+        {
+            while (await cursor1.FetchAsync())
             {
-                while (await cursor1.FetchAsync())
-                {
-                    var record = cursor1.Current;
-                    await session.RunAsync(
-                        "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
-                        new { x = record["x"].As<int>() });
-                }
-            });
+                var record = cursor1.Current;
+                await session.RunAsync(
+                    "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
+                    new { x = record["x"].As<int>() });
+            }
+        });
 
         error.Should()
             .BeOfType<ResultConsumedException>()
@@ -59,14 +58,13 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var cursor1 = await session.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
-        var error = await Record.ExceptionAsync(
-            async () =>
+        var error = await Record.ExceptionAsync(async () =>
+        {
+            while (await cursor1.FetchAsync())
             {
-                while (await cursor1.FetchAsync())
-                {
-                    await session.BeginTransactionAsync();
-                }
-            });
+                await session.BeginTransactionAsync();
+            }
+        });
 
         error.Should()
             .BeOfType<ResultConsumedException>()
@@ -83,18 +81,16 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
 
         var cursor1 = await session.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
 
-        var error = await Record.ExceptionAsync(
-            async () =>
+        var error = await Record.ExceptionAsync(async () =>
+        {
+            while (await cursor1.FetchAsync())
             {
-                while (await cursor1.FetchAsync())
-                {
-                    var record = cursor1.Current;
-                    await session.ExecuteWriteAsync(
-                        async tx => await tx.RunAsync(
-                            "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
-                            new { x = record["x"].As<int>() }));
-                }
-            });
+                var record = cursor1.Current;
+                await session.ExecuteWriteAsync(async tx => await tx.RunAsync(
+                    "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
+                    new { x = record["x"].As<int>() }));
+            }
+        });
 
         error.Should()
             .BeOfType<ResultConsumedException>()
@@ -110,17 +106,16 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var tx = await session.BeginTransactionAsync();
         var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
-        var error = await Record.ExceptionAsync(
-            async () =>
+        var error = await Record.ExceptionAsync(async () =>
+        {
+            while (await cursor1.FetchAsync())
             {
-                while (await cursor1.FetchAsync())
-                {
-                    var record = cursor1.Current;
-                    await session.RunAsync(
-                        "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
-                        new { x = record["x"].As<int>() });
-                }
-            });
+                var record = cursor1.Current;
+                await session.RunAsync(
+                    "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
+                    new { x = record["x"].As<int>() });
+            }
+        });
 
         error.Should()
             .BeOfType<TransactionNestingException>()
@@ -136,14 +131,13 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var tx = await session.BeginTransactionAsync();
         var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
-        var error = await Record.ExceptionAsync(
-            async () =>
+        var error = await Record.ExceptionAsync(async () =>
+        {
+            while (await cursor1.FetchAsync())
             {
-                while (await cursor1.FetchAsync())
-                {
-                    await session.BeginTransactionAsync();
-                }
-            });
+                await session.BeginTransactionAsync();
+            }
+        });
 
         error.Should()
             .BeOfType<TransactionNestingException>()
@@ -159,18 +153,16 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var tx = await session.BeginTransactionAsync();
         var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
-        var error = await Record.ExceptionAsync(
-            async () =>
+        var error = await Record.ExceptionAsync(async () =>
+        {
+            while (await cursor1.FetchAsync())
             {
-                while (await cursor1.FetchAsync())
-                {
-                    var record = cursor1.Current;
-                    await session.ExecuteWriteAsync(
-                        async tx2 => await tx2.RunAsync(
-                            "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
-                            new { x = record["x"].As<int>() }));
-                }
-            });
+                var record = cursor1.Current;
+                await session.ExecuteWriteAsync(async tx2 => await tx2.RunAsync(
+                    "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
+                    new { x = record["x"].As<int>() }));
+            }
+        });
 
         error.Should()
             .BeOfType<TransactionNestingException>()
@@ -184,21 +176,18 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
         await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
-        var error = await Record.ExceptionAsync(
-            async () =>
-                await session.ExecuteReadAsync(
-                    async tx =>
-                    {
-                        var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
-                        while (await cursor1.FetchAsync())
-                        {
-                            var record = cursor1.Current;
-                            await session.ExecuteWriteAsync(
-                                async tx2 => await tx2.RunAsync(
-                                    "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
-                                    new { x = record["x"].As<int>() }));
-                        }
-                    }));
+        var error = await Record.ExceptionAsync(async () =>
+            await session.ExecuteReadAsync(async tx =>
+            {
+                var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
+                while (await cursor1.FetchAsync())
+                {
+                    var record = cursor1.Current;
+                    await session.ExecuteWriteAsync(async tx2 => await tx2.RunAsync(
+                        "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
+                        new { x = record["x"].As<int>() }));
+                }
+            }));
 
         error.Should()
             .BeOfType<TransactionNestingException>()
@@ -212,20 +201,18 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
         await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
-        var error = await Record.ExceptionAsync(
-            async () =>
-                await session.ExecuteReadAsync(
-                    async tx =>
-                    {
-                        var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
-                        while (await cursor1.FetchAsync())
-                        {
-                            var record = cursor1.Current;
-                            await session.RunAsync(
-                                "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
-                                new { x = record["x"].As<int>() });
-                        }
-                    }));
+        var error = await Record.ExceptionAsync(async () =>
+            await session.ExecuteReadAsync(async tx =>
+            {
+                var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
+                while (await cursor1.FetchAsync())
+                {
+                    var record = cursor1.Current;
+                    await session.RunAsync(
+                        "UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id",
+                        new { x = record["x"].As<int>() });
+                }
+            }));
 
         error.Should()
             .BeOfType<TransactionNestingException>()
@@ -239,17 +226,15 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
         await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
-        var error = await Record.ExceptionAsync(
-            async () =>
-                await session.ExecuteReadAsync(
-                    async tx =>
-                    {
-                        var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
-                        while (await cursor1.FetchAsync())
-                        {
-                            await session.BeginTransactionAsync();
-                        }
-                    }));
+        var error = await Record.ExceptionAsync(async () =>
+            await session.ExecuteReadAsync(async tx =>
+            {
+                var cursor1 = await tx.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
+                while (await cursor1.FetchAsync())
+                {
+                    await session.BeginTransactionAsync();
+                }
+            }));
 
         error.Should()
             .BeOfType<TransactionNestingException>()

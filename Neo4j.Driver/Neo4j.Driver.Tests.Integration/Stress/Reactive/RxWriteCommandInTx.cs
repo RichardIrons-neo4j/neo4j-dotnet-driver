@@ -36,31 +36,27 @@ public sealed class RxWriteCommandInTx : RxCommand
         var session = NewSession(AccessMode.Write, context);
 
         await BeginTransaction(session, context)
-            .SelectMany(
-                txc => txc
-                    .Run("CREATE ()")
-                    .Consume()
-                    .Catch(
-                        (Exception error) =>
-                            !_test.HandleWriteFailure(error, context)
-                                ? txc.Rollback<IResultSummary>().Concat(Observable.Throw<IResultSummary>(error))
-                                : txc.Rollback<IResultSummary>())
-                    .Concat(txc.Commit<IResultSummary>())
-                    .Select(
-                        summary =>
-                        {
-                            summary.Counters.NodesCreated.Should().Be(1);
-                            context.NodeCreated();
-                            return summary;
-                        })
-                    .Finally(
-                        () =>
-                        {
-                            if (session.LastBookmarks != null)
-                            {
-                                context.Bookmarks = session.LastBookmarks;
-                            }
-                        }))
+            .SelectMany(txc => txc
+                .Run("CREATE ()")
+                .Consume()
+                .Catch((Exception error) =>
+                    !_test.HandleWriteFailure(error, context)
+                        ? txc.Rollback<IResultSummary>().Concat(Observable.Throw<IResultSummary>(error))
+                        : txc.Rollback<IResultSummary>())
+                .Concat(txc.Commit<IResultSummary>())
+                .Select(summary =>
+                {
+                    summary.Counters.NodesCreated.Should().Be(1);
+                    context.NodeCreated();
+                    return summary;
+                })
+                .Finally(() =>
+                {
+                    if (session.LastBookmarks != null)
+                    {
+                        context.Bookmarks = session.LastBookmarks;
+                    }
+                }))
             .SingleOrDefaultAsync()
             .CatchAndThrow(_ => session.Close<IResultSummary>())
             .Concat(session.Close<IResultSummary>());

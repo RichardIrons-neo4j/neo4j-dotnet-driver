@@ -58,13 +58,12 @@ public static class InternalRxTransactionTests
         [Fact]
         public void ShouldInvokeTxcRunAsyncOnlyOnce()
         {
-            VerifyLazyRunAsync(
-                r =>
-                {
-                    r.Keys().WaitForCompletion();
-                    r.Records().WaitForCompletion();
-                    r.Consume().WaitForCompletion();
-                });
+            VerifyLazyRunAsync(r =>
+            {
+                r.Keys().WaitForCompletion();
+                r.Records().WaitForCompletion();
+                r.Consume().WaitForCompletion();
+            });
         }
 
         private static void VerifyLazyRunAsync(Action<IRxResult> action)

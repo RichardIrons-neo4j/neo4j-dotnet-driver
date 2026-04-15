@@ -32,13 +32,12 @@ public sealed class AsyncFailingCommandTxFunc : AsyncCommand
 
         try
         {
-            var succeeded = await session.ExecuteReadAsync(
-                    async tx =>
-                    {
-                        var cursor = await tx.RunAsync("UNWIND [10, 5, 0] AS x RETURN 10 / x").ConfigureAwait(false);
-                        await cursor.ConsumeAsync().ConfigureAwait(false);
-                        return true;
-                    })
+            var succeeded = await session.ExecuteReadAsync(async tx =>
+                {
+                    var cursor = await tx.RunAsync("UNWIND [10, 5, 0] AS x RETURN 10 / x").ConfigureAwait(false);
+                    await cursor.ConsumeAsync().ConfigureAwait(false);
+                    return true;
+                })
                 .ConfigureAwait(false);
 
             succeeded.Should().BeFalse("Test should have thrown");

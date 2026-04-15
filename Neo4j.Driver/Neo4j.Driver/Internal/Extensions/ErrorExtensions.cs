@@ -58,7 +58,7 @@ internal static class ErrorExtensions
 
     public static bool IsClusterError(this Exception error)
     {
-        return IsClusterNotALeaderError(error) || IsForbiddenOnReadOnlyDatabaseError(error);
+        return error.IsClusterNotALeaderError() || error.IsForbiddenOnReadOnlyDatabaseError();
     }
 
     private static bool IsClusterNotALeaderError(this Exception error)

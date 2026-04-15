@@ -90,9 +90,8 @@ public class ClusterConnectionPoolTests
             mockedConnection.Setup(c => c.InitAsync(It.IsAny<SessionConfig>(), CancellationToken.None))
                 .Returns(Task.FromException(new InvalidOperationException("An exception")));
 
-            mockedConnectionPool.Setup(
-                    x =>
-                        x.AcquireAsync(It.IsAny<AccessMode>(), It.IsAny<string>(), null, It.IsAny<Bookmarks>(), false))
+            mockedConnectionPool.Setup(x =>
+                    x.AcquireAsync(It.IsAny<AccessMode>(), It.IsAny<string>(), null, It.IsAny<Bookmarks>(), false))
                 .ReturnsAsync(mockedConnection.Object);
 
             var connectionPoolDict = new ConcurrentDictionary<Uri, IConnectionPool>();
@@ -130,14 +129,13 @@ public class ClusterConnectionPoolTests
             // Given
             var mockedConnectionPool = new Mock<IConnectionPool>();
             var mockedConnection = new Mock<IConnection>();
-            mockedConnectionPool.Setup(
-                    x =>
-                        x.AcquireAsync(
-                            It.IsAny<AccessMode>(),
-                            It.IsAny<string>(),
-                            It.IsAny<SessionConfig>(),
-                            It.IsAny<Bookmarks>(),
-                            false))
+            mockedConnectionPool.Setup(x =>
+                    x.AcquireAsync(
+                        It.IsAny<AccessMode>(),
+                        It.IsAny<string>(),
+                        It.IsAny<SessionConfig>(),
+                        It.IsAny<Bookmarks>(),
+                        false))
                 .ReturnsAsync(mockedConnection.Object);
 
             var connectionPoolDict = new ConcurrentDictionary<Uri, IConnectionPool>();

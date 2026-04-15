@@ -68,11 +68,10 @@ internal class ListAddressResolver : IServerAddressResolver
             result
                 .data
                 .addresses
-                .Select(
-                    x =>
-                    {
-                        var split = x.Split(':');
-                        return ServerAddress.From(split[0], Convert.ToInt32(split[1]));
-                    }));
+                .Select(x =>
+                {
+                    var split = x.Split(':');
+                    return ServerAddress.From(split[0], Convert.ToInt32(split[1]));
+                }));
     }
 }

@@ -31,12 +31,11 @@ public sealed class BlockingWriteCommandUsingReadSessionTxFunc : BlockingCommand
 
         try
         {
-            var succeeded = session.ExecuteRead(
-                tx =>
-                {
-                    tx.Run("CREATE ()").Consume();
-                    return true;
-                });
+            var succeeded = session.ExecuteRead(tx =>
+            {
+                tx.Run("CREATE ()").Consume();
+                return true;
+            });
 
             succeeded.Should().BeFalse("Test should have thrown Client Exception");
         }

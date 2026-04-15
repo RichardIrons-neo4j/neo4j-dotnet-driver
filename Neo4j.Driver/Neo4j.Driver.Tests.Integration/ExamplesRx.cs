@@ -56,16 +56,15 @@ public class ExamplesRx
         {
             var session = Driver.RxSession();
 
-            return session.ExecuteRead(
-                    tx =>
-                    {
-                        return tx.Run(
-                                "MATCH (p:Product) WHERE p.id = $id RETURN p.title", // Cypher query
-                                new { id = 0 } // Parameters in the query, if any
-                            )
-                            .Records()
-                            .Select(record => record[0].ToString());
-                    })
+            return session.ExecuteRead(tx =>
+                {
+                    return tx.Run(
+                            "MATCH (p:Product) WHERE p.id = $id RETURN p.title", // Cypher query
+                            new { id = 0 } // Parameters in the query, if any
+                        )
+                        .Records()
+                        .Select(record => record[0].ToString());
+                })
                 .OnErrorResumeNext(session.Close<string>());
         }
         // end::rx-transaction-function[]
@@ -77,15 +76,14 @@ public class ExamplesRx
 
             // Start an explicit transaction
             return session.BeginTransaction()
-                .SelectMany(
-                    tx => tx.Run(
-                            "MATCH (p:Product) WHERE p.id = $id RETURN p.title", // Cypher query
-                            new { id = 0 } // Parameters in the query, if any
-                        )
-                        .Records()
-                        .Select(record => record[0].ToString())
-                        .Concat(tx.Commit<string>())
-                        .Catch(tx.Rollback<string>()));
+                .SelectMany(tx => tx.Run(
+                        "MATCH (p:Product) WHERE p.id = $id RETURN p.title", // Cypher query
+                        new { id = 0 } // Parameters in the query, if any
+                    )
+                    .Records()
+                    .Select(record => record[0].ToString())
+                    .Concat(tx.Commit<string>())
+                    .Catch(tx.Rollback<string>()));
         }
         // end::rx-explicit-transaction[]
 
@@ -146,13 +144,12 @@ public class ExamplesRx
         public IObservable<string> GetPeople()
         {
             var session = Driver.RxSession();
-            return session.ExecuteRead(
-                    tx =>
-                    {
-                        return tx.Run("MATCH (a:Person) RETURN a.name ORDER BY a.name")
-                            .Records()
-                            .Select(record => record[0].As<string>());
-                    })
+            return session.ExecuteRead(tx =>
+                {
+                    return tx.Run("MATCH (a:Person) RETURN a.name ORDER BY a.name")
+                        .Records()
+                        .Select(record => record[0].As<string>());
+                })
                 .OnErrorResumeNext(session.Close<string>());
         }
         // end::rx-result-consume[]

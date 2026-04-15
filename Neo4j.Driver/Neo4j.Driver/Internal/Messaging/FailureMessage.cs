@@ -36,9 +36,13 @@ internal sealed class FailureMessage : IResponseMessage
     /// <summary>Code is the Neo4j-specific error code, now deprecated in favor of <see cref="GqlStatus"/>.</summary>
     [Obsolete("This property is deprecated and will be removed in future versions. Use GqlStatus instead.")]
     public string Code { get; set; }
-    
+
 #pragma warning disable CS0618 // Type or member is obsolete
-    internal string CodeInternal { get => Code; set => Code = value; }
+    internal string CodeInternal
+    {
+        get => Code;
+        set => Code = value;
+    }
 #pragma warning restore CS0618 // Type or member is obsolete
 
     /// <summary>The specific error message describing the failure.</summary>
@@ -56,9 +60,7 @@ internal sealed class FailureMessage : IResponseMessage
     /// <summary>The raw classification as received from the server.</summary>
     public string GqlRawClassification { get; set; }
 
-    /// <summary>
-    /// GqlDiagnosticRecord returns further information about the status for diagnostic purposes. 
-    /// </summary>
+    /// <summary>GqlDiagnosticRecord returns further information about the status for diagnostic purposes.</summary>
     public Dictionary<string, object> GqlDiagnosticRecord { get; set; }
 
     /// <summary>

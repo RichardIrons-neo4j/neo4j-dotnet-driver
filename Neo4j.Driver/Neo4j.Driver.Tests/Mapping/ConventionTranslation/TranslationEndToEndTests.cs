@@ -58,14 +58,6 @@ public class TranslationEndToEndTests : MappingTestWithGlobalState
         person.YEAR_BORN.Should().Be(1977);
     }
 
-    private class ExplicitNamePerson
-    {
-        [MappingSource("name-of-person")]
-        public string Name { get; set; }
-
-        public int YearBorn { get; set; }
-    }
-
     [Fact]
     public void ShouldNotTranslateWhenPropertyIsMarkedWithMappingSourceAttribute()
     {
@@ -74,14 +66,6 @@ public class TranslationEndToEndTests : MappingTestWithGlobalState
         var person = record.AsObject<ExplicitNamePerson>();
         person.Name.Should().Be("Bob");
         person.YearBorn.Should().Be(1977);
-    }
-
-    public record Person(int NumberOfMiddleNames, string FavouriteColor);
-
-    public class FlightCrew(Person pilot, Person coPilot)
-    {
-        public Person Pilot { get; set; } = pilot;
-        public Person CoPilot { get; set; } = coPilot;
     }
 
     [Fact]
@@ -106,5 +90,21 @@ public class TranslationEndToEndTests : MappingTestWithGlobalState
         flightCrew.Pilot.FavouriteColor.Should().Be("red");
         flightCrew.CoPilot.NumberOfMiddleNames.Should().Be(2);
         flightCrew.CoPilot.FavouriteColor.Should().Be("blue");
+    }
+
+    private class ExplicitNamePerson
+    {
+        [MappingSource("name-of-person")]
+        public string Name { get; set; }
+
+        public int YearBorn { get; set; }
+    }
+
+    public record Person(int NumberOfMiddleNames, string FavouriteColor);
+
+    public class FlightCrew(Person pilot, Person coPilot)
+    {
+        public Person Pilot { get; set; } = pilot;
+        public Person CoPilot { get; set; } = coPilot;
     }
 }

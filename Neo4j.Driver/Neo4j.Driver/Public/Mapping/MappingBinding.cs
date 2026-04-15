@@ -15,20 +15,13 @@
 
 namespace Neo4j.Driver.Mapping;
 
-/// <summary>
-/// Represents metadata for mapping an entity during the mapping process in the Neo4j driver.
-/// </summary>
+/// <summary>Represents metadata for mapping an entity during the mapping process in the Neo4j driver.</summary>
 public class MappingBinding
 {
-    /// <summary>
-    /// Represents a mapping binding used to associate a specific path
-    /// with a mapping source in Neo4j operations.
-    /// </summary>
-    /// <param name="path">The path to the data in the source (e.g. a field name in a record or a property name
-    /// in a node).</param>
+    /// <summary>Represents a mapping binding used to associate a specific path with a mapping source in Neo4j operations.</summary>
+    /// <param name="path">The path to the data in the source (e.g. a field name in a record or a property name in a node).</param>
     /// <param name="mappingSource">The source type for the mapping (e.g. Property, Label, Id).</param>
-    /// <param name="optional">If <c>true</c>, the mapping will not throw an exception if the source value is
-    /// missing.</param>
+    /// <param name="optional">If <c>true</c>, the mapping will not throw an exception if the source value is missing.</param>
     internal MappingBinding(string path, MappingSource mappingSource, bool optional = false)
     {
         Path = path;
@@ -36,40 +29,30 @@ public class MappingBinding
         Optional = optional;
     }
 
-    /// <summary>
-    /// Gets or sets the path to the data in the source (e.g. a field name in a record or a property name in a node).
-    /// </summary>
+    /// <summary>Gets or sets the path to the data in the source (e.g. a field name in a record or a property name in a node).</summary>
     public string Path { get; set; }
 
-    /// <summary>
-    /// Gets or sets the source type for the mapping (e.g. Property, Label, Id).
-    /// </summary>
+    /// <summary>Gets or sets the source type for the mapping (e.g. Property, Label, Id).</summary>
     public MappingSource MappingSource { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the mapping is optional. 
-    /// If <c>true</c>, the mapping will not throw an exception if the source value is missing.
+    /// Gets or sets a value indicating whether the mapping is optional. If <c>true</c>, the mapping will not throw an
+    /// exception if the source value is missing.
     /// </summary>
     public bool Optional { get; set; }
 
-    /// <summary>
-    /// Gets or sets the default value to be used if the source value is missing and the mapping is optional.
-    /// </summary>
+    /// <summary>Gets or sets the default value to be used if the source value is missing and the mapping is optional.</summary>
     public object DefaultValue { get; set; }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether this mapping was explicitly defined by the user.
-    /// </summary>
+    /// <summary>Gets or sets a value indicating whether this mapping was explicitly defined by the user.</summary>
     public bool Explicit { get; set; }
 
-    /// <summary>
-    /// Gets the name of the parameter that will be set when mapping to Cypher parameters.
-    /// </summary>
+    /// <summary>Gets the name of the parameter that will be set when mapping to Cypher parameters.</summary>
     public string CypherParameterName { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether parameter names in the mapping process
-    /// should be translated using any configured naming convention translation.
+    /// Gets or sets a value indicating whether parameter names in the mapping process should be translated using any
+    /// configured naming convention translation.
     /// </summary>
     public bool TranslateParameterConventions { get; set; }
 }

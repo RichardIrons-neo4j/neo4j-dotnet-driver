@@ -46,9 +46,8 @@ public class ChunkWriterTests
         var mockStream = new Mock<Stream>();
         mockStream.Setup(l => l.CanWrite).Returns(false);
 
-        var ex = Record.Exception(
-            () =>
-                new ChunkWriter(mockStream.Object, TestDriverContext.MockContext, _logger.Object));
+        var ex = Record.Exception(() =>
+            new ChunkWriter(mockStream.Object, TestDriverContext.MockContext, _logger.Object));
 
         ex.Should().NotBeNull();
         ex.Should().BeOfType<ArgumentOutOfRangeException>();

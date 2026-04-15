@@ -25,7 +25,7 @@ namespace Neo4j.Driver.Mapping;
 [AttributeUsage(AttributeTargets.Property)]
 public class MappingOptionalAttribute : Attribute, IMappingBindingMutator
 {
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public virtual void Mutate(MappingBinding binding)
     {
         binding.Optional = true;

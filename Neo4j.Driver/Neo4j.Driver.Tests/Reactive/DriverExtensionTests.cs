@@ -41,8 +41,7 @@ public class DriverExtensionsTests
 
     private static IRxSession NewSession(IDriver driver)
     {
-        return driver.RxSession(
-            o =>
-                o.WithDefaultAccessMode(AccessMode.Write).WithBookmarks(Bookmarks.From("1", "3")));
+        return driver.RxSession(o =>
+            o.WithDefaultAccessMode(AccessMode.Write).WithBookmarks(Bookmarks.From("1", "3")));
     }
 }

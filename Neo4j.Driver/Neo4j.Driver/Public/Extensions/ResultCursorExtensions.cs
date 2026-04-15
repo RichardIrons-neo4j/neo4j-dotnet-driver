@@ -33,7 +33,9 @@ public static class ResultCursorExtensions
     /// Throws <exception cref="InvalidOperationException"></exception> if the result contains more than one record or
     /// the result is empty.
     /// </remarks>
-    public static async Task<IRecord> SingleAsync(this IResultCursor result, CancellationToken cancellationToken = default)
+    public static async Task<IRecord> SingleAsync(
+        this IResultCursor result,
+        CancellationToken cancellationToken = default)
     {
         if (result == null)
         {
@@ -69,7 +71,7 @@ public static class ResultCursorExtensions
     /// the result is empty.
     /// </remarks>
     public static async Task<T> SingleAsync<T>(
-        this IResultCursor result, 
+        this IResultCursor result,
         Func<IRecord, T> operation,
         CancellationToken cancellationToken = default)
     {
@@ -132,7 +134,7 @@ public static class ResultCursorExtensions
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
     public static Task<List<IRecord>> ToListAsync(this IResultCursor result, CancellationToken cancellationToken)
     {
-        return ToListAsync(result, 0, cancellationToken);
+        return result.ToListAsync(0, cancellationToken);
     }
 
     /// <summary>Apply the operation on each record in the result stream and return the operation results in a list.</summary>

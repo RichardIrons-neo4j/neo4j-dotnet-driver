@@ -26,30 +26,6 @@ namespace Neo4j.Driver.Tests.Mapping.TypeConversion;
 
 public class TypeConversionTests : MappingTestWithGlobalState
 {
-    private class WebSite
-    {
-        public string Name { get; set; }
-        public Uri Uri { get; set; }
-    }
-
-    private class User
-    {
-        public string Name { get; set; }
-        public Guid Id { get; set; }
-    }
-
-    private class UserWithConstructor(string name, Guid id)
-    {
-        public string Name => name;
-        public Guid Id => id;
-    }
-
-    private class UserAndWebSite
-    {
-        public User User { get; set; }
-        public WebSite WebSite { get; set; }
-    }
-
     [Fact]
     public void ShouldFailToMapRecordToClassWithoutConversion()
     {
@@ -99,18 +75,24 @@ public class TypeConversionTests : MappingTestWithGlobalState
     [Fact]
     public void ShouldUseConverterDuringNestedMapping()
     {
-        var websiteEntity = new Node(1, new[] {"WebSite"}, new Dictionary<string, object>
-        {
-            {"Name", "Neo4j"},
-            {"Uri", "http://neo4j.com"}
-        });
+        var websiteEntity = new Node(
+            1,
+            new[] { "WebSite" },
+            new Dictionary<string, object>
+            {
+                { "Name", "Neo4j" },
+                { "Uri", "http://neo4j.com" }
+            });
 
         var userId = Guid.NewGuid();
-        var userEntity = new Node(2, new[] {"User"}, new Dictionary<string, object>
-        {
-            {"Name", "John"},
-            {"Id", userId.ToString()}
-        });
+        var userEntity = new Node(
+            2,
+            new[] { "User" },
+            new Dictionary<string, object>
+            {
+                { "Name", "John" },
+                { "Id", userId.ToString() }
+            });
 
         var testRecord = TestRecord.Create(("WebSite", websiteEntity), ("User", userEntity));
         RecordObjectMapping.RegisterTypeConverter((string s) => Guid.Parse(s));
@@ -127,7 +109,9 @@ public class TypeConversionTests : MappingTestWithGlobalState
     [Fact]
     public void ShouldUseConverterWhenMappingLists()
     {
-        var uriStringList = new List<string> {"http://neo4j.com", "http://google.com", "http://bing.com", "http://yahoo.com"};
+        var uriStringList = new List<string>
+            { "http://neo4j.com", "http://google.com", "http://bing.com", "http://yahoo.com" };
+
         var expected = uriStringList.Select(s => new Uri(s));
         var record = TestRecord.Create(("UriList", uriStringList));
         RecordObjectMapping.RegisterTypeConverter((string s) => new Uri(s));
@@ -148,5 +132,29 @@ public class TypeConversionTests : MappingTestWithGlobalState
 
         user.Name.Should().Be("John");
         user.Id.Should().Be(guid);
+    }
+
+    private class WebSite
+    {
+        public string Name { get; set; }
+        public Uri Uri { get; set; }
+    }
+
+    private class User
+    {
+        public string Name { get; set; }
+        public Guid Id { get; set; }
+    }
+
+    private class UserWithConstructor(string name, Guid id)
+    {
+        public string Name => name;
+        public Guid Id => id;
+    }
+
+    private class UserAndWebSite
+    {
+        public User User { get; set; }
+        public WebSite WebSite { get; set; }
     }
 }

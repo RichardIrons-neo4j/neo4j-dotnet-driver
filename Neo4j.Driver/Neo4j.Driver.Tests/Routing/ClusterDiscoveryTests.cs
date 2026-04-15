@@ -64,8 +64,7 @@ public class ClusterDiscoveryTests
             var sessionConfig = new SessionConfig("fake-person");
 
             var mockConn = new Mock<IConnection>();
-            mockConn.Setup(
-                    x => x.GetRoutingTableAsync("test", sessionConfig, bookmarks, It.IsAny<IHomeDbCache>()))
+            mockConn.Setup(x => x.GetRoutingTableAsync("test", sessionConfig, bookmarks, It.IsAny<IHomeDbCache>()))
                 .ReturnsAsync(routingTable);
 
             // When
@@ -118,48 +117,44 @@ public class ClusterDiscoveryTests
                 }
             }
 
-            MockConn.Setup(
-                    x => x.EnqueueAsync(
-                        It.IsAny<IRequestMessage>(),
-                        It.IsAny<IResponseHandler>()))
+            MockConn.Setup(x => x.EnqueueAsync(
+                    It.IsAny<IRequestMessage>(),
+                    It.IsAny<IResponseHandler>()))
                 .Returns(Task.CompletedTask)
-                .Callback<IRequestMessage, IResponseHandler>(
-                    (msg1, handler1) =>
-                    {
-                        msg1.ToString().Should().Be(_requestMessages[_requestCount].ToString());
-                        _requestCount++;
-                        _pipeline.Enqueue(handler1);
-                    });
+                .Callback<IRequestMessage, IResponseHandler>((msg1, handler1) =>
+                {
+                    msg1.ToString().Should().Be(_requestMessages[_requestCount].ToString());
+                    _requestCount++;
+                    _pipeline.Enqueue(handler1);
+                });
 
             MockConn.Setup(x => x.ReceiveOneAsync())
-                .Returns(
-                    () =>
+                .Returns(() =>
+                {
+                    if (_responseCount < _responseMessages.Count)
                     {
-                        if (_responseCount < _responseMessages.Count)
-                        {
-                            _responseMessages[_responseCount].Dispatch(_pipeline);
-                            _responseCount++;
-                            _pipeline.AssertNoFailure();
-                            return Task.CompletedTask;
-                        }
+                        _responseMessages[_responseCount].Dispatch(_pipeline);
+                        _responseCount++;
+                        _pipeline.AssertNoFailure();
+                        return Task.CompletedTask;
+                    }
 
-                        throw new InvalidOperationException("Not enough response message to provide");
-                    });
+                    throw new InvalidOperationException("Not enough response message to provide");
+                });
 
             MockConn.Setup(x => x.SyncAsync())
-                .Returns(
-                    () =>
+                .Returns(() =>
+                {
+                    if (_responseCount < _responseMessages.Count)
                     {
-                        if (_responseCount < _responseMessages.Count)
-                        {
-                            _responseMessages[_responseCount].Dispatch(_pipeline);
-                            _responseCount++;
-                            _pipeline.AssertNoFailure();
-                            return Task.CompletedTask;
-                        }
+                        _responseMessages[_responseCount].Dispatch(_pipeline);
+                        _responseCount++;
+                        _pipeline.AssertNoFailure();
+                        return Task.CompletedTask;
+                    }
 
-                        throw new InvalidOperationException("Not enough response message to provide");
-                    });
+                    throw new InvalidOperationException("Not enough response message to provide");
+                });
 
             MockConn.Setup(x => x.IsOpen).Returns(() => _responseCount < _responseMessages.Count);
 

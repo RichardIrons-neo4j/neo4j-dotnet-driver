@@ -128,10 +128,9 @@ public sealed class CertificateTrustIT : IClassFixture<CertificateTrustIT.Certif
 
     private async Task VerifyFailure(Uri target, TrustManager trustManager)
     {
-        var ex = await Record.ExceptionAsync(
-            () => TestConnectivity(
-                target,
-                Config.Builder.WithTrustManager(trustManager).WithEncryptionLevel(EncryptionLevel.Encrypted).Build()));
+        var ex = await Record.ExceptionAsync(() => TestConnectivity(
+            target,
+            Config.Builder.WithTrustManager(trustManager).WithEncryptionLevel(EncryptionLevel.Encrypted).Build()));
 
         ex.Should()
             .BeOfType<SecurityException>()
@@ -144,10 +143,9 @@ public sealed class CertificateTrustIT : IClassFixture<CertificateTrustIT.Certif
         TrustManager trustManager,
         EncryptionLevel encryptionLevel = EncryptionLevel.Encrypted)
     {
-        var ex = await Record.ExceptionAsync(
-            () => TestConnectivity(
-                target,
-                Config.Builder.WithTrustManager(trustManager).WithEncryptionLevel(encryptionLevel).Build()));
+        var ex = await Record.ExceptionAsync(() => TestConnectivity(
+            target,
+            Config.Builder.WithTrustManager(trustManager).WithEncryptionLevel(encryptionLevel).Build()));
 
         ex.Should().BeNull();
     }

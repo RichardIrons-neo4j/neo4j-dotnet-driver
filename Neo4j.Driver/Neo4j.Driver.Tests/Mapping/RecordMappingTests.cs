@@ -548,27 +548,26 @@ public class RecordMappingTests
         for (var i = 0; i < numberOfThreads; i++)
         {
             tasks.Add(
-                Task.Run(
-                    () =>
+                Task.Run(() =>
+                {
+                    try
                     {
-                        try
+                        resetEvent.Wait(); // Wait for the signal to start
+                        for (var j = 0; j < 100; j++)
                         {
-                            resetEvent.Wait(); // Wait for the signal to start
-                            for (var j = 0; j < 100; j++)
+                            foreach (var type in typesToTest)
                             {
-                                foreach (var type in typesToTest)
-                                {
-                                    RecordObjectMapping.Instance.GetMapMethodForType(type);
-                                }
-
-                                RecordObjectMapping.Reset();
+                                RecordObjectMapping.Instance.GetMapMethodForType(type);
                             }
+
+                            RecordObjectMapping.Reset();
                         }
-                        catch (Exception ex)
-                        {
-                            exceptions.Add(ex);
-                        }
-                    }));
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }));
         }
 
         resetEvent.Set(); // Signal all tasks to start
@@ -593,7 +592,7 @@ public class RecordMappingTests
 
         [MappingOptional]
         [MappingSource("hobbies")]
-        public List<string> Hobbies { get; set; } = null!;
+        public List<string> Hobbies { get; } = null!;
     }
 
     private class SimpleTestPerson
@@ -613,7 +612,7 @@ public class RecordMappingTests
     private class PersonInDict
     {
         [MappingSource("person.name")]
-        public string Name { get; set; } = "";
+        public string Name { get; } = "";
 
         [MappingSource("person.born")]
         public int Born { get; set; }
@@ -635,7 +634,7 @@ public class RecordMappingTests
     private class Person
     {
         [MappingSource("name")]
-        public string Name { get; set; } = "";
+        public string Name { get; } = "";
 
         [MappingSource("born")]
         public int? Born { get; set; }
@@ -644,43 +643,43 @@ public class RecordMappingTests
     private class ProducingCareer
     {
         [MappingSource("person")]
-        public Person Producer { get; set; } = null!;
+        public Person Producer { get; } = null!;
 
         [MappingSource("titles")]
-        public List<string> MovieTitleIdeas { get; set; } = null!;
+        public List<string> MovieTitleIdeas { get; } = null!;
 
         [MappingSource("movies")]
-        public List<Movie> HistoricalMovies { get; set; } = null!;
+        public List<Movie> HistoricalMovies { get; } = null!;
 
         [MappingSource("moviesDict")]
-        public List<Movie> OtherMovies { get; set; } = null!;
+        public List<Movie> OtherMovies { get; } = null!;
     }
 
     private class CarAndPainting
     {
         [MappingSource("car")]
-        public Car Car { get; set; } = null!;
+        public Car Car { get; } = null!;
 
         [MappingSource("painting")]
-        public Painting Painting { get; set; } = null!;
+        public Painting Painting { get; } = null!;
     }
 
     private class Painting
     {
         [MappingSource("painting.artist")]
-        public string Artist { get; set; } = "";
+        public string Artist { get; } = "";
 
         [MappingSource("painting.title")]
-        public string Title { get; set; } = "";
+        public string Title { get; } = "";
     }
 
     private class Car
     {
         [MappingSource("car.make")]
-        public string Make { get; set; } = "";
+        public string Make { get; } = "";
 
         [MappingSource("car.model")]
-        public string Model { get; set; } = "";
+        public string Model { get; } = "";
 
         [MappingDefaultValue("unset")]
         [MappingSource("car.madeup")]
@@ -690,7 +689,7 @@ public class RecordMappingTests
     private class PersonWithoutBornSetter
     {
         [MappingSource("name")]
-        public string Name { get; set; } = "";
+        public string Name { get; } = "";
 
         public int? Born { get; } = 1999; // no setter
     }
@@ -698,10 +697,10 @@ public class RecordMappingTests
     private class TestPersonWithoutBornMapped
     {
         [MappingSource("name")]
-        public string Name { get; set; } = "A. Test Name";
+        public string Name { get; } = "A. Test Name";
 
         [MappingIgnored]
-        public int? Born { get; set; } = 9999;
+        public int? Born { get; } = 9999;
     }
 
     private class Book
@@ -727,7 +726,7 @@ public class RecordMappingTests
     private class ClassWithInitProperties
     {
         [MappingSource("name")]
-        public string Name { get; set; } = "";
+        public string Name { get; } = "";
 
         [MappingSource("age")]
         public int Age { get; init; }

@@ -18,15 +18,17 @@ using System;
 namespace Neo4j.Driver.Mapping;
 
 /// <summary>
-/// This attribute is used to specify the name of the parameter to be used when mapping a property to a Cypher parameter.
+/// This attribute is used to specify the name of the parameter to be used when mapping a property to a Cypher
+/// parameter.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
 public class CypherParameterMappingAttribute : MappingBindingsAttribute
 {
     /// <summary>
-    /// This attribute is used to specify the name of the parameter to be used when mapping a property to a Cypher parameter.
+    /// This attribute is used to specify the name of the parameter to be used when mapping a property to a Cypher
+    /// parameter.
     /// </summary>
-    public CypherParameterMappingAttribute(string cypherParameterName) 
+    public CypherParameterMappingAttribute(string cypherParameterName)
     {
         CypherParameterName = cypherParameterName;
     }

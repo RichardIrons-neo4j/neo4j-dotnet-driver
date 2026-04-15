@@ -32,17 +32,16 @@ internal class DefaultHostResolver : IHostResolver
     {
     }
 
-
     public DefaultHostResolver(IHostResolver resolver)
     {
         _resolver = resolver;
         _addressComparer =
-            new AddressComparer(AddressFamily.InterNetworkV6 );
+            new AddressComparer(AddressFamily.InterNetworkV6);
     }
 
     public IPAddress[] Resolve(string hostname)
     {
-        if (TryParseIpAddress(hostname, out var result) == false)
+        if (!TryParseIpAddress(hostname, out var result))
         {
             result = _resolver.Resolve(hostname);
         }
@@ -52,7 +51,7 @@ internal class DefaultHostResolver : IHostResolver
 
     public async Task<IPAddress[]> ResolveAsync(string hostname)
     {
-        if (TryParseIpAddress(hostname, out var result) == false)
+        if (!TryParseIpAddress(hostname, out var result))
         {
             result = await _resolver.ResolveAsync(hostname).ConfigureAwait(false);
         }

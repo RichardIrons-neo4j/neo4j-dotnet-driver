@@ -182,7 +182,7 @@ public sealed class ConfigBuilder
         _config.MaxConnectionLifetime = timeSpan;
         return this;
     }
-    
+
     /// <summary>
     /// Gets or internal sets a custom server address resolver used by the routing driver to resolve the initial
     /// address used to create the driver. Such resolution happens: 1) during the very first rediscovery when driver is
@@ -408,14 +408,15 @@ public sealed class ConfigBuilder
     /// server.
     /// </param>
     /// <param name="disabledClassifications">
-    /// Optional parameter to override the classification of notifications emitted. <br/> By passing
-    /// an empty collection, all classifications are enabled.<br/> By leaving null, the value will inherit configuration from the
-    /// server.
+    /// Optional parameter to override the classification of notifications emitted. <br/>
+    /// By passing an empty collection, all classifications are enabled.<br/> By leaving null, the value will inherit
+    /// configuration from the server.
     /// </param>
     /// <exception cref="ArgumentException">Thrown when all parameters are null.</exception>
     /// <returns>A <see cref="ConfigBuilder"/> instance for further configuration options.</returns>
     /// <seealso cref="WithNotificationsDisabled"/>
-    /// <seealso cref="SessionConfigBuilder.WithNotifications(Severity?, Category[], Classification[])"/>"/>
+    /// <seealso cref="SessionConfigBuilder.WithNotifications(Severity?, Category[], Classification[])"/>
+    /// "/>
     /// <seealso cref="SessionConfigBuilder.WithNotificationsDisabled"/>
     /// <returns>A <see cref="ConfigBuilder"/> instance for further configuration options.</returns>
     public ConfigBuilder WithNotifications(
@@ -523,9 +524,11 @@ public sealed class ConfigBuilder
         return this;
     }
 
-    /// <summary>Sets a custom <see cref="ITlsNegotiator"/> to use when establishing a TLS connection. Note
-    /// that this overrides the default TLS negotiator, which handles certificate-based trust, so if you
-    /// use this method you should implement certificate validation yourself.</summary>
+    /// <summary>
+    /// Sets a custom <see cref="ITlsNegotiator"/> to use when establishing a TLS connection. Note that this overrides
+    /// the default TLS negotiator, which handles certificate-based trust, so if you use this method you should implement
+    /// certificate validation yourself.
+    /// </summary>
     /// <param name="tlsNegotiator">The <see cref="ITlsNegotiator"/> to use.</param>
     /// <returns>A <see cref="ConfigBuilder"/> instance for further configuration options.</returns>
     /// <warning>
@@ -551,9 +554,11 @@ public sealed class ConfigBuilder
         return this;
     }
 
-    /// <summary>Sets the type of custom <see cref="ITlsNegotiator"/> to use when establishing a TLS connection. Note
-    /// that this overrides the default TLS negotiator, which handles certificate-based trust, so if you
-    /// use this method you should implement certificate validation yourself.</summary>
+    /// <summary>
+    /// Sets the type of custom <see cref="ITlsNegotiator"/> to use when establishing a TLS connection. Note that this
+    /// overrides the default TLS negotiator, which handles certificate-based trust, so if you use this method you should
+    /// implement certificate validation yourself.
+    /// </summary>
     /// <typeparam name="T">The <see cref="ITlsNegotiator"/> to use.</typeparam>
     /// <returns>A <see cref="ConfigBuilder"/> instance for further configuration options.</returns>
     /// <warning>

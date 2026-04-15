@@ -29,7 +29,7 @@ public static class DriverExtensions
     /// <returns>A simple session instance</returns>
     public static ISession Session(this IDriver driver)
     {
-        return Session(driver, null);
+        return driver.Session(null);
     }
 
     /// <summary>

@@ -50,8 +50,7 @@ public class DotnetCoreFactAttribute : FactAttribute
     public DotnetCoreFactAttribute()
     {
         var shouldSkip =
-            RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase) ==
-            false;
+            !RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase);
 
         if (shouldSkip)
         {
@@ -65,8 +64,7 @@ public class DotnetCoreTheoryAttribute : TheoryAttribute
     public DotnetCoreTheoryAttribute()
     {
         var shouldSkip =
-            RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase) ==
-            false;
+            !RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase);
 
         if (shouldSkip)
         {

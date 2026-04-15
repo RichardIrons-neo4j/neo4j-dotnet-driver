@@ -251,23 +251,21 @@ public class ResultCursorBuilderTests
         builder.RunCompleted(0, new[] { "a" }, null);
         builder.PullCompleted(true, null);
         builder.CurrentState.Should().Be(ResultCursorBuilder.State.RunCompleted);
-        actions.Enqueue(
-            () =>
-            {
-                builder.PushRecord(new object[] { 1 });
-                counter++;
-                builder.PushRecord(new object[] { 2 });
-                counter++;
-                builder.PullCompleted(true, null);
-            });
+        actions.Enqueue(() =>
+        {
+            builder.PushRecord(new object[] { 1 });
+            counter++;
+            builder.PushRecord(new object[] { 2 });
+            counter++;
+            builder.PullCompleted(true, null);
+        });
 
-        actions.Enqueue(
-            () =>
-            {
-                builder.PushRecord(new object[] { 3 });
-                counter++;
-                builder.PullCompleted(false, null);
-            });
+        actions.Enqueue(() =>
+        {
+            builder.PushRecord(new object[] { 3 });
+            counter++;
+            builder.PullCompleted(false, null);
+        });
 
         var cursor = builder.CreateCursor();
 

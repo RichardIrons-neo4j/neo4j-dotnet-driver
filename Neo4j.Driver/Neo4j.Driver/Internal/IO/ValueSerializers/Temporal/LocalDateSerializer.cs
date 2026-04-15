@@ -22,10 +22,9 @@ namespace Neo4j.Driver.Internal.IO.ValueSerializers.Temporal;
 
 internal sealed class LocalDateSerializer : IPackStreamSerializer
 {
-    internal static readonly LocalDateSerializer Instance = new();
-
     public const byte StructType = (byte)'D';
     public const int StructSize = 1;
+    internal static readonly LocalDateSerializer Instance = new();
 
     public byte[] ReadableStructs => new[] { StructType };
 
@@ -47,6 +46,7 @@ internal sealed class LocalDateSerializer : IPackStreamSerializer
             WriteDateOnly(writer, date);
             return;
         }
+
         WriteLocalDate(writer, value);
     }
 

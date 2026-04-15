@@ -17,7 +17,7 @@ using Neo4j.Driver.Tests.BenchkitBackend.Abstractions;
 
 namespace Neo4j.Driver.Tests.BenchkitBackend.Implementations;
 
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+using ILogger = ILogger;
 
 internal class RecordConsumer(
     ILogger logger)

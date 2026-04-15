@@ -40,12 +40,11 @@ internal class Neo4jExceptionFactory
         return typeof(Neo4jException).Assembly
             .GetExportedTypes()
             .Where(t => typeof(Neo4jException).IsAssignableFrom(t))
-            .Select(
-                exceptionType => new
-                {
-                    exceptionType,
-                    attr = exceptionType.GetCustomAttribute<ErrorCodeAttribute>()
-                })
+            .Select(exceptionType => new
+            {
+                exceptionType,
+                attr = exceptionType.GetCustomAttribute<ErrorCodeAttribute>()
+            })
             .Where(t => t.attr is not null)
             .Select(t => (t.attr.Code, t.exceptionType))
             .ToList();
@@ -105,8 +104,8 @@ internal class Neo4jExceptionFactory
     public Neo4jException GetException(FailureMessage failureMessage)
     {
         var factoryInfo =
-            _exceptionFactories.FirstOrDefault(
-                f => _simpleWildcardHelper.StringMatches(failureMessage.CodeInternal, f.Code));
+            _exceptionFactories.FirstOrDefault(f =>
+                _simpleWildcardHelper.StringMatches(failureMessage.CodeInternal, f.Code));
 
         if (factoryInfo is null)
         {

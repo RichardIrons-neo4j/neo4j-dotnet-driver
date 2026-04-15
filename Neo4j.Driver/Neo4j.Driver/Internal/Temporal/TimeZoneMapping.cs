@@ -137,23 +137,19 @@ internal static class TimeZoneMapping
             var doc = XDocument.Load(reader);
             var allMappedZones = doc.Descendants(mapZoneName).ToArray();
 
-            windowsToIana = allMappedZones.SelectMany(
-                    zone => GetAttribute(zone, typeName)
-                        .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Take(1)
-                        .Select(
-                            ianaName =>
-                                new KeyValuePair<string, string>(
-                                    $"{GetAttribute(zone, otherName)}_{GetAttribute(zone, territoryName)}",
-                                    ianaName)))
+            windowsToIana = allMappedZones.SelectMany(zone => GetAttribute(zone, typeName)
+                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Take(1)
+                    .Select(ianaName =>
+                        new KeyValuePair<string, string>(
+                            $"{GetAttribute(zone, otherName)}_{GetAttribute(zone, territoryName)}",
+                            ianaName)))
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-            ianaToWindows = allMappedZones.SelectMany(
-                    zone => GetAttribute(zone, typeName)
-                        .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(
-                            ianaName =>
-                                new KeyValuePair<string, string>($"{ianaName}", GetAttribute(zone, otherName))))
+            ianaToWindows = allMappedZones.SelectMany(zone => GetAttribute(zone, typeName)
+                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(ianaName =>
+                        new KeyValuePair<string, string>($"{ianaName}", GetAttribute(zone, otherName))))
                 .Distinct(new MappingEqualityComparer())
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }

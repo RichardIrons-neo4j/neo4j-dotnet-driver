@@ -336,8 +336,8 @@ public static class NavigationIT
                 .AssertEqual(
                     OnError<IRecord>(
                         0,
-                        MatchesException<ClientException>(
-                            e => e.Code.Equals("Neo.ClientError.Statement.SyntaxError"))));
+                        MatchesException<ClientException>(e =>
+                            e.Code.Equals("Neo.ClientError.Statement.SyntaxError"))));
 
             result
                 .Records()
@@ -360,8 +360,8 @@ public static class NavigationIT
                 .AssertEqual(
                     OnError<IResultSummary>(
                         0,
-                        MatchesException<ClientException>(
-                            e => e.Code.Equals("Neo.ClientError.Statement.SyntaxError"))));
+                        MatchesException<ClientException>(e =>
+                            e.Code.Equals("Neo.ClientError.Statement.SyntaxError"))));
 
             summary2.AssertEqual(summary1);
         }

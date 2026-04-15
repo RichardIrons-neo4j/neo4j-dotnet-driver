@@ -51,7 +51,7 @@ internal class RecordPathFinder : IRecordPathFinder
             // matches a field name and the second part matches a property name
             var field = path.Substring(0, dotIndex);
             field = translate ? RecordObjectMapping.Instance.GetTranslatedRecordIdentifier(field) : field;
-            
+
             var property = path.Substring(dotIndex + 1);
             property = translate ? RecordObjectMapping.Instance.GetTranslatedRecordIdentifier(property) : property;
 

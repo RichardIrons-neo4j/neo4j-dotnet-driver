@@ -41,7 +41,7 @@ internal class ObjectToCypherParameterDictionaryConverter(
             Dictionary<string, object> dict => dict,
             IDictionary<string, object> dictInt => new Dictionary<string, object>(dictInt),
             IReadOnlyDictionary<string, object> dictIntRo => dictIntRo.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-            var _ when TryGetDictionaryOfStringKeys(o, out var dictStr) => dictStr,
+            _ when TryGetDictionaryOfStringKeys(o, out var dictStr) => dictStr,
             IEnumerable<KeyValuePair<string, object>> kvpSeq => kvpSeq.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
             _ => FillDictionary(o, new Dictionary<string, object>())
         };

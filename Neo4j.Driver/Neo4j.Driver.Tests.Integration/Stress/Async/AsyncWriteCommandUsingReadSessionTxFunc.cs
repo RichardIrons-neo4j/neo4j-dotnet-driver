@@ -31,13 +31,12 @@ public sealed class AsyncWriteCommandUsingReadSessionTxFunc : AsyncCommand
         await using var session = NewSession(AccessMode.Read, context);
         try
         {
-            var result = await session.ExecuteReadAsync(
-                    async tx =>
-                    {
-                        var cursor = await tx.RunAsync("CREATE ()").ConfigureAwait(false);
-                        await cursor.ConsumeAsync().ConfigureAwait(false);
-                        return false;
-                    })
+            var result = await session.ExecuteReadAsync(async tx =>
+                {
+                    var cursor = await tx.RunAsync("CREATE ()").ConfigureAwait(false);
+                    await cursor.ConsumeAsync().ConfigureAwait(false);
+                    return false;
+                })
                 .ConfigureAwait(false);
 
             result.Should().BeTrue("This should have thrown an exception");

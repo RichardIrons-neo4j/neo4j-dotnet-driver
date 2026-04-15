@@ -29,7 +29,6 @@ namespace Neo4j.Driver.Internal.Connector;
 internal sealed class TcpSocketClient : ITcpSocketClient
 {
     private readonly INeo4jLogger _neo4JLogger;
-    public Uri ConnectionUri { get; private set; }
 
     private Socket _client;
 
@@ -40,6 +39,7 @@ internal sealed class TcpSocketClient : ITcpSocketClient
     }
 
     private DriverContext DriverContext { get; }
+    public Uri ConnectionUri { get; private set; }
 
     public Stream ReaderStream { get; private set; }
     public Stream WriterStream => ReaderStream;
@@ -193,14 +193,14 @@ internal sealed class TcpSocketClient : ITcpSocketClient
     }
 
     private void InitClient()
-    {   
+    {
         _client = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp)
         {
             NoDelay = true
         };
 
         _client.DualMode = true;
-        
+
         _client.SetSocketOption(
             SocketOptionLevel.Socket,
             SocketOptionName.KeepAlive,

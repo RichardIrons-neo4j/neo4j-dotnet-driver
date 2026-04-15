@@ -30,8 +30,8 @@ internal class RxRetryLogic : IRxRetryLogic
     private readonly double _delayJitter;
     private readonly double _delayMultiplier;
     private readonly double _initialDelay;
-    private readonly INeo4jLogger _neo4JLogger;
     private readonly int _maxRetryTimeout;
+    private readonly INeo4jLogger _neo4JLogger;
     private readonly Random _random;
 
     public RxRetryLogic(TimeSpan maxRetryTimeout, INeo4jLogger neo4JLogger)
@@ -46,40 +46,38 @@ internal class RxRetryLogic : IRxRetryLogic
 
     public IObservable<T> Retry<T>(IObservable<T> work)
     {
-        return work.RetryWhen(
-            failedWork =>
+        return work.RetryWhen(failedWork =>
+        {
+            var handledExceptions = new List<Exception>();
+            var timer = Stopwatch.StartNew();
+            var delay = _initialDelay;
+            var retryCount = 1;
+
+            return failedWork.SelectMany(exc =>
             {
-                var handledExceptions = new List<Exception>();
-                var timer = Stopwatch.StartNew();
-                var delay = _initialDelay;
-                var retryCount = 1;
+                if (!exc.CanBeRetried())
+                {
+                    return Observable.Throw<int>(exc);
+                }
 
-                return failedWork.SelectMany(
-                    exc =>
-                    {
-                        if (!exc.CanBeRetried())
-                        {
-                            return Observable.Throw<int>(exc);
-                        }
+                handledExceptions.Add(exc);
 
-                        handledExceptions.Add(exc);
+                if (retryCount >= 2 && timer.ElapsedMilliseconds >= _maxRetryTimeout)
+                {
+                    return Observable.Throw<int>(
+                        new ServiceUnavailableException(
+                            $"Failed after retried for {retryCount} times in {_maxRetryTimeout} ms. " +
+                            "Make sure that your database is online and retry again.",
+                            new AggregateException(handledExceptions)));
+                }
 
-                        if (retryCount >= 2 && timer.ElapsedMilliseconds >= _maxRetryTimeout)
-                        {
-                            return Observable.Throw<int>(
-                                new ServiceUnavailableException(
-                                    $"Failed after retried for {retryCount} times in {_maxRetryTimeout} ms. " +
-                                    "Make sure that your database is online and retry again.",
-                                    new AggregateException(handledExceptions)));
-                        }
-
-                        var delayDuration = TimeSpan.FromMilliseconds(ComputeNextDelay(delay));
-                        delay *= _delayMultiplier;
-                        retryCount++;
-                        _neo4JLogger?.Warn(exc, $"Transaction failed and will be retried in {delay} ms.");
-                        return Observable.Return(1).Delay(delayDuration);
-                    });
+                var delayDuration = TimeSpan.FromMilliseconds(ComputeNextDelay(delay));
+                delay *= _delayMultiplier;
+                retryCount++;
+                _neo4JLogger?.Warn(exc, $"Transaction failed and will be retried in {delay} ms.");
+                return Observable.Return(1).Delay(delayDuration);
             });
+        });
     }
 
     private double ComputeNextDelay(double delay)

@@ -42,13 +42,12 @@ internal class ResultList : ProtocolObject
         }
 
         var mappedList = Records
-            .Select(
-                x => new
-                {
-                    values = x.Values
-                        .Select(y => NativeToCypher.Convert(y.Value))
-                        .ToList()
-                })
+            .Select(x => new
+            {
+                values = x.Values
+                    .Select(y => NativeToCypher.Convert(y.Value))
+                    .ToList()
+            })
             .ToList();
 
         return new ProtocolResponse("RecordList", new { records = mappedList }).Encode();

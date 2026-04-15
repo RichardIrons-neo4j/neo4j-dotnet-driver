@@ -49,18 +49,15 @@ internal class RxResult : IRxResult
 
     public IObservable<IRecord> Records()
     {
-        return _resultCursor.SelectMany(
-            cursor =>
-                Observable.Create<IRecord>(recordObserver => StartStreaming(cursor, recordObserver)));
+        return _resultCursor.SelectMany(cursor =>
+            Observable.Create<IRecord>(recordObserver => StartStreaming(cursor, recordObserver)));
     }
 
     public IObservable<IResultSummary> Consume()
     {
-        return _resultCursor.SelectMany(
-            cursor =>
-                Observable.Create<IResultSummary>(
-                    summaryObserver =>
-                        StartStreaming(cursor, summaryObserver: summaryObserver)));
+        return _resultCursor.SelectMany(cursor =>
+            Observable.Create<IResultSummary>(summaryObserver =>
+                StartStreaming(cursor, summaryObserver: summaryObserver)));
     }
 
     public IObservable<bool> IsOpen => _resultCursor.Select(x => x.IsOpen).FirstAsync();

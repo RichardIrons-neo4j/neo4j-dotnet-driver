@@ -37,7 +37,7 @@ public class UnsupportedTypeTests
         unsupportedType.Name.Should().Be(name);
         unsupportedType.MinimumProtocolVersion.Should().Be(expectedMinimumProtocolVersion);
     }
-    
+
     [Fact]
     public void ShouldGiveCorrectStringRepresentation()
     {

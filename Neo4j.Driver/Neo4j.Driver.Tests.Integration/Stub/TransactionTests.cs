@@ -102,18 +102,17 @@ public abstract class TransactionTests
         {
             using var _ = BoltStubServer.Start($"{boltVersion}/connection_error_on_commit", 9001);
 
-            var exc = Record.Exception(
-                () =>
-                {
-                    using var driver = GraphDatabase.Driver(
-                        "bolt://127.0.0.1:9001",
-                        AuthTokens.None,
-                        NoEncryptionAndShortRetry);
+            var exc = Record.Exception(() =>
+            {
+                using var driver = GraphDatabase.Driver(
+                    "bolt://127.0.0.1:9001",
+                    AuthTokens.None,
+                    NoEncryptionAndShortRetry);
 
-                    using var session = driver.Session(o => o.WithDefaultAccessMode(AccessMode.Write));
+                using var session = driver.Session(o => o.WithDefaultAccessMode(AccessMode.Write));
 
-                    session.ExecuteWrite(txc => txc.Run("CREATE (n {name: 'Bob'})"));
-                });
+                session.ExecuteWrite(txc => txc.Run("CREATE (n {name: 'Bob'})"));
+            });
 
             exc.Should()
                 .BeOfType<ServiceUnavailableException>()
@@ -130,16 +129,15 @@ public abstract class TransactionTests
         {
             using var _ = BoltStubServer.Start($"{boltVersion}/connection_error_on_commit", 9001);
 
-            var exc = await Record.ExceptionAsync(
-                async () =>
-                {
-                    await using var driver =
-                        GraphDatabase.Driver("bolt://127.0.0.1:9001", AuthTokens.None, NoEncryptionAndShortRetry);
+            var exc = await Record.ExceptionAsync(async () =>
+            {
+                await using var driver =
+                    GraphDatabase.Driver("bolt://127.0.0.1:9001", AuthTokens.None, NoEncryptionAndShortRetry);
 
-                    await using var session = driver.AsyncSession(o => o.WithDefaultAccessMode(AccessMode.Write));
+                await using var session = driver.AsyncSession(o => o.WithDefaultAccessMode(AccessMode.Write));
 
-                    await session.ExecuteWriteAsync(txc => txc.RunAsync("CREATE (n {name: 'Bob'})"));
-                });
+                await session.ExecuteWriteAsync(txc => txc.RunAsync("CREATE (n {name: 'Bob'})"));
+            });
 
             exc.Should()
                 .BeOfType<ServiceUnavailableException>()

@@ -218,8 +218,10 @@ public sealed class Duration : TemporalValue, IEquatable<Duration>, IComparable,
         return HashCode.Combine(Months, Days, Seconds, Nanos);
     }
 
-    /// <summary>Converts the value of the current <see cref="Duration"/> object to its equivalent string representation
-    /// as an ISO 8601 duration string.</summary>
+    /// <summary>
+    /// Converts the value of the current <see cref="Duration"/> object to its equivalent string representation as an
+    /// ISO 8601 duration string.
+    /// </summary>
     /// <returns>ISO 8601 duration string representation of this Duration.</returns>
     public override string ToString()
     {

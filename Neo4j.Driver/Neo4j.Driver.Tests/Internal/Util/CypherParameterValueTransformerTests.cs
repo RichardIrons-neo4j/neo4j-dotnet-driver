@@ -13,13 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Neo4j.Driver.Tests.Internal.Util;
-
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using Neo4j.Driver.Internal.Util;
 using Xunit;
+
+namespace Neo4j.Driver.Tests.Internal.Util;
 
 public class CypherParameterValueTransformerTests
 {
@@ -82,12 +82,6 @@ public class CypherParameterValueTransformerTests
             .WithMessage("*string keys*");
     }
 
-    private class TestObject
-    {
-        public int A { get; set; }
-        public string B { get; set; }
-    }
-
     [Fact]
     public void Transform_Object_ReturnsDictionaryOfProperties()
     {
@@ -105,8 +99,8 @@ public class CypherParameterValueTransformerTests
     {
         var input = new List<TestObject>
         {
-            new TestObject { A = 1, B = "x" },
-            new TestObject { A = 2, B = "y" }
+            new() { A = 1, B = "x" },
+            new() { A = 2, B = "y" }
         };
 
         var result = _transformer.Transform(input);
@@ -121,6 +115,12 @@ public class CypherParameterValueTransformerTests
         var input = Vector.Create([1.0, 2.0, 3.0]);
         var result = _transformer.Transform(input);
         result.Should().BeOfType<Vector<double>>();
-        ((Vector<double>) result).Values.Should().BeEquivalentTo([1.0, 2.0, 3.0]);
+        ((Vector<double>)result).Values.Should().BeEquivalentTo([1.0, 2.0, 3.0]);
+    }
+
+    private class TestObject
+    {
+        public int A { get; set; }
+        public string B { get; set; }
     }
 }

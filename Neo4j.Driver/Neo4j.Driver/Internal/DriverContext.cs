@@ -47,8 +47,7 @@ internal sealed class DriverContext
         HostResolver = customHostResolver ??
             (RuntimeHelper.IsDotNetCore
                 ? new SystemNetCoreHostResolver(new SystemHostResolver())
-                : new DefaultHostResolver(
-                    new SystemHostResolver()));
+                : new DefaultHostResolver(new SystemHostResolver()));
 
         Metrics = config.MetricsEnabled ? new DefaultMetrics() : null;
     }

@@ -30,8 +30,8 @@ internal class RetryLogic : IRetryLogic
     private readonly double _delayJitter;
     private readonly double _delayMultiplier;
     private readonly double _initialDelay;
-    private readonly INeo4jLogger _neo4JLogger;
     private readonly int _maxRetryTimeout;
+    private readonly INeo4jLogger _neo4JLogger;
     private readonly Random _random;
 
     public RetryLogic(TimeSpan maxRetryTimeout, INeo4jLogger neo4JLogger)

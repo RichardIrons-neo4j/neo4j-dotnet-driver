@@ -16,17 +16,15 @@
 namespace Neo4j.Driver.Mapping;
 
 /// <summary>
-/// Defines an interface that provides metadata for object mapping used in the Neo4j driver.
-/// This interface allows access to the <see cref="MappingBinding"/> object, which encapsulates
-/// details about the mapping configuration for an object. This interface is intended to be
-/// implemented by attributes decorating a property or parameter.
+/// Defines an interface that provides metadata for object mapping used in the Neo4j driver. This interface allows
+/// access to the <see cref="MappingBinding"/> object, which encapsulates details about the mapping configuration for an
+/// object. This interface is intended to be implemented by attributes decorating a property or parameter.
 /// </summary>
 public interface IMappingBindingMutator
 {
     /// <summary>
-    /// Modifies the provided <see cref="MappingBinding"/> instance to update or transform
-    /// its metadata configuration. This method is  used to define or adjust how
-    /// object mapping is performed in the context of the Neo4j driver.
+    /// Modifies the provided <see cref="MappingBinding"/> instance to update or transform its metadata configuration.
+    /// This method is  used to define or adjust how object mapping is performed in the context of the Neo4j driver.
     /// </summary>
     /// <param name="binding">The <see cref="MappingBinding"/> instance to be mutated.</param>
     void Mutate(MappingBinding binding);

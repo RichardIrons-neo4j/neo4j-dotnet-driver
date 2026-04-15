@@ -32,9 +32,8 @@ public abstract class BlockingCommand : IBlockingCommand
 
     protected ISession NewSession(AccessMode mode, StressTestContext context)
     {
-        return _driver.Session(
-            o =>
-                o.WithDefaultAccessMode(mode)
-                    .WithBookmarks(_useBookmark ? new[] { context.Bookmarks } : Array.Empty<Bookmarks>()));
+        return _driver.Session(o =>
+            o.WithDefaultAccessMode(mode)
+                .WithBookmarks(_useBookmark ? new[] { context.Bookmarks } : Array.Empty<Bookmarks>()));
     }
 }

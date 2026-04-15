@@ -34,13 +34,12 @@ public sealed class RxFailingCommandInTx : RxCommand
         var session = NewSession(AccessMode.Read, context);
 
         BeginTransaction(session, context)
-            .SelectMany(
-                txc => txc
-                    .Run("UNWIND [10, 5, 0] AS x RETURN 10 / x")
-                    .Records()
-                    .Select(r => r[0].As<int>())
-                    .CatchAndThrow(_ => txc.Rollback<int>())
-                    .Concat(txc.Commit<int>()))
+            .SelectMany(txc => txc
+                .Run("UNWIND [10, 5, 0] AS x RETURN 10 / x")
+                .Records()
+                .Select(r => r[0].As<int>())
+                .CatchAndThrow(_ => txc.Rollback<int>())
+                .Concat(txc.Commit<int>()))
             .CatchAndThrow(_ => session.Close<int>())
             .Concat(session.Close<int>())
             .WaitForCompletion()

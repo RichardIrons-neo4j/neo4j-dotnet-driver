@@ -178,9 +178,8 @@ public class DelegateExecutableQueryMappingExtensionsTests
         }
 
         GetRecordsAsync()
-            .AsObjectsAsync(
-                (string name, int age, string city, string country, string job) =>
-                    new { name, age, city, country, job })
+            .AsObjectsAsync((string name, int age, string city, string country, string job) =>
+                new { name, age, city, country, job })
             .Result.Should()
             .BeEquivalentTo(
                 new { name = "Bob", age = 30, city = "New York", country = "USA", job = "Engineer" },
@@ -226,9 +225,8 @@ public class DelegateExecutableQueryMappingExtensionsTests
         }
 
         GetRecordsAsync()
-            .AsObjectsAsync(
-                (string name, int age, string city, string country, string job, string gender) =>
-                    new { name, age, city, country, job, gender })
+            .AsObjectsAsync((string name, int age, string city, string country, string job, string gender) =>
+                new { name, age, city, country, job, gender })
             .Result.Should()
             .BeEquivalentTo(
                 new { name = "Bob", age = 30, city = "New York", country = "USA", job = "Engineer", gender = "Male" },
@@ -280,9 +278,15 @@ public class DelegateExecutableQueryMappingExtensionsTests
         }
 
         GetRecordsAsync()
-            .AsObjectsAsync(
-                (string name, int age, string city, string country, string job, string gender, string maritalStatus) =>
-                    new { name, age, city, country, job, gender, maritalStatus })
+            .AsObjectsAsync((
+                    string name,
+                    int age,
+                    string city,
+                    string country,
+                    string job,
+                    string gender,
+                    string maritalStatus) =>
+                new { name, age, city, country, job, gender, maritalStatus })
             .Result.Should()
             .BeEquivalentTo(
                 new
@@ -346,16 +350,15 @@ public class DelegateExecutableQueryMappingExtensionsTests
         }
 
         GetRecordsAsync()
-            .AsObjectsAsync(
-                (
-                    string name,
-                    int age,
-                    string city,
-                    string country,
-                    string job,
-                    string gender,
-                    string maritalStatus,
-                    int children) => new { name, age, city, country, job, gender, maritalStatus, children })
+            .AsObjectsAsync((
+                string name,
+                int age,
+                string city,
+                string country,
+                string job,
+                string gender,
+                string maritalStatus,
+                int children) => new { name, age, city, country, job, gender, maritalStatus, children })
             .Result.Should()
             .BeEquivalentTo(
                 new
@@ -422,18 +425,17 @@ public class DelegateExecutableQueryMappingExtensionsTests
         }
 
         GetRecordsAsync()
-            .AsObjectsAsync(
-                (
-                    string name,
-                    int age,
-                    string city,
-                    string country,
-                    string job,
-                    string gender,
-                    string maritalStatus,
-                    int children,
-                    string education) => new
-                    { name, age, city, country, job, gender, maritalStatus, children, education })
+            .AsObjectsAsync((
+                string name,
+                int age,
+                string city,
+                string country,
+                string job,
+                string gender,
+                string maritalStatus,
+                int children,
+                string education) => new
+                { name, age, city, country, job, gender, maritalStatus, children, education })
             .Result.Should()
             .BeEquivalentTo(
                 new
@@ -506,19 +508,18 @@ public class DelegateExecutableQueryMappingExtensionsTests
         }
 
         GetRecordsAsync()
-            .AsObjectsAsync(
-                (
-                    string name,
-                    int age,
-                    string city,
-                    string country,
-                    string job,
-                    string gender,
-                    string maritalStatus,
-                    int children,
-                    string education,
-                    int income) => new
-                    { name, age, city, country, job, gender, maritalStatus, children, education, income })
+            .AsObjectsAsync((
+                string name,
+                int age,
+                string city,
+                string country,
+                string job,
+                string gender,
+                string maritalStatus,
+                int children,
+                string education,
+                int income) => new
+                { name, age, city, country, job, gender, maritalStatus, children, education, income })
             .Result.Should()
             .BeEquivalentTo(
                 new

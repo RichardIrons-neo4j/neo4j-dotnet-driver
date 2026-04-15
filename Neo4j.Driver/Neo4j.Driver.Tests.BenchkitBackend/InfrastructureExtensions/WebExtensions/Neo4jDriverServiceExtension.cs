@@ -23,16 +23,15 @@ internal static class Neo4jDriverServiceExtension
         this IServiceCollection services,
         BenchkitBackendConfiguration configuration)
     {
-        services.AddSingleton<IDriver>(
-            _ =>
-            {
-                var driverUri = $"{configuration.Neo4jScheme}://{configuration.Neo4jHost}:{configuration.Neo4jPort}";
-                var driver = GraphDatabase.Driver(
-                    driverUri,
-                    AuthTokens.Basic(configuration.Neo4jUser, configuration.Neo4jPassword));
+        services.AddSingleton<IDriver>(_ =>
+        {
+            var driverUri = $"{configuration.Neo4jScheme}://{configuration.Neo4jHost}:{configuration.Neo4jPort}";
+            var driver = GraphDatabase.Driver(
+                driverUri,
+                AuthTokens.Basic(configuration.Neo4jUser, configuration.Neo4jPassword));
 
-                return driver;
-            });
+            return driver;
+        });
 
         return services;
     }

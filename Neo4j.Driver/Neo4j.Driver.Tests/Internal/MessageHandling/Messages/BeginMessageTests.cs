@@ -197,22 +197,21 @@ public class BeginMessageTests
     [Fact]
     public void ShouldThrowIfBoltVersionLessThan44()
     {
-        Record.Exception(
-                () => new BeginMessage(
-                    BoltProtocolVersion.V4_3,
-                    "neo4j",
-                    new InternalBookmarks("bm:a"),
-                    new TransactionConfig
+        Record.Exception(() => new BeginMessage(
+                BoltProtocolVersion.V4_3,
+                "neo4j",
+                new InternalBookmarks("bm:a"),
+                new TransactionConfig
+                {
+                    Metadata = new Dictionary<string, object>
                     {
-                        Metadata = new Dictionary<string, object>
-                        {
-                            ["a"] = "b"
-                        },
-                        Timeout = TimeSpan.FromSeconds(1)
+                        ["a"] = "b"
                     },
-                    AccessMode.Read,
-                    new SessionConfig("Douglas Fir"),
-                    null))
+                    Timeout = TimeSpan.FromSeconds(1)
+                },
+                AccessMode.Read,
+                new SessionConfig("Douglas Fir"),
+                null))
             .Should()
             .BeOfType<ArgumentOutOfRangeException>();
     }

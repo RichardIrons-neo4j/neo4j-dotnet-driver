@@ -49,10 +49,9 @@ public class TransactionTimeoutTests
         {
             // only logs if it changes the timeout
             autoMocker.GetMock<INeo4jLogger>()
-                .Setup(
-                    x => x.Info(
-                        It.Is<string>(s => s.Contains("rounded up")),
-                        It.IsAny<object[]>()))
+                .Setup(x => x.Info(
+                    It.Is<string>(s => s.Contains("rounded up")),
+                    It.IsAny<object[]>()))
                 .Verifiable();
         }
 

@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using Neo4j.Driver.Internal.Types;
@@ -106,12 +107,12 @@ public class VectorMappingTests
         var obj = record.AsObjectFromBlueprint(
             new
             {
-                Ints = System.Array.Empty<int>(),
-                Longs = System.Array.Empty<long>(),
-                Floats = System.Array.Empty<float>(),
-                Doubles = System.Array.Empty<double>(),
-                Shorts = System.Array.Empty<short>(),
-                Bytes = System.Array.Empty<sbyte>()
+                Ints = Array.Empty<int>(),
+                Longs = Array.Empty<long>(),
+                Floats = Array.Empty<float>(),
+                Doubles = Array.Empty<double>(),
+                Shorts = Array.Empty<short>(),
+                Bytes = Array.Empty<sbyte>()
             });
 
         obj.Ints.Should().Equal(5, 6, 7);

@@ -41,17 +41,15 @@ public class NestedQueriesIT : AbstractRxIT
             .Records()
             .Select(r => r[0].As<int>())
             .Buffer(10)
-            .SelectMany(
-                x =>
-                    session.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records())
+            .SelectMany(x =>
+                session.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records())
             .Select(r => r[0].As<int>())
             .WaitForCompletion()
             .AssertEqual(
                 OnError<int>(
                     0,
-                    MatchesException<ClientException>(
-                        e =>
-                            e.Message.Contains("consume the current query result before"))));
+                    MatchesException<ClientException>(e =>
+                        e.Message.Contains("consume the current query result before"))));
     }
 
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
@@ -64,9 +62,8 @@ public class NestedQueriesIT : AbstractRxIT
             .Records()
             .Select(r => r[0].As<int>())
             .Buffer(10)
-            .SelectMany(
-                x =>
-                    session.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records())
+            .SelectMany(x =>
+                session.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records())
             .Select(r => r[0].As<int>())
             .OnErrorResumeNext(session.Close<int>())
             .WaitForCompletion()
@@ -90,26 +87,22 @@ public class NestedQueriesIT : AbstractRxIT
         const int size = 1024;
         var session = Server.Driver.RxSession(o => o.WithFetchSize(5));
 
-        session.ExecuteRead(
-                txc =>
-                    txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
-                        .Records()
-                        .Select(r => r[0].As<int>())
-                        .Buffer(10)
-                        .SelectMany(
-                            x =>
-                                session.ExecuteWrite(
-                                    txc2 =>
-                                        txc2.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x })
-                                            .Records()))
-                        .Select(r => r[0].As<int>()))
+        session.ExecuteRead(txc =>
+                txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
+                    .Records()
+                    .Select(r => r[0].As<int>())
+                    .Buffer(10)
+                    .SelectMany(x =>
+                        session.ExecuteWrite(txc2 =>
+                            txc2.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x })
+                                .Records()))
+                    .Select(r => r[0].As<int>()))
             .WaitForCompletion()
             .AssertEqual(
                 OnError<int>(
                     0,
-                    MatchesException<TransactionNestingException>(
-                        e =>
-                            OutputMessage(e.Message, "Attempting to nest transactions"))));
+                    MatchesException<TransactionNestingException>(e =>
+                        OutputMessage(e.Message, "Attempting to nest transactions"))));
     }
 
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
@@ -118,19 +111,16 @@ public class NestedQueriesIT : AbstractRxIT
         const int size = 1024;
         var session = Server.Driver.RxSession(o => o.WithFetchSize(5));
 
-        session.ExecuteRead(
-                txc =>
-                    txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
-                        .Records()
-                        .Select(r => r[0].As<int>())
-                        .Buffer(10)
-                        .SelectMany(
-                            x =>
-                                session.ExecuteWrite(
-                                    txc2 =>
-                                        txc2.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x })
-                                            .Records()))
-                        .Select(r => r[0].As<int>()))
+        session.ExecuteRead(txc =>
+                txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
+                    .Records()
+                    .Select(r => r[0].As<int>())
+                    .Buffer(10)
+                    .SelectMany(x =>
+                        session.ExecuteWrite(txc2 =>
+                            txc2.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x })
+                                .Records()))
+                    .Select(r => r[0].As<int>()))
             .OnErrorResumeNext(session.Close<int>())
             .WaitForCompletion()
             .AssertEqual(OnCompleted<int>(0));
@@ -146,19 +136,16 @@ public class NestedQueriesIT : AbstractRxIT
             .Records()
             .Select(r => r[0].As<int>())
             .Buffer(10)
-            .SelectMany(
-                x =>
-                    session.ExecuteWrite(
-                        txc2 =>
-                            txc2.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records()))
+            .SelectMany(x =>
+                session.ExecuteWrite(txc2 =>
+                    txc2.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records()))
             .Select(r => r[0].As<int>())
             .WaitForCompletion()
             .AssertEqual(
                 OnError<int>(
                     0,
-                    MatchesException<ClientException>(
-                        e =>
-                            e.Message.Contains("consume the current query result before"))));
+                    MatchesException<ClientException>(e =>
+                        e.Message.Contains("consume the current query result before"))));
     }
 
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
@@ -171,11 +158,9 @@ public class NestedQueriesIT : AbstractRxIT
             .Records()
             .Select(r => r[0].As<int>())
             .Buffer(10)
-            .SelectMany(
-                x =>
-                    session.ExecuteWrite(
-                        txc2 =>
-                            txc2.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records()))
+            .SelectMany(x =>
+                session.ExecuteWrite(txc2 =>
+                    txc2.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records()))
             .Select(r => r[0].As<int>())
             .OnErrorResumeNext(session.Close<int>())
             .WaitForCompletion()
@@ -188,22 +173,19 @@ public class NestedQueriesIT : AbstractRxIT
         const int size = 1024;
         var session = Server.Driver.RxSession(o => o.WithFetchSize(5));
 
-        session.ExecuteRead(
-                txc => txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
-                    .Records()
-                    .Select(r => r[0].As<int>())
-                    .Buffer(10)
-                    .SelectMany(
-                        x =>
-                            session.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records()))
+        session.ExecuteRead(txc => txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
+                .Records()
+                .Select(r => r[0].As<int>())
+                .Buffer(10)
+                .SelectMany(x =>
+                    session.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records()))
             .Select(r => r[0].As<int>())
             .WaitForCompletion()
             .AssertEqual(
                 OnError<int>(
                     0,
-                    MatchesException<TransactionNestingException>(
-                        e =>
-                            e.Message.Contains("Attempting to nest transactions"))));
+                    MatchesException<TransactionNestingException>(e =>
+                        e.Message.Contains("Attempting to nest transactions"))));
     }
 
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
@@ -212,14 +194,12 @@ public class NestedQueriesIT : AbstractRxIT
         const int size = 1024;
         var session = Server.Driver.RxSession(o => o.WithFetchSize(5));
 
-        session.ExecuteRead(
-                txc => txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
-                    .Records()
-                    .Select(r => r[0].As<int>())
-                    .Buffer(10)
-                    .SelectMany(
-                        x =>
-                            session.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records()))
+        session.ExecuteRead(txc => txc.Run("UNWIND range(1, $size) AS x RETURN x", new { size })
+                .Records()
+                .Select(r => r[0].As<int>())
+                .Buffer(10)
+                .SelectMany(x =>
+                    session.Run("UNWIND $x AS id CREATE (n:Node {id: id}) RETURN n.id", new { x }).Records()))
             .Select(r => r[0].As<int>())
             .OnErrorResumeNext(session.Close<int>())
             .WaitForCompletion()

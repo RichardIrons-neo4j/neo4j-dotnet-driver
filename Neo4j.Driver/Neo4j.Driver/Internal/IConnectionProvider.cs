@@ -24,6 +24,8 @@ internal interface IConnectionProvider : IAsyncDisposable
 {
     DriverContext DriverContext { get; }
 
+    bool IsDirectDriver { get; }
+
     Task<IConnection> AcquireAsync(
         AccessMode mode,
         string database,
@@ -35,6 +37,4 @@ internal interface IConnectionProvider : IAsyncDisposable
     Task<bool> SupportsReAuthAsync();
     IRoutingTable GetRoutingTable(string database);
     Task<IServerInfo> VerifyConnectivityAndGetInfoAsync();
-    
-    bool IsDirectDriver { get; }
 }

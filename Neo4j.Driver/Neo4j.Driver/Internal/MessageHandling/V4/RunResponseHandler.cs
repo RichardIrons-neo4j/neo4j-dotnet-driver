@@ -26,10 +26,10 @@ internal sealed class RunResponseHandler : MetadataCollectingResponseHandler
 {
     private readonly HomeDbCacheKey _cacheKey;
     private readonly IHomeDbCache _homeDbCache;
+    private readonly bool _isDefaultDatabase;
     private readonly SessionConfig _sessionConfig;
     private readonly IResultStreamBuilder _streamBuilder;
     private readonly SummaryBuilder _summaryBuilder;
-    private readonly bool _isDefaultDatabase;
 
     public RunResponseHandler(
         IResultStreamBuilder streamBuilder,
@@ -66,7 +66,9 @@ internal sealed class RunResponseHandler : MetadataCollectingResponseHandler
         var dbInfo = GetMetadata<DatabaseInfoCollector, IDatabaseInfo>();
         if (_isDefaultDatabase && _homeDbCache != null && dbInfo?.Name != null)
         {
-            _sessionConfig.DriverContext.Neo4JLogger?.Debug($"Caching database name '{dbInfo.Name}' for key '{_cacheKey}'");
+            _sessionConfig.DriverContext.Neo4JLogger?.Debug(
+                $"Caching database name '{dbInfo.Name}' for key '{_cacheKey}'");
+
             _homeDbCache.AddOrUpdate(_cacheKey, dbInfo.Name);
             _sessionConfig?.PinDatabase(dbInfo.Name);
         }

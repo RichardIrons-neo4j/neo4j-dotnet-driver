@@ -234,7 +234,7 @@ internal sealed class ConnectionPool : IConnectionPool
         return connection.Server;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public bool IsDirectDriver => true;
 
     public DriverContext DriverContext { get; }
@@ -270,7 +270,7 @@ internal sealed class ConnectionPool : IConnectionPool
         Interlocked.CompareExchange(ref _poolStatus, Active, Inactive);
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public bool IsOnlyConnectionWithoutSsr(IConnection connection)
     {
         var allConnections = _inUseConnections.Concat(_idleConnections).ToArray();

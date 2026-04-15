@@ -90,13 +90,12 @@ public class SessionIT : AbstractRxIT
 
         session.Run("RETURN 1")
             .Records()
-            .SelectMany(
-                _ =>
-                {
-                    throw new Exception("Got you!");
+            .SelectMany(_ =>
+            {
+                throw new Exception("Got you!");
 #pragma warning disable CS0162
-                    return Observable.Range(0, 10);
-                })
+                return Observable.Range(0, 10);
+            })
             .OnErrorResumeNext(session.Close<int>())
             .WaitForCompletion()
             .AssertEqual(OnCompleted<int>(0));

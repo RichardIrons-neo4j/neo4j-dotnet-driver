@@ -19,21 +19,25 @@ using Neo4j.Driver.Internal.Protocol;
 
 namespace Neo4j.Driver.Internal.IO.ValueSerializers;
 
-internal class UnsupportedTypeSerializer: IPackStreamSerializer
+internal class UnsupportedTypeSerializer : IPackStreamSerializer
 {
     private const byte UnsupportedTypeStructType = (byte)'?';
     private const int UnsupportedTypeStructSize = 4;
-    
-    /// <inheritdoc />
-    public byte[] ReadableStructs => [UnsupportedTypeStructType];
-    
-    // we don't write unknown data
-    public IEnumerable<Type> WritableTypes { get; } = [];
-    
+
     public static UnsupportedTypeSerializer Instance { get; } = new();
 
-    /// <inheritdoc />
-    public (object, int) DeserializeSpan(BoltProtocolVersion version, SpanPackStreamReader reader, byte signature, int size)
+    /// <inheritdoc/>
+    public byte[] ReadableStructs => [UnsupportedTypeStructType];
+
+    // we don't write unknown data
+    public IEnumerable<Type> WritableTypes { get; } = [];
+
+    /// <inheritdoc/>
+    public (object, int) DeserializeSpan(
+        BoltProtocolVersion version,
+        SpanPackStreamReader reader,
+        byte signature,
+        int size)
     {
         if (signature != UnsupportedTypeStructType)
         {
@@ -48,7 +52,7 @@ internal class UnsupportedTypeSerializer: IPackStreamSerializer
         var minProtocolMinor = reader.ReadInteger();
         var extra = reader.ReadMap();
         var message = "";
-        
+
         if (extra.TryGetValue("message", out var messageObj) && messageObj is string foundMessage)
         {
             message = foundMessage;
@@ -78,12 +82,12 @@ internal class UnsupportedTypeSerializer: IPackStreamSerializer
         {
             message = foundMessage;
         }
-        
+
         var result = new UnsupportedType(name, minProtocolMajor, minProtocolMinor, message);
         return result;
     }
-    
-    /// <inheritdoc />
+
+    /// <inheritdoc/>
     public void Serialize(BoltProtocolVersion version, PackStreamWriter writer, object value)
     {
         throw new NotImplementedException("UnsupportedType cannot be serialized.");

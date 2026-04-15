@@ -48,7 +48,7 @@ internal static class TemporalHelpers
     private const int SecondsPerMinute = 60;
     private const int SecondsPerHour = SecondsPerMinute * MinutesPerHour;
     private const int SecondsPerDay = SecondsPerHour * HoursPerDay;
-    private const long NanosPerMinute = (long)NanosPerSecond * SecondsPerMinute;
+    private const long NanosPerMinute = NanosPerSecond * SecondsPerMinute;
     private const long NanosPerHour = NanosPerMinute * MinutesPerHour;
 
     private const long Days0000To1970 = DaysPerCycle * 5L - (30L * 365L + 7L);
@@ -142,7 +142,7 @@ internal static class TemporalHelpers
         if (m > 2)
         {
             total -= 1;
-            if (IsLeapYear(year) == false)
+            if (!IsLeapYear(year))
             {
                 total -= 1;
             }
@@ -242,6 +242,7 @@ internal static class TemporalHelpers
                 $"Year component ({date.Year}) of this instance is not valid for a DateOnly instance.");
         }
     }
+
     public static void AssertNoOverflow(TimeSpan offset, string target)
     {
         if (Math.Abs(offset.TotalHours) > 14)
@@ -281,7 +282,7 @@ internal static class TemporalHelpers
         hours %= HoursPerDay;
         var years = months / MonthsPerYear;
         months %= MonthsPerYear;
-        
+
         // do negative second/nanosecond handling
         var negativeTime = hours < 0 || minutes < 0 || seconds < 0 || nanoseconds < 0;
         var timeSign = negativeTime ? "-" : "";
@@ -290,17 +291,17 @@ internal static class TemporalHelpers
             seconds++;
             nanoseconds = (int)NanosPerSecond - nanoseconds;
         }
-        
+
         hours = Math.Abs(hours);
         minutes = Math.Abs(minutes);
         seconds = Math.Abs(seconds);
         nanoseconds = Math.Abs(nanoseconds);
-        
+
         var dateComponent = years != 0 || months != 0 || days != 0
             ? $"{IfNonZero(years, 'Y')}{IfNonZero(months, 'M')}{IfNonZero(days, 'D')}"
             : "";
-        
-        string timeComponent = hours != 0 || minutes != 0 || seconds != 0 || nanoseconds != 0
+
+        var timeComponent = hours != 0 || minutes != 0 || seconds != 0 || nanoseconds != 0
             ? $"T{timeSign}{IfNonZero(hours, 'H')}{IfNonZero(minutes, 'M')}{Seconds()}"
             : "";
 
@@ -308,12 +309,15 @@ internal static class TemporalHelpers
         if (dateComponent == "" && timeComponent == "")
         {
             return "P0D";
-        }       
-        
+        }
+
         return $"P{dateComponent}{timeComponent}";
 
-        string IfNonZero(long amount, char identifier) => amount != 0 ? $"{amount}{identifier}" : "";
-       
+        string IfNonZero(long amount, char identifier)
+        {
+            return amount != 0 ? $"{amount}{identifier}" : "";
+        }
+
         string Seconds()
         {
             if (seconds == 0 && nanoseconds == 0)

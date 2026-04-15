@@ -130,7 +130,7 @@ internal static class TestBlackList
             "Re-enabling cache delayed until 6.0 release."),
 
         ("test_homedb.TestHomeDbMixedCluster.test_re_enabling_cache_after_disabling",
-            "Re-enabling cache delayed until 6.0 release."),
+            "Re-enabling cache delayed until 6.0 release.")
     };
 
     public static bool FindTest(string testName, out string reason)

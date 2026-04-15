@@ -35,11 +35,11 @@ public class VarLongTests
         }
 
         [Theory]
-        [InlineData(new byte[] { 0x8F, 0x01 }, 143)]          // = 0000001 0001111  
-        [InlineData(new byte[] { 0xFF, 0x01 }, 255)]          // = 0000001 1111111
-        [InlineData(new byte[] { 0xFF, 0xFF, 0x01 }, 32767)]  // = 0000001 1111111 1111111
-        [InlineData(new byte[] { 0x81, 0x81, 0x01 }, 16513)]  // = 0000001 0000001 0000001
-        [InlineData(new byte[] { 0x8F, 0x8F, 0x04 }, 67471)]  // = 0000100 0001111 0001111
+        [InlineData(new byte[] { 0x8F, 0x01 }, 143)] // = 0000001 0001111  
+        [InlineData(new byte[] { 0xFF, 0x01 }, 255)] // = 0000001 1111111
+        [InlineData(new byte[] { 0xFF, 0xFF, 0x01 }, 32767)] // = 0000001 1111111 1111111
+        [InlineData(new byte[] { 0x81, 0x81, 0x01 }, 16513)] // = 0000001 0000001 0000001
+        [InlineData(new byte[] { 0x8F, 0x8F, 0x04 }, 67471)] // = 0000100 0001111 0001111
         public void ShouldAddMultipleNewSegments(byte[] data, long finalValue)
         {
             var varLong = new VarLong();
@@ -58,16 +58,15 @@ public class VarLongTests
             var varLong = new VarLong();
             const byte newSegment = 0x1;
 
-            var exception = Record.Exception(
-                () =>
+            var exception = Record.Exception(() =>
+            {
+                for (var i = 0; i < 9; i++)
                 {
-                    for (var i = 0; i < 9; i++)
-                    {
-                        varLong.AddSegment(newSegment);
-                    }
-                });
+                    varLong.AddSegment(newSegment);
+                }
+            });
 
-            exception.Should().BeOfType<ArgumentException>().Which.Message.Should().Be("VarLong Segment overflow");  
+            exception.Should().BeOfType<ArgumentException>().Which.Message.Should().Be("VarLong Segment overflow");
         }
     }
 }

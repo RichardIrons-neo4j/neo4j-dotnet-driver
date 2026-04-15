@@ -221,8 +221,8 @@ public class LambdaMappingRecordExtensionsTests
             ("f", 'x'),
             ("g", 123.45m));
 
-        var result = record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g) => new { a, b, c, d, e, f, g });
+        var result = record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g) =>
+            new { a, b, c, d, e, f, g });
 
         result.a.Should().Be(69);
         result.b.Should().Be("test");
@@ -237,8 +237,8 @@ public class LambdaMappingRecordExtensionsTests
     public void ShouldFailWithSevenPropertiesWhenPropertyMissing()
     {
         var record = TestRecord.Create(("a", 69), ("b", "test"), ("c", true), ("d", 1.23), ("e", 123L), ("f", 'x'));
-        Action act = () => record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g) => new { a, b, c, d, e, f, g });
+        Action act = () => record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g) =>
+            new { a, b, c, d, e, f, g });
 
         act.Should().Throw<MappingFailedException>();
     }
@@ -255,8 +255,8 @@ public class LambdaMappingRecordExtensionsTests
             ("f", 'x'),
             ("g", "not a decimal"));
 
-        Action act = () => record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g) => new { a, b, c, d, e, f, g });
+        Action act = () => record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g) =>
+            new { a, b, c, d, e, f, g });
 
         act.Should().Throw<MappingFailedException>();
     }
@@ -274,8 +274,8 @@ public class LambdaMappingRecordExtensionsTests
             ("g", 123.45m),
             ("h", (byte)123));
 
-        var result = record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h) => new { a, b, c, d, e, f, g, h });
+        var result = record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g, byte h) =>
+            new { a, b, c, d, e, f, g, h });
 
         result.a.Should().Be(69);
         result.b.Should().Be("test");
@@ -299,8 +299,8 @@ public class LambdaMappingRecordExtensionsTests
             ("f", 'x'),
             ("g", 123.45m));
 
-        Action act = () => record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h) => new { a, b, c, d, e, f, g, h });
+        Action act = () => record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g, byte h) =>
+            new { a, b, c, d, e, f, g, h });
 
         act.Should().Throw<MappingFailedException>();
     }
@@ -318,8 +318,8 @@ public class LambdaMappingRecordExtensionsTests
             ("g", 123.45m),
             ("h", "not a byte"));
 
-        Action act = () => record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h) => new { a, b, c, d, e, f, g, h });
+        Action act = () => record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g, byte h) =>
+            new { a, b, c, d, e, f, g, h });
 
         act.Should().Throw<MappingFailedException>();
     }
@@ -338,9 +338,8 @@ public class LambdaMappingRecordExtensionsTests
             ("h", (byte)123),
             ("i", (short)12345));
 
-        var result = record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i) =>
-                new { a, b, c, d, e, f, g, h, i });
+        var result = record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i) =>
+            new { a, b, c, d, e, f, g, h, i });
 
         result.a.Should().Be(69);
         result.b.Should().Be("test");
@@ -366,8 +365,8 @@ public class LambdaMappingRecordExtensionsTests
             ("g", 123.45m),
             ("h", (byte)123));
 
-        Action act = () => record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i) =>
+        Action act = () =>
+            record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i) =>
                 new { a, b, c, d, e, f, g, h, i });
 
         act.Should().Throw<MappingFailedException>();
@@ -387,8 +386,8 @@ public class LambdaMappingRecordExtensionsTests
             ("h", (byte)123),
             ("i", "not a short"));
 
-        Action act = () => record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i) =>
+        Action act = () =>
+            record.AsObject((int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i) =>
                 new { a, b, c, d, e, f, g, h, i });
 
         act.Should().Throw<MappingFailedException>();
@@ -409,9 +408,18 @@ public class LambdaMappingRecordExtensionsTests
             ("i", (short)12345),
             ("j", (ushort)12345));
 
-        var result = record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i, ushort j) =>
-                new { a, b, c, d, e, f, g, h, i, j });
+        var result = record.AsObject((
+                int a,
+                string b,
+                bool c,
+                double d,
+                long e,
+                char f,
+                decimal g,
+                byte h,
+                short i,
+                ushort j) =>
+            new { a, b, c, d, e, f, g, h, i, j });
 
         result.a.Should().Be(69);
         result.b.Should().Be("test");
@@ -439,9 +447,18 @@ public class LambdaMappingRecordExtensionsTests
             ("h", (byte)123),
             ("i", (short)12345));
 
-        Action act = () => record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i, ushort j) =>
-                new { a, b, c, d, e, f, g, h, i, j });
+        Action act = () => record.AsObject((
+                int a,
+                string b,
+                bool c,
+                double d,
+                long e,
+                char f,
+                decimal g,
+                byte h,
+                short i,
+                ushort j) =>
+            new { a, b, c, d, e, f, g, h, i, j });
 
         act.Should().Throw<MappingFailedException>();
     }
@@ -461,9 +478,18 @@ public class LambdaMappingRecordExtensionsTests
             ("i", (short)12345),
             ("j", "not a ushort"));
 
-        Action act = () => record.AsObject(
-            (int a, string b, bool c, double d, long e, char f, decimal g, byte h, short i, ushort j) =>
-                new { a, b, c, d, e, f, g, h, i, j });
+        Action act = () => record.AsObject((
+                int a,
+                string b,
+                bool c,
+                double d,
+                long e,
+                char f,
+                decimal g,
+                byte h,
+                short i,
+                ushort j) =>
+            new { a, b, c, d, e, f, g, h, i, j });
 
         act.Should().Throw<MappingFailedException>();
     }

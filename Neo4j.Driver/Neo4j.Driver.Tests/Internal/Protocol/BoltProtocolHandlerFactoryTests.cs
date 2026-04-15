@@ -36,20 +36,19 @@ public class BoltProtocolHandlerFactoryTests
                 new Query("..."),
                 new ServerInfo(new Uri("bolt://127.0.0.1:7687")));
 
-            var ex = Record.Exception(
-                () =>
-                {
-                    BoltProtocolHandlerFactory.Instance.NewResultCursorBuilder(
-                        summaryBuilder,
-                        new Mock<IConnection>().Object,
-                        null,
-                        null,
-                        null,
-                        null,
-                        -1,
-                        true,
-                        It.IsAny<IInternalAsyncTransaction>());
-                });
+            var ex = Record.Exception(() =>
+            {
+                BoltProtocolHandlerFactory.Instance.NewResultCursorBuilder(
+                    summaryBuilder,
+                    new Mock<IConnection>().Object,
+                    null,
+                    null,
+                    null,
+                    null,
+                    -1,
+                    true,
+                    It.IsAny<IInternalAsyncTransaction>());
+            });
 
             ex.Should().BeNull();
         }
