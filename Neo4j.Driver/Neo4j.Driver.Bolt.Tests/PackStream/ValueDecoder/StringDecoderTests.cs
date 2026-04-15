@@ -11,9 +11,8 @@ namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoder;
 internal class StringDecoderTests : UnitTestBase<StringDecoder>
 {
     [SetUp]
-    public new void SetUp()
+    public void SetUp()
     {
-        base.SetUp();
         AutoMocker.Use<IPackStreamSizeReader>(new PackStreamSizeReader());
     }
 

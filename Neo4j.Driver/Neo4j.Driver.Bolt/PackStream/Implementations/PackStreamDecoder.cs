@@ -25,36 +25,22 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations;
 internal class PackStreamDecoder : IPackStreamDecoder
 {
     private readonly IChunkAssembler _chunkAssembler;
+    private readonly IValueDecoderProvider _valueDecoderProvider;
     private readonly ILogger _logger;
-    private readonly Dictionary<byte, IValueDecoder> _decoders = new();
 
     public PackStreamDecoder(
         IValueDecoder[] decoders,
         IChunkAssembler chunkAssembler,
+        IValueDecoderProvider valueDecoderProvider,
         ILogger logger)
     {
         _chunkAssembler = chunkAssembler ?? throw new ArgumentNullException(nameof(chunkAssembler));
+        _valueDecoderProvider = valueDecoderProvider;
         _logger = logger;
 
         if (decoders is null or { Length: 0 })
         {
             throw new ArgumentNullException(nameof(decoders), "At least one decoder must be provided.");
-        }
-
-        foreach (var decoder in decoders)
-        {
-            foreach (var markerByte in decoder.HandledMarkerBytes)
-            {
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    _logger.LogDebug(
-                        "Registering decoder {decoder} for marker byte: {markerByte}",
-                        decoder.GetType().Name,
-                        $"0x{markerByte:X2}");
-                }
-
-                _decoders[markerByte] = decoder;
-            }
         }
     }
 
@@ -68,18 +54,13 @@ internal class PackStreamDecoder : IPackStreamDecoder
 
         var markerByte = buffer.First.Span[0];
 
-        if (!_decoders.TryGetValue(markerByte, out var decoder))
-        {
-            throw new InvalidOperationException($"No decoder found for marker byte: 0x{markerByte:X2}");
-        }
-
+        var decoder = _valueDecoderProvider.GetDecoder(markerByte, this);
         return decoder.Decode(buffer);
     }
 
     /// <inheritdoc />
     public async IAsyncEnumerable<PackStreamValue> Decode(IByteReader byteReader, int valueCount)
     {
-        // ...existing code...
         var processed = 0;
         var count = 0;
 
@@ -94,11 +75,7 @@ internal class PackStreamDecoder : IPackStreamDecoder
                 var markerByte = remaining.First.Span[0];
                 _logger.LogIf(LogLevel.Trace, "Decoding marker byte: {markerByte}", () => [markerByte]);
 
-                if (!_decoders.TryGetValue(markerByte, out var decoder))
-                {
-                    throw new InvalidOperationException($"No decoder found for marker byte: 0x{markerByte:X2}");
-                }
-
+                var decoder = _valueDecoderProvider.GetDecoder(markerByte, this);
                 var decoderResult = decoder.Decode(remaining);
                 _logger.LogTrace(
                     "Decoded value: {value} (consumed {bytesConsumed} bytes)",
