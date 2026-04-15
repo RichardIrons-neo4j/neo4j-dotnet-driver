@@ -57,8 +57,8 @@ public readonly ref struct PackStreamStringView
             {
                 Span<byte> buffer = stackalloc byte[4];
                 var toCopy = (int)Math.Min(4, _reader.Remaining);
-                _reader.TryCopyTo(buffer.Slice(0, toCopy));
-                status = Rune.DecodeFromUtf8(buffer.Slice(0, toCopy), out _current, out bytesConsumed);
+                _reader.TryCopyTo(buffer[..toCopy]);
+                status = Rune.DecodeFromUtf8(buffer[..toCopy], out _current, out bytesConsumed);
             }
 
             if (status != OperationStatus.Done)
