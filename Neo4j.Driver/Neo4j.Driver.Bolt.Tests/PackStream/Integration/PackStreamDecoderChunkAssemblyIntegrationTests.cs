@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Buffers;
 using System.IO.Pipelines;
 using FluentAssertions;
 using Moq.AutoMock;
@@ -23,6 +22,7 @@ using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Types.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Implementations;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
+using Neo4j.Driver.Bolt.Tests.Transport;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 using Neo4j.Driver.Bolt.Transport.Implementations;
 using NUnit.Framework;
@@ -76,13 +76,6 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         _autoMocker.Use<IChunkAssembler>(chunkAssembler);
     }
 
-    private static IByteReader CreateByteReader(byte[] wireBytes)
-    {
-        var sequence = new ReadOnlySequence<byte>(wireBytes);
-        var pipeReader = PipeReader.Create(sequence);
-        return new PipeReaderByteReader(pipeReader);
-    }
-
     /// <summary>
     /// Feeds bytes in chunks to simulate the byte reader receiving data in multiple reads.
     /// </summary>
@@ -122,7 +115,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
             0x14,
         ];
 
-        var byteReader = CreateByteReader(wire);
+        var byteReader = TestByteReaders.FromSingleReadBuffer(wire);
         var materialisedListItems = new List<long>();
         var valueCount = 0;
 
@@ -156,7 +149,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
             0x92, 0x01, 0x02,
         ];
 
-        var byteReader = CreateByteReader(wire);
+        var byteReader = TestByteReaders.FromSingleReadBuffer(wire);
         long? materialisedInt = null;
         string? materialisedString = null;
         List<long>? materialisedListItems = null;
@@ -203,7 +196,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
             0x85, 0x77, 0x6F, 0x72, 0x6C, 0x64,
         ];
 
-        var byteReader = CreateByteReader(wire);
+        var byteReader = TestByteReaders.FromSingleReadBuffer(wire);
         long? materialisedInt = null;
         string? materialisedString = null;
         var valueCount = 0;
@@ -248,7 +241,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
             0x81, 0x62, 0x14,
         ];
 
-        var byteReader = CreateByteReader(wire);
+        var byteReader = TestByteReaders.FromSingleReadBuffer(wire);
         long? firstListItem = null;
         var mapEntries = new List<(string Key, long Value)>();
         var valueCount = 0;
@@ -363,7 +356,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
             0x02,
         ];
 
-        var byteReader = CreateByteReader(wire);
+        var byteReader = TestByteReaders.FromSingleReadBuffer(wire);
         var firstWasNull = false;
         byte? materialisedStructTag = null;
         List<long>? materialisedStructFields = null;
@@ -405,7 +398,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
             0x91, 0x63,
         ];
 
-        var byteReader = CreateByteReader(wire);
+        var byteReader = TestByteReaders.FromSingleReadBuffer(wire);
         long? materialisedListItem = null;
         var valueCount = 0;
 
