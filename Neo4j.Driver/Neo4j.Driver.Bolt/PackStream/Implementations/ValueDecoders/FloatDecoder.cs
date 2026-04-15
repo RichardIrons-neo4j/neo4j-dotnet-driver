@@ -1,4 +1,4 @@
-﻿﻿// Copyright (c) "Neo4j"
+﻿﻿﻿// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -16,6 +16,7 @@
 using System.Buffers;
 using System.Buffers.Binary;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
@@ -23,41 +24,15 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// Decodes Float64 values from PackStream format.
 /// Float64 is a nine-byte encoding: marker byte 0xC1 followed by a big-endian IEEE 754 double-precision float.
 /// </summary>
-public class FloatDecoder : IValueDecoder
+internal class FloatDecoder : ValueDecoderBase
 {
-    public byte[] HandledMarkerBytes => [PackStreamMarker.Float64];
+    public override byte[] HandledMarkerBytes => [PackStreamMarker.Float64];
 
-    public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
+    public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
-        if (buffer.IsEmpty)
-        {
-            throw new InvalidOperationException("Buffer is empty. Cannot decode Float value.");
-        }
-
-        if (buffer.FirstSpan[0] != PackStreamMarker.Float64)
-        {
-            throw new InvalidOperationException($"Unknown marker byte: 0x{buffer.FirstSpan[0]:X2}");
-        }
-
-        if (buffer.Length < 9)
-        {
-            throw new InvalidOperationException("Buffer too short. Float64 requires 9 bytes.");
-        }
-
-        var valueBytes = buffer.Slice(1, 8);
-        double value;
-        if (valueBytes.IsSingleSegment)
-        {
-            value = BinaryPrimitives.ReadDoubleBigEndian(valueBytes.FirstSpan);
-        }
-        else
-        {
-            Span<byte> temp = stackalloc byte[8];
-            valueBytes.CopyTo(temp);
-            value = BinaryPrimitives.ReadDoubleBigEndian(temp);
-        }
-
-        return new ValueDecoderResult(PackStreamValue.Float(value), 9);
+        var reader = new SequenceReader<byte>(buffer);
+        ReadValidMarkerByte(ref reader);
+        var value = ReadDouble(ref reader);
+        return new ValueDecoderResult(PackStreamValue.Float(value), (int)reader.Consumed);
     }
 }
-

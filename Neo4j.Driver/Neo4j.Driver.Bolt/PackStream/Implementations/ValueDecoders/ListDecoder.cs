@@ -17,6 +17,7 @@ using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
@@ -27,7 +28,7 @@ namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 /// List16: marker 0xD5 + 2 byte big-endian count
 /// List32: marker 0xD6 + 4 byte big-endian count
 /// </summary>
-internal class ListDecoder : IRecursiveValueDecoder
+internal class ListDecoder : ValueDecoderBase, IRecursiveValueDecoder
 {
     private readonly IPackStreamSizeReader _sizeReader;
     private readonly ILogger _logger;
@@ -41,53 +42,55 @@ internal class ListDecoder : IRecursiveValueDecoder
 
     private static readonly byte[] TinyListMarkers = Enumerable.Range(0x90, 16).Select(i => (byte)i).ToArray();
 
-    public byte[] HandledMarkerBytes =>
+    public override byte[] HandledMarkerBytes =>
         [..TinyListMarkers, PackStreamMarker.List8, PackStreamMarker.List16, PackStreamMarker.List32];
 
-    public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
+    protected override bool IsMarkerByteHandled(byte markerByte)
     {
-        if (_recursionDecoder is null)
-        {
-            throw new InvalidOperationException("Recursion decoder is not set.");
-        }
-        
-        if (buffer.IsEmpty)
-        {
-            throw new InvalidOperationException("Buffer is empty. Cannot decode List value.");
-        }
+        return markerByte 
+            is >= 0x90 and <= 0x9F
+            or PackStreamMarker.List8
+            or PackStreamMarker.List16
+            or PackStreamMarker.List32;
+    }
 
-        var marker = buffer.FirstSpan[0];
+    private static IntegerSize GetIntSize(byte marker) => (IntegerSize)(marker - PackStreamMarker.List8);
+
+    public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
+    {
+        _recursionDecoder = _recursionDecoder ?? throw new InvalidOperationException("Recursion decoder is not set.");
+
+        var reader = new SequenceReader<byte>(buffer);
+        var marker = ReadValidMarkerByte(ref reader);
 
         _logger.LogDebug("Decoding list with marker 0x{Marker:X2}", marker);
 
-        var (headerSize, itemCount) = marker switch
+        var itemCount = marker switch
         {
-            >= 0x90 and <= 0x9F => (1, marker & 0x0F),
-            PackStreamMarker.List8 => _sizeReader.ReadSize8(buffer, "List8"),
-            PackStreamMarker.List16 => _sizeReader.ReadSize16(buffer, "List16"),
-            PackStreamMarker.List32 => _sizeReader.ReadSize32(buffer, "List32"),
+            >= 0x90 and <= 0x9F => marker & 0x0F,
+            PackStreamMarker.List8 or PackStreamMarker.List16 or PackStreamMarker.List32
+                => ReadSize(ref reader, GetIntSize(marker)),
             _ => throw new InvalidOperationException($"Unknown list marker byte: 0x{marker:X2}")
         };
 
-        _logger.LogDebug("List header: {HeaderSize} bytes, {ItemCount} items", headerSize, itemCount);
+        _logger.LogDebug("List header: {ItemCount} items", itemCount);
 
-        if (_logger.IsEnabled(LogLevel.Trace))
+        var itemsData = reader.UnreadSequence;
+        var totalItemBytes = CalculateTotalItemBytes(itemsData, itemCount);
+        if (!reader.TryReadExact(totalItemBytes, out var listItemsData))
         {
-            var headerBytes = buffer.Slice(0, headerSize).ToArray();
-            _logger.LogTrace("List header bytes: {HeaderBytes}", BitConverter.ToString(headerBytes));
+            throw new InvalidOperationException(
+                $"Buffer too short to read list items. Expected {totalItemBytes} bytes, got {reader.Consumed} bytes.");
         }
 
-        var itemsData = buffer.Slice(headerSize);
-        var totalItemBytes = CalculateTotalItemBytes(itemsData, itemCount);
-
         var value = PackStreamValue.List(
-            buffer.Slice(headerSize, totalItemBytes),
+            listItemsData,
             itemCount,
             _recursionDecoder);
 
-        _logger.LogDebug("Decoded list: {ItemCount} items, {TotalBytes} total bytes", itemCount, headerSize + totalItemBytes);
+        _logger.LogDebug("Decoded list: {ItemCount} items, {TotalBytes} total bytes", itemCount, totalItemBytes);
 
-        return new ValueDecoderResult(value, headerSize + totalItemBytes);
+        return new ValueDecoderResult(value, (int)reader.Consumed);
     }
 
     public void SetRecursionDecoder(IPackStreamDecoder decoder)
@@ -116,7 +119,11 @@ internal class ListDecoder : IRecursiveValueDecoder
             if (_logger.IsEnabled(LogLevel.Trace))
             {
                 var nextByte = remaining.FirstSpan[0];
-                _logger.LogTrace("Decoding list item {Index}/{Count}, next marker: 0x{Marker:X2}", i + 1, itemCount, nextByte);
+                _logger.LogTrace(
+                    "Decoding list item {Index}/{Count}, next marker: 0x{Marker:X2}",
+                    i + 1,
+                    itemCount,
+                    nextByte);
             }
 
             var result = _recursionDecoder.Decode(remaining);

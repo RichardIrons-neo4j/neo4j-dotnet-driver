@@ -16,7 +16,6 @@
 using System.Buffers;
 using System.Text;
 using FluentAssertions;
-using Moq;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
@@ -25,7 +24,7 @@ using Neo4j.Driver.Bolt.Tests.TestHelpers;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 using NUnit.Framework;
 
-namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoder;
+namespace Neo4j.Driver.Bolt.Tests.PackStream.ValueDecoders;
 
 [TestFixture]
 internal class ListDecoderTests : UnitTestBase<ListDecoder>
@@ -178,6 +177,52 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
     }
 
     [Test]
+    public void DecodesNestedList()
+    {
+        // Outer list with 2 items: [[1, 2], [3]]
+        // 0x92 = TinyList(2), 0x92 = TinyList(2), 0x01, 0x02, 0x91 = TinyList(1), 0x03
+        var buffer = new ReadOnlySequence<byte>([0x92, 0x92, 0x01, 0x02, 0x91, 0x03]);
+
+        var result = Subject.Decode(buffer);
+
+        result.Value.ListValue.Count.Should().Be(2);
+        result.BytesConsumed.Should().Be(6);
+
+        var outerList = result.Value.ListValue.ToEnumerable().ToList();
+        outerList[0].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([1, 2]);
+        outerList[1].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([3]);
+    }
+
+    [Test]
+    public void DecodesNestedListWithHeterogeneousItems()
+    {
+        // Outer list with 3 items: [[1, "Hello"], 0.1, [2]]
+        // 0x93 = TinyList(3)
+        //   0x92 = TinyList(2), 0x01, 0x20
+        //   0x11 = Float(0.1)
+        //   0x91 = TinyList(1), 0x02
+        var buffer = new ReadOnlySequence<byte>([0x93, 0x92, 0x01, 0x20, 0x11, 0x91, 0x02]);
+
+        var result = Subject.Decode(buffer);
+
+        result.Value.ListValue.Count.Should().Be(3);
+        result.BytesConsumed.Should().Be(7);
+
+        var outerList = result.Value.ListValue.ToEnumerable().ToList();
+
+        // First item: [1, "Hello"]
+        var firstInner = outerList[0].ListValue.ToEnumerable().ToList();
+        firstInner[0].IntValue.Should().Be(1);
+        firstInner[1].StringValue.ToString().Should().Be("Hello");
+
+        // Second item: 0.1
+        outerList[1].FloatValue.Should().BeApproximately(0.1, 0.001);
+
+        // Third item: [2]
+        outerList[2].ListValue.ToEnumerable().Select(v => v.IntValue).Should().BeEquivalentTo([2]);
+    }
+
+    [Test]
     public void ThrowsOnEmptyBuffer()
     {
         Action act = () => Subject.Decode(ReadOnlySequence<byte>.Empty);
@@ -293,11 +338,11 @@ internal class ListDecoderTests : UnitTestBase<ListDecoder>
             var array = buffer.ToArray();
             return array[0] switch
             {
-                0x01 => new(PackStreamValue.Int(1), 1),
-                0x02 => new(PackStreamValue.Int(2), 1),
-                0x03 => new(PackStreamValue.Int(3), 1),
-                0x04 => new(PackStreamValue.Int(4), 1),
-                0x05 => new(PackStreamValue.Int(5), 1),
+                0x01 => new(PackStreamValue.Integer(1), 1),
+                0x02 => new(PackStreamValue.Integer(2), 1),
+                0x03 => new(PackStreamValue.Integer(3), 1),
+                0x04 => new(PackStreamValue.Integer(4), 1),
+                0x05 => new(PackStreamValue.Integer(5), 1),
                 0x11 => new(PackStreamValue.Float(0.1f), 1),
                 0x12 => new(PackStreamValue.Float(0.2f), 1),
                 0x13 => new(PackStreamValue.Float(0.3f), 1),

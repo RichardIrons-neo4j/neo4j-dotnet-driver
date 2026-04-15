@@ -21,6 +21,7 @@ using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Implementations;
+using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 
 namespace Neo4j.Driver.Bolt.Tests.PackStream;
@@ -36,7 +37,7 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
         var dummyDecoder = new MockDecoder(
             [0x01],
             [0x01],
-            PackStreamValue.Int(-123));
+            PackStreamValue.Integer(-123));
         
         AutoMocker.GetMock<IValueDecoderProvider>()
             .Setup(x => x.GetDecoder(It.IsAny<byte>(), It.IsAny<IPackStreamDecoder>()))
@@ -50,7 +51,7 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
 
         var result = await Subject.Decode(byteReader.Object, 1).ToListAsync();
         result.Should().HaveCount(1);
-        result.First().Should().Be(PackStreamValue.Int(-123));
+        result.First().Should().Be(PackStreamValue.Integer(-123));
     }
 
     [Test]
@@ -59,8 +60,8 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
         Dictionary<byte[], PackStreamValue> packStreamMessages = new()
         {
             // not real packstream messages
-            [[0x01,0x02, 0x03]] = PackStreamValue.Int(12345),
-            [[0x32, 0xFF, 0xFF, 0xFF]] = PackStreamValue.Int(123456789),
+            [[0x01,0x02, 0x03]] = PackStreamValue.Integer(12345),
+            [[0x32, 0xFF, 0xFF, 0xFF]] = PackStreamValue.Integer(123456789),
             [[0xFF, 0x00]] = PackStreamValue.Float(123.456)
         };
 

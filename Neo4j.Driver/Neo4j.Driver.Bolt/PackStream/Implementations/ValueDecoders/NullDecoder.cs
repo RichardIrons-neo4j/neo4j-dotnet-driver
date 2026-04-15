@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+﻿﻿// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -16,24 +16,18 @@
 using System.Buffers;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
 using Marker = Neo4j.Driver.Internal.IO.PackStream;
+using static Neo4j.Driver.Bolt.PackStream.Implementations.Helpers.ValueDecoderHelpers;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoders;
 
-public class NullDecoder : IValueDecoder
+internal class NullDecoder : ValueDecoderBase
 {
-    public byte[] HandledMarkerBytes => [Marker.Null];
+    public override byte[] HandledMarkerBytes => [Marker.Null];
 
-    public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
+    public override ValueDecoderResult Decode(ReadOnlySequence<byte> buffer)
     {
-        if (buffer.IsEmpty)
-        {
-            throw new InvalidOperationException("Buffer is empty. Cannot decode null value.");
-        }
-
-        if (buffer.FirstSpan[0] != Marker.Null)
-        {
-            throw new InvalidOperationException($"Unknown marker byte: 0x{buffer.FirstSpan[0]:X2}");
-        }
+        var reader = new SequenceReader<byte>(buffer);
+        var marker = ReadValidMarkerByte(ref reader);
 
         return new ValueDecoderResult(PackStreamValue.Null(), 1);
     }
