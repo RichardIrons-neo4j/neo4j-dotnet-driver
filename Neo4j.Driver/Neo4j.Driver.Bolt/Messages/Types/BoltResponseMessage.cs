@@ -16,7 +16,7 @@
 using Neo4j.Driver.Bolt.Messages.Ephemeral;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
-namespace Neo4j.Driver.Bolt.Messages.Abstractions;
+namespace Neo4j.Driver.Bolt.Messages.Types;
 
 /// <summary>
 /// Discriminated union for a decoded Bolt response message.

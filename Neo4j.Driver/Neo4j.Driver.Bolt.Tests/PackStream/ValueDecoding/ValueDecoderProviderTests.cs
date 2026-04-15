@@ -20,6 +20,7 @@ using Moq;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Types.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using NUnit.Framework;
 

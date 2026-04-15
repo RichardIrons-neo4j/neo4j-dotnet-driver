@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Neo4j.Driver.Bolt.Messages.Abstractions;
+namespace Neo4j.Driver.Bolt.Messages.Types;
 
 /// <summary>
 /// Bolt response message kinds. Values match the PackStream struct tag bytes on the wire.

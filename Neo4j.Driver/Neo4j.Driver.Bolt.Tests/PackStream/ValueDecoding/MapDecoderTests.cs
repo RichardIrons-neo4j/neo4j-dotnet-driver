@@ -20,6 +20,7 @@ using Neo4j.Driver;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Types.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
 using Neo4j.Driver.Bolt.Tests.TestHelpers;

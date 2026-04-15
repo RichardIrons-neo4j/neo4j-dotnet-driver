@@ -1,9 +1,9 @@
-﻿using System.Buffers;
+using System.Buffers;
 
-namespace Neo4j.Driver.Bolt.Transport.Abstractions;
+namespace Neo4j.Driver.Bolt.Transport.Types;
 
 /// <summary>
-/// Result of a read operation from an <see cref="IByteReader"/>.
+/// Result of a read operation from an <see cref="Neo4j.Driver.Bolt.Transport.Abstractions.IByteReader"/>.
 /// </summary>
 public readonly struct ByteReadResult
 {

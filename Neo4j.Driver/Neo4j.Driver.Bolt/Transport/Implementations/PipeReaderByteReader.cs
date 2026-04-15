@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -15,6 +15,7 @@
 
 using System.IO.Pipelines;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
+using Neo4j.Driver.Bolt.Transport.Types;
 
 namespace Neo4j.Driver.Bolt.Transport.Implementations;
 

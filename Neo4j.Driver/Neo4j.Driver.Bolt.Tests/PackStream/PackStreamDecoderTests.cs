@@ -20,6 +20,7 @@ using FluentAssertions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 using Neo4j.Driver.Bolt.PackStream.Abstractions.ValueDecoding;
+using Neo4j.Driver.Bolt.PackStream.Types.ValueDecoding;
 using Neo4j.Driver.Bolt.PackStream.Implementations;
 using Neo4j.Driver.Bolt.Transport.Abstractions;
 

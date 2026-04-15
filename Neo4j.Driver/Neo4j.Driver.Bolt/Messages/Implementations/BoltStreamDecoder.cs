@@ -15,7 +15,7 @@
 
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using Neo4j.Driver.Bolt.Messages.Abstractions;
+using Neo4j.Driver.Bolt.Messages.Types;
 using Neo4j.Driver.Bolt.Messages.Abstractions.Decoding;
 using Neo4j.Driver.Bolt.PackStream;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;

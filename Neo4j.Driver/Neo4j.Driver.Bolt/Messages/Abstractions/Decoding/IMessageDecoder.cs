@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Neo4j.Driver.Bolt.Messages.Types;
 using Neo4j.Driver.Bolt.PackStream.Ephemeral;
 
 namespace Neo4j.Driver.Bolt.Messages.Abstractions.Decoding;
@@ -25,7 +26,7 @@ internal interface IMessageDecoder
     byte HandledTag { get; }
 
     /// <summary>
-    /// Decodes the struct payload into a <see cref="BoltResponseMessage"/>.
+    /// Decodes the struct payload into a <see cref="BoltResponseMessage" />.
     /// </summary>
     BoltResponseMessage Decode(PackStreamStructView structView);
 }
