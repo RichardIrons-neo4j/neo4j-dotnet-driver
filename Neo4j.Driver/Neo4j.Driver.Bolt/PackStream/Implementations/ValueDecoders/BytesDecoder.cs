@@ -36,16 +36,9 @@ internal class BytesDecoder : ValueDecoderBase
     {
         var reader = new SequenceReader<byte>(buffer);
         var marker = ReadValidMarkerByte(ref reader);
-
         var intSize = GetIntSize(marker);
         var length = ReadSize(ref reader, intSize);
-
-        if (!reader.TryReadExact(length, out var bytesData))
-        {
-            throw new InvalidOperationException(
-                $"Buffer too short to read bytes data. Expected {length} bytes, got {reader.Consumed} bytes.");
-        }
-
+        var bytesData = ReadExact(ref reader, length);
         var value = PackStreamValue.Bytes(bytesData);
         return new ValueDecoderResult(value, (int)reader.Consumed);
     }

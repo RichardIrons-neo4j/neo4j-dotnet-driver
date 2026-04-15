@@ -1,4 +1,4 @@
-﻿// Copyright (c) "Neo4j"
+// Copyright (c) "Neo4j"
 // Neo4j Sweden AB [https://neo4j.com]
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
@@ -75,14 +75,46 @@ internal class ListDecoder : ValueDecoderBase, IRecursiveValueDecoder
 
         _logger.LogDebug("List header: {ItemCount} items", itemCount);
 
-        var itemsData = reader.UnreadSequence;
-        var totalItemBytes = CalculateTotalItemBytes(itemsData, itemCount);
-        if (!reader.TryReadExact(totalItemBytes, out var listItemsData))
+        var itemsStartOffset = (int)reader.Consumed;
+        var totalItemBytes = 0;
+
+        for (var i = 0; i < itemCount; i++)
         {
-            throw new InvalidOperationException(
-                $"Buffer too short to read list items. Expected {totalItemBytes} bytes, got {reader.Consumed} bytes.");
+            if (reader.UnreadSequence.IsEmpty)
+            {
+                throw new InvalidOperationException(
+                    $"Unexpected end of data: expected {itemCount} list items but only found {i}.");
+            }
+
+            if (_logger.IsEnabled(LogLevel.Trace))
+            {
+                var nextByte = reader.UnreadSequence.FirstSpan[0];
+                _logger.LogTrace(
+                    "Decoding list item {Index}/{Count}, next marker: 0x{Marker:X2}",
+                    i + 1,
+                    itemCount,
+                    nextByte);
+            }
+
+            var result = _recursionDecoder.Decode(reader.UnreadSequence);
+            var bytesConsumed = result.BytesConsumed;
+
+            if (bytesConsumed == 0)
+            {
+                throw new InvalidOperationException("Decoder returned zero bytes consumed.");
+            }
+
+            if (bytesConsumed > reader.Remaining)
+            {
+                throw new InvalidOperationException(
+                    $"Decoder reports consuming {bytesConsumed} bytes but only {reader.Remaining} bytes remain.");
+            }
+
+            totalItemBytes += bytesConsumed;
+            reader.Advance(bytesConsumed);
         }
 
+        var listItemsData = buffer.Slice(itemsStartOffset, totalItemBytes);
         var value = PackStreamValue.List(
             listItemsData,
             itemCount,
@@ -96,54 +128,5 @@ internal class ListDecoder : ValueDecoderBase, IRecursiveValueDecoder
     public void SetRecursionDecoder(IPackStreamDecoder decoder)
     {
         _recursionDecoder = decoder;
-    }
-
-    private int CalculateTotalItemBytes(ReadOnlySequence<byte> data, int itemCount)
-    {
-        var remaining = data;
-        var totalBytes = 0;
-
-        if (_recursionDecoder is null)
-        {
-            throw new InvalidOperationException("Recursion decoder is not set.");
-        }
-
-        for (var i = 0; i < itemCount; i++)
-        {
-            if (remaining.IsEmpty)
-            {
-                throw new InvalidOperationException(
-                    $"Unexpected end of data: expected {itemCount} list items but only found {i}.");
-            }
-
-            if (_logger.IsEnabled(LogLevel.Trace))
-            {
-                var nextByte = remaining.FirstSpan[0];
-                _logger.LogTrace(
-                    "Decoding list item {Index}/{Count}, next marker: 0x{Marker:X2}",
-                    i + 1,
-                    itemCount,
-                    nextByte);
-            }
-
-            var result = _recursionDecoder.Decode(remaining);
-
-            var bytesConsumed = result.BytesConsumed;
-            if (bytesConsumed == 0)
-            {
-                throw new InvalidOperationException("Decoder returned zero bytes consumed.");
-            }
-
-            if (bytesConsumed > remaining.Length)
-            {
-                throw new InvalidOperationException(
-                    $"Decoder reports consuming {bytesConsumed} bytes but only {remaining.Length} bytes remain.");
-            }
-
-            totalBytes += bytesConsumed;
-            remaining = remaining.Slice(bytesConsumed);
-        }
-
-        return totalBytes;
     }
 }
