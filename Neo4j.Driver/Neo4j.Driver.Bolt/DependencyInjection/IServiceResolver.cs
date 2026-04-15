@@ -17,12 +17,13 @@ namespace Neo4j.Driver.Bolt.DependencyInjection;
 
 /// <summary>
 /// Resolves registered services with recursive constructor injection.
-/// Multiple implementations: resolve <c>IEnumerable&lt;T&gt;</c>.
+/// Several implementations for the same service: plain <c>Resolve&lt;T&gt;</c> uses the last registration; use
+/// <c>IEnumerable&lt;T&gt;</c> for all.
 /// </summary>
 public interface IServiceResolver
 {
     /// <summary>
-    /// Resolves <typeparamref name="T"/>. Throws if several implementations are registered for the same service.
+    /// Resolves <typeparamref name="T"/>. If several implementations are registered, the last registration wins.
     /// </summary>
     T Resolve<T>()
         where T : notnull;

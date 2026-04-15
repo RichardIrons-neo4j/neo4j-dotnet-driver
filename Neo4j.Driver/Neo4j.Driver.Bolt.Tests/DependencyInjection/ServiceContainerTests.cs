@@ -107,6 +107,17 @@ internal class ServiceContainerTests
     }
 
     [Test]
+    public void Resolve_MultipleRegistrationsForSameService_LastRegistrationWins()
+    {
+        // Plain Resolve<T> picks the last registered implementation when several exist; use IEnumerable<T> for all.
+        var container = new ServiceContainer()
+            .Register<IWidget, Widget>()
+            .Register<IWidget, OtherWidget>();
+
+        container.Resolve<IWidget>().Should().BeOfType<OtherWidget>();
+    }
+
+    [Test]
     public void Resolve_IEnumerable_ReturnsAllImplementationsInRegistrationOrder()
     {
         var container = new ServiceContainer()

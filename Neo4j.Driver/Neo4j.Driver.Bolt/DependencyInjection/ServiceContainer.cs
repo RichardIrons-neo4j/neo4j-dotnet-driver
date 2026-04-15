@@ -24,8 +24,8 @@ namespace Neo4j.Driver.Bolt.DependencyInjection;
 
 /// <summary>
 /// Internal-use container: register implementations (several per service), instances, optional assembly scan,
-/// and <see cref="Resolve{T}"/> with constructor injection. Multiple implementations: resolve
-/// <c>IEnumerable&lt;T&gt;</c> only. Ambiguous single <c>T</c> throws.
+/// and <see cref="Resolve{T}"/> with constructor injection. Several implementations for one service: plain
+/// <c>Resolve&lt;T&gt;</c> uses the last registration; <c>IEnumerable&lt;T&gt;</c> returns all in order.
 /// </summary>
 public sealed class ServiceContainer : IServiceResolver
 {
@@ -34,7 +34,8 @@ public sealed class ServiceContainer : IServiceResolver
 
     /// <summary>
     /// Registers <typeparamref name="TImplementation"/> for <typeparamref name="TService"/>.
-    /// If several implementations exist for <typeparamref name="TService"/>, resolve <c>IEnumerable&lt;TService&gt;</c>.
+    /// Later registrations for the same service override plain <c>Resolve&lt;TService&gt;</c>; use
+    /// <c>IEnumerable&lt;TService&gt;</c> for every implementation.
     /// </summary>
     public ServiceContainer Register<TService, TImplementation>()
         where TImplementation : class, TService
