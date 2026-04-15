@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Runtime.CompilerServices;
+
 namespace Neo4j.Driver.Bolt.Extensions;
 
 internal static class ExceptionExtensions
@@ -26,5 +28,22 @@ internal static class ExceptionExtensions
                 throw exceptionFactory();
             }
         }
-    }    
+        
+        public static void ThrowIf(bool condition, [CallerArgumentExpression(nameof(condition))] string? message = null)
+        {
+            if (condition)
+            {
+                throw CreateExceptionWithMessage<T>(message ?? "Condition was true");
+            }
+        }
+    }
+
+    private static Exception CreateExceptionWithMessage<T>(string message) where T : Exception
+    {
+        var result = typeof(T).GetConstructor([typeof(string)]) is not null
+            ? (Exception?)Activator.CreateInstance(typeof(T), message)
+            : Activator.CreateInstance<T>();
+
+        return result ?? throw new InvalidOperationException("Could not create exception of type " + typeof(T));
+    }
 }
