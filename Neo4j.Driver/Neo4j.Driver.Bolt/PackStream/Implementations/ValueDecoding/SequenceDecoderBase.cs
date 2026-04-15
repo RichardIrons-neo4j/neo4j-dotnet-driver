@@ -15,6 +15,7 @@
 
 using System.Buffers;
 using Microsoft.Extensions.Logging;
+using Neo4j.Driver.Bolt.Extensions;
 using Neo4j.Driver.Bolt.PackStream.Abstractions;
 
 namespace Neo4j.Driver.Bolt.PackStream.Implementations.ValueDecoding;
@@ -40,21 +41,7 @@ internal abstract class SequenceDecoderBase(ILogger logger) : ValueDecoderBase(l
 
         for (var i = 0; i < valueCount; i++)
         {
-            if (reader.UnreadSequence.IsEmpty)
-            {
-                throw new ProtocolException(
-                    $"Unexpected end of data: expected {valueCount} items but only found {i}.");
-            }
-
-            if (Logger.IsEnabled(LogLevel.Trace))
-            {
-                var nextByte = reader.UnreadSequence.FirstSpan[0];
-                Logger.LogTrace(
-                    "Decoding item {Index}/{Count}, next marker: 0x{Marker:X2}",
-                    i + 1,
-                    valueCount,
-                    nextByte);
-            }
+            ProtocolException.ThrowIf(reader.UnreadSequence.IsEmpty);
 
             var result = decoder.Decode(reader.UnreadSequence);
             var bytesConsumed = result.BytesConsumed;
