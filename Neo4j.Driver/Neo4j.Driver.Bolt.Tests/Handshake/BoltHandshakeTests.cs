@@ -89,7 +89,6 @@ internal class BoltHandshakeTests : UnitTestBase<BoltHandshake>
         return bytes;
     }
 
-    /// <summary>Handshake I/O setup; writer stays AutoMocker’s default mock unless capture is required.</summary>
     private static class Arrange
     {
         public static void FirstReadExactly(AutoMocker mocker, byte[] response)
@@ -100,7 +99,6 @@ internal class BoltHandshakeTests : UnitTestBase<BoltHandshake>
                 .Returns(ValueTask.CompletedTask);
         }
 
-        /// <summary>Records payload sent by <see cref="BoltHandshake"/> (only test that asserts on writes).</summary>
         public static List<byte> HandshakeWithWriteCapture(AutoMocker mocker, byte[] response)
         {
             var written = new List<byte>();

@@ -26,11 +26,36 @@ namespace Neo4j.Driver.Bolt.DependencyInjection;
 /// Internal-use container: register implementations (several per service), instances, optional assembly scan,
 /// and <see cref="Resolve{T}"/> with constructor injection. Several implementations for one service: plain
 /// <c>Resolve&lt;T&gt;</c> uses the last registration; <c>IEnumerable&lt;T&gt;</c> returns all in order.
+/// Optional <see cref="IServiceResolver"/> parent: when this scope has no local answer, resolution delegates to the parent.
 /// </summary>
-public class ServiceContainer : IServiceResolver
+public class ServiceContainer : IServiceResolver, IDisposable
 {
-    private readonly Dictionary<Type, List<Type>> _implementationsByService = new();
+    private readonly IServiceResolver? _parent;
+    private readonly Dictionary<Type, HashSet<Type>> _implementationsByService = new();
     private readonly Dictionary<Type, object> _instances = new();
+    private bool _disposed;
+
+    /// <summary>
+    /// Creates a root container (no parent).
+    /// </summary>
+    public ServiceContainer()
+        : this(parent: null)
+    {
+    }
+
+    /// <summary>
+    /// Creates a scoped container. Registrations on this instance override the parent; anything not
+    /// registered locally is resolved via <paramref name="parent"/>.
+    /// </summary>
+    public ServiceContainer(IServiceResolver? parent)
+    {
+        _parent = parent;
+    }
+
+    /// <summary>
+    /// Creates a child scope with this container as parent. Disposing the child does not dispose the parent.
+    /// </summary>
+    public ServiceContainer CreateScope() => new(this);
 
     /// <summary>
     /// Registers <typeparamref name="TImplementation"/> for <typeparamref name="TService"/>.
@@ -40,6 +65,7 @@ public class ServiceContainer : IServiceResolver
     public ServiceContainer Register<TService, TImplementation>()
         where TImplementation : class, TService
     {
+        ThrowIfDisposed();
         AddRegistration(typeof(TService), typeof(TImplementation));
         return this;
     }
@@ -47,6 +73,7 @@ public class ServiceContainer : IServiceResolver
     public ServiceContainer RegisterInstance<TService>(TService instance)
         where TService : class
     {
+        ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(instance);
         _instances[typeof(TService)] = instance;
         return this;
@@ -58,27 +85,30 @@ public class ServiceContainer : IServiceResolver
     /// </summary>
     public ServiceContainer RegisterTypesFromAssembly(Assembly assembly)
     {
+        ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(assembly);
 
-        foreach (var type in GetLoadableTypes(assembly).OrderBy(t => t.FullName, StringComparer.Ordinal))
+        foreach (var type in assembly.GetTypes().OrderBy(t => t.FullName, StringComparer.Ordinal))
         {
             if (!type.IsClass || type.IsAbstract || type.ContainsGenericParameters)
             {
+                // Skip non-class, abstract, or generic types
                 continue;
             }
 
             if (type.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Length > 0)
             {
+                // Skip compiler-generated types
                 continue;
             }
 
             AddRegistration(type, type);
 
-            foreach (var iface in type.GetInterfaces())
+            foreach (var interfaceType in type.GetInterfaces())
             {
-                if (iface.Assembly == assembly)
+                if (interfaceType.Assembly == assembly)
                 {
-                    AddRegistration(iface, type);
+                    AddRegistration(interfaceType, type);
                 }
             }
         }
@@ -97,40 +127,73 @@ public class ServiceContainer : IServiceResolver
     /// <inheritdoc />
     public object Resolve(Type serviceType)
     {
+        ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(serviceType);
         return ResolveCore(serviceType, new Stack<Type>());
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _implementationsByService.Clear();
+        _instances.Clear();
+    }
+
+    private void ThrowIfDisposed()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     private object ResolveCore(Type serviceType, Stack<Type> resolutionStack)
     {
         if (_instances.TryGetValue(serviceType, out var instance))
         {
+            // singleton or scoped instance already created
             return instance;
         }
 
         if (IsIEnumerableOfT(serviceType))
         {
+            // IEnumerable<T>, return all implementations
             return ResolveAll(serviceType, resolutionStack);
         }
 
-        var implementations = GetRegisteredImplementationTypes(serviceType);
-        InvalidOperationException.ThrowIf(
-            implementations.Count == 0,
-            () => new InvalidOperationException($"No registration for {serviceType.FullName}."));
-
-        return Activate(implementations[^1], resolutionStack);
+        var implementations = GetLocalImplementationTypes(serviceType);
+        return implementations.Any()
+            ? Activate(implementations[^1], resolutionStack) // last registration wins
+            : ResolveFromParentOrThrow(serviceType); // no local registration, delegate to parent if any
     }
 
-    private static bool IsIEnumerableOfT(Type serviceType) =>
-        serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>);
+    private object ResolveFromParentOrThrow(Type serviceType)
+    {
+        return _parent is not null
+            ? _parent.Resolve(serviceType)
+            : throw new InvalidOperationException($"No registration for {serviceType.FullName}.");
+    }
+
+    private static bool IsIEnumerableOfT(Type serviceType)
+    {
+        return serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>);
+    }
 
     private object ResolveAll(Type serviceType, Stack<Type> resolutionStack)
     {
         var elementType = serviceType.GetGenericArguments()[0];
-        var implTypes = GetRegisteredImplementationTypes(elementType);
+        var implTypes = GetLocalImplementationTypes(elementType);
         var listType = typeof(List<>).MakeGenericType(elementType);
         var list = (IList)Activator.CreateInstance(listType)!;
         
+        if (implTypes.Count == 0)
+        {
+            return _parent?.Resolve(serviceType) ?? list;
+        }
+
         foreach (var impl in implTypes)
         {
             list.Add(Activate(impl, resolutionStack));
@@ -146,6 +209,7 @@ public class ServiceContainer : IServiceResolver
             var path = string.Join(
                 " -> ",
                 resolutionStack.Reverse().Append(concreteType).Select(static t => t.FullName ?? t.Name));
+
             throw new InvalidOperationException(
                 $"Circular dependency while resolving {concreteType.FullName}. Path: {path}.");
         }
@@ -161,9 +225,8 @@ public class ServiceContainer : IServiceResolver
                 args[i] = ResolveCore(parameters[i].ParameterType, resolutionStack);
             }
 
-            return Activator.CreateInstance(concreteType, args)
-                ?? throw new InvalidOperationException(
-                    $"Failed to create instance of {concreteType.FullName}.");
+            return Activator.CreateInstance(concreteType, args) ??
+                throw new InvalidOperationException($"Failed to create instance of {concreteType.FullName}.");
         }
         finally
         {
@@ -171,16 +234,12 @@ public class ServiceContainer : IServiceResolver
         }
     }
 
-    private IReadOnlyList<Type> GetRegisteredImplementationTypes(Type serviceType)
+    private List<Type> GetLocalImplementationTypes(Type serviceType)
     {
-        if (_implementationsByService.TryGetValue(serviceType, out var list) && list.Count > 0)
+        // do we have a local registration?
+        if (_implementationsByService.TryGetValue(serviceType, out var set) && set.Count > 0)
         {
-            return list;
-        }
-
-        if (serviceType is { IsClass: true, IsAbstract: false })
-        {
-            return [serviceType];
+            return set.ToList();
         }
 
         return [];
@@ -188,27 +247,13 @@ public class ServiceContainer : IServiceResolver
 
     private void AddRegistration(Type serviceType, Type implementationType)
     {
-        if (!_implementationsByService.TryGetValue(serviceType, out var list))
+        if (_implementationsByService.TryGetValue(serviceType, out var types))
         {
-            list = [];
-            _implementationsByService[serviceType] = list;
+            types.Add(implementationType);
         }
-
-        if (!list.Contains(implementationType))
+        else
         {
-            list.Add(implementationType);
-        }
-    }
-
-    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
-    {
-        try
-        {
-            return assembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException ex)
-        {
-            return ex.Types.Where(t => t is not null)!;
+            _implementationsByService[serviceType] = [implementationType];
         }
     }
 
@@ -221,7 +266,7 @@ public class ServiceContainer : IServiceResolver
             return constructors[0];
         }
 
-        return constructors.MaxBy(c => c.GetParameters().Length)
-            ?? throw new InvalidOperationException($"{concreteType.FullName} has no public constructors.");
+        return constructors.MaxBy(c => c.GetParameters().Length) ??
+            throw new InvalidOperationException($"{concreteType.FullName} has no public constructors.");
     }
 }

@@ -107,6 +107,76 @@ internal class ServiceContainerTests
     }
 
     [Test]
+    public void CreateScope_ResolvesFromParentWhenNotRegisteredLocally()
+    {
+        var parent = new ServiceContainer().Register<IWidget, Widget>();
+        using var child = parent.CreateScope();
+        child.Resolve<IWidget>().Should().BeOfType<Widget>();
+    }
+
+    [Test]
+    public void CreateScope_LocalRegistrationOverridesParent()
+    {
+        var parent = new ServiceContainer().Register<IWidget, Widget>();
+        using var child = parent.CreateScope();
+        child.Register<IWidget, OtherWidget>();
+        child.Resolve<IWidget>().Should().BeOfType<OtherWidget>();
+    }
+
+    [Test]
+    public void CreateScope_NestedChildStillResolvesViaChain()
+    {
+        var root = new ServiceContainer().Register<IWidget, Widget>();
+        using var middle = root.CreateScope();
+        using var leaf = middle.CreateScope();
+        leaf.Resolve<IWidget>().Should().BeOfType<Widget>();
+    }
+
+    [Test]
+    public void CreateScope_ConstructorDependenciesResolvedFromParent()
+    {
+        var dep = new Dep();
+        var parent = new ServiceContainer()
+            .RegisterInstance<IDep>(dep)
+            .Register<Consumer, Consumer>();
+        using var child = parent.CreateScope();
+        var consumer = child.Resolve<Consumer>();
+        consumer.Dep.Should().BeSameAs(dep);
+    }
+
+    [Test]
+    public void CreateScope_IEnumerableDelegatesToParentWhenLocalListEmpty()
+    {
+        var parent = new ServiceContainer()
+            .Register<IWidget, Widget>()
+            .Register<IWidget, OtherWidget>();
+        using var child = parent.CreateScope();
+        var all = child.Resolve<IEnumerable<IWidget>>().ToList();
+        all.Should().HaveCount(2);
+        all[0].Should().BeOfType<Widget>();
+        all[1].Should().BeOfType<OtherWidget>();
+    }
+
+    [Test]
+    public void Dispose_ThenResolve_ThrowsObjectDisposedException()
+    {
+        var parent = new ServiceContainer().Register<IWidget, Widget>();
+        var child = parent.CreateScope();
+        child.Dispose();
+        var act = () => child.Resolve<IWidget>();
+        act.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Test]
+    public void DisposeChild_ParentStillResolves()
+    {
+        var parent = new ServiceContainer().Register<IWidget, Widget>();
+        var child = parent.CreateScope();
+        child.Dispose();
+        parent.Resolve<IWidget>().Should().BeOfType<Widget>();
+    }
+
+    [Test]
     public void Resolve_MultipleRegistrationsForSameService_LastRegistrationWins()
     {
         // Plain Resolve<T> picks the last registered implementation when several exist; use IEnumerable<T> for all.
