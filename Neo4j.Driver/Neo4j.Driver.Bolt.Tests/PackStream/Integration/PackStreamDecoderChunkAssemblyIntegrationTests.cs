@@ -127,7 +127,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         var materialisedListItems = new List<long>();
         var valueCount = 0;
 
-        await foreach (var value in Subject.Decode(byteReader, 1))
+        await foreach (var value in Subject.Decode(byteReader))
         {
             valueCount++;
             value.Type.Should().Be(PackStreamType.List);
@@ -163,7 +163,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         List<long>? materialisedListItems = null;
         var valueCount = 0;
 
-        await foreach (var value in Subject.Decode(byteReader, 3))
+        await foreach (var value in Subject.Decode(byteReader))
         {
             valueCount++;
             switch (valueCount)
@@ -209,7 +209,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         string? materialisedString = null;
         var valueCount = 0;
 
-        await foreach (var value in Subject.Decode(byteReader, 2))
+        await foreach (var value in Subject.Decode(byteReader))
         {
             valueCount++;
             if (valueCount == 1)
@@ -254,7 +254,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         var mapEntries = new List<(string Key, long Value)>();
         var valueCount = 0;
 
-        await foreach (var value in Subject.Decode(byteReader, 1))
+        await foreach (var value in Subject.Decode(byteReader))
         {
             valueCount++;
             var list = value.ListValue.ToEnumerable().ToList();
@@ -302,7 +302,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         var materialisedListItems = new List<long>();
         var valueCount = 0;
 
-        await foreach (var value in Subject.Decode(byteReader, 1))
+        await foreach (var value in Subject.Decode(byteReader))
         {
             valueCount++;
             value.Type.Should().Be(PackStreamType.List);
@@ -338,7 +338,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         ];
 
         var byteReader = await CreateChunkedByteReader([chunk1, chunk2]);
-        var values = await Subject.Decode(byteReader, 2).ToListAsync();
+        var values = await Subject.Decode(byteReader).Take(2).ToListAsync();
 
         values.Should().HaveCount(2);
         values[0].BooleanValue.Should().BeTrue();
@@ -370,7 +370,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         List<long>? materialisedStructFields = null;
         var valueCount = 0;
 
-        await foreach (var value in Subject.Decode(byteReader, 2))
+        await foreach (var value in Subject.Decode(byteReader))
         {
             valueCount++;
             if (valueCount == 1)
@@ -410,7 +410,7 @@ internal class PackStreamDecoderChunkAssemblyIntegrationTests
         long? materialisedListItem = null;
         var valueCount = 0;
 
-        await foreach (var value in Subject.Decode(byteReader, 1))
+        await foreach (var value in Subject.Decode(byteReader))
         {
             valueCount++;
             value.ListValue.Count.Should().Be(1);

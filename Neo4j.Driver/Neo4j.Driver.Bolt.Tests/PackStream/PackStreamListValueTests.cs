@@ -209,7 +209,7 @@ internal class PackStreamListViewTests
             return new ValueDecoderResult(PackStreamValueView.Integer(value), 1);
         }
 
-        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
     }
 
@@ -221,7 +221,7 @@ internal class PackStreamListViewTests
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer) =>
             new(PackStreamValueView.Integer(1), 0);
 
-        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
     }
 
@@ -233,7 +233,7 @@ internal class PackStreamListViewTests
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer) =>
             new(PackStreamValueView.Integer(1), 100);
 
-        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
     }
 }

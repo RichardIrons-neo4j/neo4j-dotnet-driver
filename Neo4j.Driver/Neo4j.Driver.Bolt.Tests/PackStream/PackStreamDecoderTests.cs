@@ -49,7 +49,7 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
             .Setup(x => x.ReadMessagesAsync(byteReader.Object, CancellationToken.None))
             .Returns(messages.ToAsyncEnumerable());
 
-        var result = await Subject.Decode(byteReader.Object, 1).ToListAsync();
+        var result = await Subject.Decode(byteReader.Object).Take(1).ToListAsync();
         result.Should().HaveCount(1);
         result.First().Should().Be(PackStreamValueView.Integer(-123));
     }
@@ -79,7 +79,7 @@ internal class PackStreamDecoderTests : UnitTestBase<PackStreamDecoder>
             .Setup(x => x.ReadMessagesAsync(byteReader.Object, CancellationToken.None))
             .Returns(messages.ToAsyncEnumerable());
 
-        var result = await Subject.Decode(byteReader.Object, 3).ToListAsync();
+        var result = await Subject.Decode(byteReader.Object).Take(3).ToListAsync();
         result.Should().HaveCount(3);
         result.Should().BeEquivalentTo(packStreamMessages.Values);
     }

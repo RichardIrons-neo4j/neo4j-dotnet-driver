@@ -262,7 +262,7 @@ internal class MessageDecoderTests
         public ValueDecoderResult Decode(ReadOnlySequence<byte> buffer) =>
             new(PackStreamValueView.Null(), buffer.IsEmpty ? 0 : 1);
 
-        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
     }
 }

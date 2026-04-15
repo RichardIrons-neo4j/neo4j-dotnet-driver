@@ -283,7 +283,7 @@ internal class StructDecoderTests : DecoderTestsBase<StructDecoder>
             _structDecoder.SetRecursionDecoder(this);
         }
 
-        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount) =>
+        public IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
 
         private static ReadOnlySequence<byte> GetUtfBytes(string str) => new(Encoding.UTF8.GetBytes(str));

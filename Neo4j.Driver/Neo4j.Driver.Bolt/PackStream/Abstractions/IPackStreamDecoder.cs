@@ -23,9 +23,10 @@ namespace Neo4j.Driver.Bolt.PackStream.Abstractions;
 internal interface IPackStreamDecoder
 {
     /// <summary>
-    /// Decodes values asynchronously from a byte reader.
+    /// Decodes values asynchronously from a byte reader. Yields one value per Bolt message body.
+    /// The consumer stops enumerating when it has read enough; the reader position advances accordingly.
     /// </summary>
-    IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, int valueCount);
+    IAsyncEnumerable<PackStreamValueView> Decode(IByteReader byteReader, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Decodes a single value synchronously from an already-buffered sequence.
