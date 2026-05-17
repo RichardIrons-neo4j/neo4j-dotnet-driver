@@ -27,6 +27,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo4j.Driver.Tests.TestBack
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo4j.Driver.Tests.BenchkitBackend", "Neo4j.Driver.Tests.BenchkitBackend\Neo4j.Driver.Tests.BenchkitBackend.csproj", "{EFFB6047-6BD4-4CEE-9D5B-09DFE8B8340E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo4j.Driver.Bolt", "Neo4j.Driver.Bolt\Neo4j.Driver.Bolt.csproj", "{272D1081-A988-4313-89D4-7C2B103A6BC1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo4j.Driver.Bolt.Tests", "Neo4j.Driver.Bolt.Tests\Neo4j.Driver.Bolt.Tests.csproj", "{F4CE078D-FA06-461E-AE7A-A12723C3E279}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo4j.Driver.Bolt.TestHarness", "Neo4j.Driver.Bolt.TestHarness\Neo4j.Driver.Bolt.TestHarness.csproj", "{D164C86F-B423-40FD-9931-5DB55C0E97FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -76,6 +82,24 @@ Global
 		{EFFB6047-6BD4-4CEE-9D5B-09DFE8B8340E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EFFB6047-6BD4-4CEE-9D5B-09DFE8B8340E}.CI|Any CPU.ActiveCfg = CI|Any CPU
 		{EFFB6047-6BD4-4CEE-9D5B-09DFE8B8340E}.CI|Any CPU.Build.0 = CI|Any CPU
+		{272D1081-A988-4313-89D4-7C2B103A6BC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{272D1081-A988-4313-89D4-7C2B103A6BC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{272D1081-A988-4313-89D4-7C2B103A6BC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{272D1081-A988-4313-89D4-7C2B103A6BC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{272D1081-A988-4313-89D4-7C2B103A6BC1}.CI|Any CPU.ActiveCfg = CI|Any CPU
+		{272D1081-A988-4313-89D4-7C2B103A6BC1}.CI|Any CPU.Build.0 = CI|Any CPU
+		{F4CE078D-FA06-461E-AE7A-A12723C3E279}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4CE078D-FA06-461E-AE7A-A12723C3E279}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4CE078D-FA06-461E-AE7A-A12723C3E279}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4CE078D-FA06-461E-AE7A-A12723C3E279}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4CE078D-FA06-461E-AE7A-A12723C3E279}.CI|Any CPU.ActiveCfg = CI|Any CPU
+		{F4CE078D-FA06-461E-AE7A-A12723C3E279}.CI|Any CPU.Build.0 = CI|Any CPU
+		{D164C86F-B423-40FD-9931-5DB55C0E97FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D164C86F-B423-40FD-9931-5DB55C0E97FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D164C86F-B423-40FD-9931-5DB55C0E97FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D164C86F-B423-40FD-9931-5DB55C0E97FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D164C86F-B423-40FD-9931-5DB55C0E97FC}.CI|Any CPU.ActiveCfg = CI|Any CPU
+		{D164C86F-B423-40FD-9931-5DB55C0E97FC}.CI|Any CPU.Build.0 = CI|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
