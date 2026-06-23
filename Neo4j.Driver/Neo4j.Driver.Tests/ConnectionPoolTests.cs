@@ -171,6 +171,56 @@ public class ConnectionPoolTests
         }
 
         [Fact]
+        public async Task ShouldNotLeakPoolSizeWhenLivenessProbeHangsDuringAcquisitionTimeout()
+        {
+            var connectionMock = new Mock<IPooledConnection>();
+            connectionMock
+                .Setup(x => x.InitAsync(It.IsAny<SessionConfig>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            connectionMock
+                .Setup(x => x.ResetAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            connectionMock
+                .Setup(x => x.SyncAsync(It.IsAny<CancellationToken>()))
+                .Returns<CancellationToken>(ct => Task.Delay(Timeout.Infinite, ct));
+
+            var connectionDestroyed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            connectionMock
+                .Setup(x => x.DestroyAsync())
+                .Returns(() =>
+                {
+                    connectionDestroyed.TrySetResult();
+                    return Task.CompletedTask;
+                });
+
+            var factoryMock = new Mock<IPooledConnectionFactory>();
+            factoryMock
+                .Setup(x => x.Create(It.IsAny<Uri>(), It.IsAny<IConnectionReleaseManager>(), It.IsAny<IAuthToken>()))
+                .Returns(connectionMock.Object);
+
+            CancellationTokenSource acquisitionTimeoutSource = null;
+            var pool = new ConnectionPool(
+                factoryMock.Object,
+                driverContext: TestDriverContext.With(
+                    config: x => x
+                        .WithMaxConnectionPoolSize(1)
+                        .WithConnectionAcquisitionTimeout(TimeSpan.FromMilliseconds(200))),
+                validator: new LivenessProbeValidator(),
+                acquisitionTimeoutSourceFactory: _ => acquisitionTimeoutSource = new CancellationTokenSource());
+
+            var act = () => pool.AcquireAsync(AccessMode.Read, null, null, Bookmarks.Empty);
+
+            await act.Should().ThrowAsync<ClientException>();
+
+            acquisitionTimeoutSource.IsCancellationRequested.Should().BeTrue();
+
+            await connectionDestroyed.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            pool.PoolSize.Should().Be(0);
+        }
+
+        [Fact]
         public async Task ShouldNotExceedIdleLimit()
         {
             var pool = NewConnectionPool(
@@ -1724,6 +1774,12 @@ public class ConnectionPoolTests
             idleConnections.Count.Should().Be(0);
             VerifyDestroyAsyncCalledOnce(idleMocks);
         }
+    }
+
+    private sealed class LivenessProbeValidator : IConnectionValidator
+    {
+        public Task<bool> OnReleaseAsync(IPooledConnection connection) => Task.FromResult(true);
+        public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection) => AcquireStatus.RequiresLivenessProbe;
     }
 
     private class TestConnectionValidator : IConnectionValidator
