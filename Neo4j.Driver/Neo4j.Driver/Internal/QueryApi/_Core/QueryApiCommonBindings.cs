@@ -40,7 +40,8 @@ internal static class QueryApiCommonBindings
                 })
 
             .Bind<IAsyncRetryLogic>()
-            .To((DriverContext context, ILogger logger) => new AsyncRetryLogic(context, logger))
+                .To((DriverContext context, ILogger logger) => new AsyncRetryLogic(context, logger))
+                
             .Bind<IHttpRequestEnricher>(nameof(QueryApiAuthEnricher)).To<QueryApiAuthEnricher>()
             .Bind<IQueryApiClient>().To<QueryApiClient>()
             .Bind<IQueryApiErrorChecker>().To<QueryApiErrorChecker>()
