@@ -19,6 +19,6 @@ if __name__ == "__main__":
     # This generates a bit ugly output when not in TeamCity, it can be fixed by checking the TEST_IN_TEAMCITY
     # environment flag...(but needs to be passed to the container somehow)
     os.environ.update({"TEAMCITY_PROJECT_NAME":"unittests"})
-    run(["dotnet", "test", "Neo4j.Driver.Tests.csproj"])
+    run(["dotnet", "test", "Neo4j.Driver.Tests.csproj", "--configuration", "CI"])
     os.chdir(wd)
 
