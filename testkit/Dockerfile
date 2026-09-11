@@ -1,13 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
-RUN apt -o Acquire::Retries=5 update \
-	&& ln -fs /usr/share/zoneinfo/Europe/London /etc/localtime \
-	&& DEBIAN_FRONTEND=noninteractive apt -o Acquire::Retries=5 install -y tzdata \
-	&& DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend noninteractive tzdata \
-	&& rm -rf /var/lib/apt/lists/*
+ENV TZ=Europe/London
 
-RUN apt -o Acquire::Retries=5 update \
-	&& apt -o Acquire::Retries=5 install -y python3 \
+RUN apt -o Acquire::Retries=5 -o Acquire::Languages=none update \
+	&& DEBIAN_FRONTEND=noninteractive apt -o Acquire::Retries=5 install -y --no-install-recommends python3 \
 	&& rm -rf /var/lib/apt/lists/*
 
 # install .NET runtimes
