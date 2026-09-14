@@ -54,7 +54,7 @@ public sealed class PropertyEncryptionIT : DirectDriverTestBase
             builder => builder.WithPropertyEncryptionProfiles([profile]));
 
         var propertyEncryption = driver.PropertyEncryption();
-        await propertyEncryption.KeyManager().CreateAsync("main", token);
+        await propertyEncryption.KeyManager().CreateAsync("main", cancellationToken: token);
 
         var encrypted = await propertyEncryption.EncryptRequest()
             .FromValue("hello from a real database")

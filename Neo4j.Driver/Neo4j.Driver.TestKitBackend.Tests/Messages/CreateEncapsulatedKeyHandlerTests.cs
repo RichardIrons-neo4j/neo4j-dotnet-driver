@@ -33,7 +33,7 @@ public class CreateEncapsulatedKeyHandlerTests
         var propertyEncryptionMock = driverMock.WithPropertyEncryption();
         var keyManagerMock = new Mock<IEncapsulatedKeyManager>();
         propertyEncryptionMock.Setup(p => p.KeyManager()).Returns(keyManagerMock.Object);
-        keyManagerMock.Setup(m => m.CreateAsync("k1", It.IsAny<CancellationToken>()))
+        keyManagerMock.Setup(m => m.CreateAsync("k1", null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new EncapsulatedKey("key-1", "k1"));
 
         var handler = _autoMocker.CreateInstance<CreateEncapsulatedKeyHandler>();
@@ -52,7 +52,7 @@ public class CreateEncapsulatedKeyHandlerTests
         var propertyEncryptionMock = driverMock.WithPropertyEncryption();
         var keyManagerMock = new Mock<IEncapsulatedKeyManager>();
         propertyEncryptionMock.Setup(p => p.KeyManager("p1")).Returns(keyManagerMock.Object);
-        keyManagerMock.Setup(m => m.CreateAsync("k1", It.IsAny<CancellationToken>()))
+        keyManagerMock.Setup(m => m.CreateAsync("k1", null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new EncapsulatedKey("key-1", "k1"));
 
         var handler = _autoMocker.CreateInstance<CreateEncapsulatedKeyHandler>();

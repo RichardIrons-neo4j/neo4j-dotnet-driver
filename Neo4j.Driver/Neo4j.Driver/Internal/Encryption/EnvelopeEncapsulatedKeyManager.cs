@@ -42,23 +42,68 @@ internal class EnvelopeEncapsulatedKeyManager : IEncapsulatedKeyManager
         _errorPolicy = errorPolicy;
     }
 
-    public async Task<EncapsulatedKey> CreateAsync(string alias, CancellationToken cancellationToken = default)
+    public async Task<EncapsulatedKey> CreateAsync(
+        string? alias = null,
+        IKeyEncapsulationOptions? encapsulationOptions = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var result = await _keyEncapsulationService.EncapsulateAsync(EmptyOptions, cancellationToken)
+            var result = await _keyEncapsulationService
+                .EncapsulateAsync(encapsulationOptions ?? EmptyOptions, cancellationToken)
                 .ConfigureAwait(false);
 
-            return await _keyRepository.CreateAsync(
-                    alias,
-                    result.Encapsulation,
-                    result.Metadata,
-                    cancellationToken)
+            return await _keyRepository
+                .CreateAsync(alias, result.Encapsulation, result.Metadata, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception e)
         {
             _errorPolicy.Throw("key creation", e);
+            throw;
+        }
+    }
+
+    public async Task<EncapsulatedKey?> FindByAliasAsync(string alias, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _keyRepository.FindByAliasAsync(alias, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _errorPolicy.Throw("key lookup", e);
+            throw;
+        }
+    }
+
+    public async Task SetAliasByIdAsync(string id, string? alias, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _keyRepository.SetAliasByIdAsync(id, alias, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _errorPolicy.Throw("alias update", e);
+            throw;
+        }
+    }
+
+    public Task DeleteAliasByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return SetAliasByIdAsync(id, null, cancellationToken);
+    }
+
+    public async Task DeleteByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _keyRepository.DeleteByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _errorPolicy.Throw("key deletion", e);
             throw;
         }
     }

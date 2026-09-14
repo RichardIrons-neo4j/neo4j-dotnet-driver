@@ -59,7 +59,7 @@ public class EnvelopeEncapsulatedKeyManagerProviderTests
         var started = CreateSubject().TryCreateKeyManager(profile, out var manager);
 
         started.Should().BeTrue();
-        var result = await manager!.CreateAsync("alias-1", TestContext.Current.CancellationToken);
+        var result = await manager!.CreateAsync("alias-1", cancellationToken: TestContext.Current.CancellationToken);
 
         result.Should().BeSameAs(stored);
     }
