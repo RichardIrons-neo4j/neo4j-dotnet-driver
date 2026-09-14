@@ -28,13 +28,13 @@ if __name__ == "__main__":
     os.environ.update({"TEAMCITY_PROJECT_NAME": "integrationtests"})
 
     failFlag = False
-    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--filter", "DisplayName~IntegrationTests.Internals"])
-    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--filter", "DisplayName~IntegrationTests.Direct"])
-    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--filter", "DisplayName~IntegrationTests.Reactive&DisplayName!~IntegrationTests.Reactive.NestedQueriesIT"])
+    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--configuration", "CI", "--filter", "DisplayName~IntegrationTests.Internals"])
+    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--configuration", "CI", "--filter", "DisplayName~IntegrationTests.Direct"])
+    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--configuration", "CI", "--filter", "DisplayName~IntegrationTests.Reactive&DisplayName!~IntegrationTests.Reactive.NestedQueriesIT"])
     # TODO: Re-enable for cluster tests if not replaced by testkit native ones.
-    # run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--filter", "DisplayName~IntegrationTests.Routing"])
-    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--filter", "DisplayName~IntegrationTests.Types"])
-    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--filter", "DisplayName~Examples"])
+    # run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--configuration", "CI", "--filter", "DisplayName~IntegrationTests.Routing"])
+    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--configuration", "CI", "--filter", "DisplayName~IntegrationTests.Types"])
+    run(["dotnet", "test", "Neo4j.Driver.Tests.Integration.csproj", "--configuration", "CI", "--filter", "DisplayName~Examples"])
 
     os.chdir(wd)
 
