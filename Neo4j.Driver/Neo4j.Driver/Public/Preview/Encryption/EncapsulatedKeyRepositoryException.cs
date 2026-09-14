@@ -21,7 +21,7 @@ namespace Neo4j.Driver.Preview.Encryption;
 /// The base exception for failures raised by an <see cref="IEncapsulatedKeyRecordRepository"/>. This
 /// exception is part of the Encryption Preview feature, and is subject to change or removal.
 /// </summary>
-public class EncapsulatedKeyRepositoryException(string message) : Neo4jException(message);
+public class EncapsulatedKeyRepositoryException(string message) : PropertyEncryptionException(message);
 
 /// <summary>
 /// Thrown when an <see cref="IEncapsulatedKeyRecordRepository"/> is asked for a key id it doesn't have.

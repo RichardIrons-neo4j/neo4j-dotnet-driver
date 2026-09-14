@@ -16,6 +16,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using FluentAssertions;
 using Neo4j.Driver.Preview.Encryption;
 using Xunit;
@@ -24,6 +25,25 @@ namespace Neo4j.Driver.Tests.Public.Preview.Encryption;
 
 public class PropertyEncryptionExceptionTests
 {
+    [Fact]
+    public void IsTheBaseOfEveryPropertyEncryptionException()
+    {
+        var others = typeof(PropertyEncryptionException).Assembly
+            .GetExportedTypes()
+            .Where(type => type.Namespace == typeof(PropertyEncryptionException).Namespace)
+            .Where(type => typeof(Exception).IsAssignableFrom(type))
+            .Where(type => type != typeof(PropertyEncryptionException))
+            .ToList();
+
+        var strays = others
+            .Where(type => !typeof(PropertyEncryptionException).IsAssignableFrom(type))
+            .Select(type => type.Name)
+            .ToList();
+
+        others.Should().NotBeEmpty();
+        strays.Should().BeEmpty();
+    }
+
     [Fact]
     public void CarriesTheMessageAndCause()
     {
