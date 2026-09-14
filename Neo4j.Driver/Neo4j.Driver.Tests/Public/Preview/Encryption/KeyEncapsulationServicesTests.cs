@@ -50,7 +50,7 @@ public class KeyEncapsulationServicesTests
 
         var unwrapped = await subject.DecapsulateAsync(
             encapsulated.Encapsulation,
-            encapsulated.Options.ToMap(),
+            encapsulated.Metadata,
             TestContext.Current.CancellationToken);
 
         unwrapped.Should().Equal(encapsulated.Key);
@@ -76,7 +76,7 @@ public class KeyEncapsulationServicesTests
         var otherService = KeyEncapsulationServices.Local(Sequence(32, seed: 0x90));
         var act = async () => await otherService.DecapsulateAsync(
             encapsulated.Encapsulation,
-            encapsulated.Options.ToMap(),
+            encapsulated.Metadata,
             TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<Exception>();

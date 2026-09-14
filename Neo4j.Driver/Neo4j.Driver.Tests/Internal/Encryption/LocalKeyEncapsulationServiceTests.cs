@@ -74,7 +74,7 @@ public class LocalKeyEncapsulationServiceTests
 
         result.Key.Should().Equal(Dek);
         result.Encapsulation.Should().Equal(wrapped.CipherOutput);
-        result.Options.ToMap()["iv"].Should().Be("encoded-iv");
+        result.Metadata["iv"].Should().Be("encoded-iv");
     }
 
     [Fact]

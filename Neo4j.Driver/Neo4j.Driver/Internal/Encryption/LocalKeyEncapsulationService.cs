@@ -45,7 +45,7 @@ internal class LocalKeyEncapsulationService : IKeyEncapsulationService
         _base64Codec = base64Codec;
     }
 
-    public Task<EncapsulationResult> EncapsulateAsync(
+    public Task<KeyEncapsulationResult> EncapsulateAsync(
         IKeyEncapsulationOptions options,
         CancellationToken cancellationToken = default)
     {
@@ -59,19 +59,18 @@ internal class LocalKeyEncapsulationService : IKeyEncapsulationService
 
         var wrapped = _aeadCipher.Encrypt(_kek, iv, dek, aad: []).CipherOutput;
 
-        var resultOptions = new MapKeyEncapsulationOptions(
-            new Dictionary<string, string> { [IvOption] = _base64Codec.Encode(iv) });
+        var metadata = new Dictionary<string, string> { [IvOption] = _base64Codec.Encode(iv) };
 
-        return Task.FromResult(new EncapsulationResult(wrapped, resultOptions, dek));
+        return Task.FromResult(new KeyEncapsulationResult(wrapped, metadata, dek));
     }
 
     public Task<byte[]> DecapsulateAsync(
         byte[] encapsulation,
-        IReadOnlyDictionary<string, string> options,
+        IReadOnlyDictionary<string, string> metadata,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var iv = _base64Codec.Decode(options[IvOption]);
+        var iv = _base64Codec.Decode(metadata[IvOption]);
         var decapsulatedKey = _aeadCipher.Decrypt(_kek, iv, encapsulation, aad: []);
         return Task.FromResult(decapsulatedKey);
     }

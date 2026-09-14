@@ -32,7 +32,7 @@ internal class TestkitKeyEncapsulationService : IKeyEncapsulationService
         _kek = kek ?? RandomNumberGenerator.GetBytes(KeyLength);
     }
 
-    public Task<EncapsulationResult> EncapsulateAsync(
+    public Task<KeyEncapsulationResult> EncapsulateAsync(
         IKeyEncapsulationOptions options,
         CancellationToken cancellationToken = default)
     {
@@ -49,19 +49,18 @@ internal class TestkitKeyEncapsulationService : IKeyEncapsulationService
             encapsulation.AsSpan(0, dataKey.Length),
             encapsulation.AsSpan(dataKey.Length));
 
-        var wrapOptions = new WrapOptions(
-            new Dictionary<string, string> { [IvOption] = Convert.ToBase64String(iv) });
+        var metadata = new Dictionary<string, string> { [IvOption] = Convert.ToBase64String(iv) };
 
-        return Task.FromResult(new EncapsulationResult(encapsulation, wrapOptions, dataKey));
+        return Task.FromResult(new KeyEncapsulationResult(encapsulation, metadata, dataKey));
     }
 
     public Task<byte[]> DecapsulateAsync(
         byte[] encapsulation,
-        IReadOnlyDictionary<string, string> options,
+        IReadOnlyDictionary<string, string> metadata,
         CancellationToken cancellationToken = default)
     {
         Span<byte> iv = stackalloc byte[IvLength];
-        if (!Convert.TryFromBase64String(options[IvOption], iv, out var ivLength) || ivLength != IvLength)
+        if (!Convert.TryFromBase64String(metadata[IvOption], iv, out var ivLength) || ivLength != IvLength)
         {
             throw new ArgumentException($"The '{IvOption}' option is not a {IvLength}-byte base64 value.");
         }
@@ -76,10 +75,5 @@ internal class TestkitKeyEncapsulationService : IKeyEncapsulationService
             dataKey);
 
         return Task.FromResult(dataKey);
-    }
-
-    private record WrapOptions(IReadOnlyDictionary<string, string> Map) : IKeyEncapsulationOptions
-    {
-        public IReadOnlyDictionary<string, string> ToMap() => Map;
     }
 }

@@ -35,7 +35,7 @@ public interface IKeyEncapsulationService
     /// <param name="options">Options controlling the encapsulation.</param>
     /// <param name="cancellationToken">The cancellation token for the operation.</param>
     /// <returns>The generated key and its encapsulation.</returns>
-    Task<EncapsulationResult> EncapsulateAsync(
+    Task<KeyEncapsulationResult> EncapsulateAsync(
         IKeyEncapsulationOptions options,
         CancellationToken cancellationToken = default);
 
@@ -44,11 +44,11 @@ public interface IKeyEncapsulationService
     /// Preview feature, and is subject to change or removal.
     /// </summary>
     /// <param name="encapsulation">The encapsulated (wrapped) data encryption key.</param>
-    /// <param name="options">The options that were persisted alongside the encapsulation when it was created.</param>
+    /// <param name="metadata">The metadata that was persisted alongside the encapsulation when it was created.</param>
     /// <param name="cancellationToken">The cancellation token for the operation.</param>
     /// <returns>The unwrapped plaintext data encryption key.</returns>
     Task<byte[]> DecapsulateAsync(
         byte[] encapsulation,
-        IReadOnlyDictionary<string, string> options,
+        IReadOnlyDictionary<string, string> metadata,
         CancellationToken cancellationToken = default);
 }

@@ -32,16 +32,16 @@ public class TestkitKeyEncapsulationServiceTests
         return new TestkitKeyEncapsulationService(kek ?? Kek);
     }
 
-    private static Task<EncapsulationResult> Encapsulate(TestkitKeyEncapsulationService service)
+    private static Task<KeyEncapsulationResult> Encapsulate(TestkitKeyEncapsulationService service)
     {
         return service.EncapsulateAsync(NoOptions, TestContext.Current.CancellationToken);
     }
 
-    private static Task<byte[]> Decapsulate(TestkitKeyEncapsulationService service, EncapsulationResult result)
+    private static Task<byte[]> Decapsulate(TestkitKeyEncapsulationService service, KeyEncapsulationResult result)
     {
         return service.DecapsulateAsync(
             result.Encapsulation,
-            result.Options.ToMap(),
+            result.Metadata,
             TestContext.Current.CancellationToken);
     }
 
@@ -82,7 +82,7 @@ public class TestkitKeyEncapsulationServiceTests
     {
         var encapsulated = await Encapsulate(Service());
 
-        var iv = Convert.FromBase64String(encapsulated.Options.ToMap()["iv"]);
+        var iv = Convert.FromBase64String(encapsulated.Metadata["iv"]);
 
         iv.Should().HaveCount(12);
     }

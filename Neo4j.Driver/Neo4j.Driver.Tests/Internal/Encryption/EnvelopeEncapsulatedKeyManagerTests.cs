@@ -42,16 +42,16 @@ public class EnvelopeEncapsulatedKeyManagerTests
     public async Task CreateAsync_EncapsulatesWithEmptyOptionsAndSavesTheResultUnderTheAlias()
     {
         var token = TestContext.Current.CancellationToken;
-        var resultOptions = new MapKeyEncapsulationOptions(new Dictionary<string, string> { ["iv"] = "abc" });
-        var encapsulationResult = new EncapsulationResult([0xAA], resultOptions, [0xBB]);
-        var stored = new EncapsulatedKeyRecord("key-1", "alias-1", [0xAA], resultOptions.ToMap());
+        var resultMetadata = new Dictionary<string, string> { ["iv"] = "abc" };
+        var encapsulationResult = new KeyEncapsulationResult([0xAA], resultMetadata, [0xBB]);
+        var stored = new EncapsulatedKeyRecord("key-1", "alias-1", [0xAA], resultMetadata);
 
         _kes.Setup(k => k.EncapsulateAsync(
                 It.Is<IKeyEncapsulationOptions>(o => o.ToMap().Count == 0),
                 token))
             .ReturnsAsync(encapsulationResult);
 
-        _repository.Setup(r => r.CreateAsync("alias-1", encapsulationResult.Encapsulation, resultOptions.ToMap(), token))
+        _repository.Setup(r => r.CreateAsync("alias-1", encapsulationResult.Encapsulation, resultMetadata, token))
             .ReturnsAsync(stored);
 
         var result = await CreateSubject().CreateAsync("alias-1", token);

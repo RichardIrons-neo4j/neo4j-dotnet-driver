@@ -38,9 +38,9 @@ public class EnvelopeEncapsulatedKeyManagerProviderTests
     {
         var kes = new Mock<IKeyEncapsulationService>();
         var repository = new Mock<IEncapsulatedKeyRecordRepository>();
-        var encapsulationResult = new EncapsulationResult(
+        var encapsulationResult = new KeyEncapsulationResult(
             [0xAA],
-            new MapKeyEncapsulationOptions(new Dictionary<string, string> { ["iv"] = "abc" }),
+            new Dictionary<string, string> { ["iv"] = "abc" },
             [0xBB]);
         var stored = new EncapsulatedKeyRecord("key-1", "alias-1", [0xAA], new Dictionary<string, string> { ["iv"] = "abc" });
 

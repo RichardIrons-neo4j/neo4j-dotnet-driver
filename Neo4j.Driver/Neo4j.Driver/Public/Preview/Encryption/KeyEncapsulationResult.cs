@@ -15,6 +15,10 @@
 
 #nullable enable
 
+#nullable enable
+
+using System.Collections.Generic;
+
 namespace Neo4j.Driver.Preview.Encryption;
 
 /// <summary>
@@ -22,9 +26,12 @@ namespace Neo4j.Driver.Preview.Encryption;
 /// record is part of the Encryption Preview feature, and is subject to change or removal.
 /// </summary>
 /// <param name="Encapsulation">The wrapped (encapsulated) data encryption key, opaque to the caller.</param>
-/// <param name="Options">
-/// Options describing how the encapsulation was produced, to be persisted alongside it and supplied back to
+/// <param name="Metadata">
+/// Everything needed to unwrap the encapsulation again, to be persisted alongside it and supplied back to
 /// <see cref="IKeyEncapsulationService.DecapsulateAsync"/>.
 /// </param>
 /// <param name="Key">The generated plaintext data encryption key.</param>
-public record EncapsulationResult(byte[] Encapsulation, IKeyEncapsulationOptions Options, byte[] Key);
+public record KeyEncapsulationResult(
+    byte[] Encapsulation,
+    IReadOnlyDictionary<string, string> Metadata,
+    byte[] Key);

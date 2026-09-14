@@ -52,7 +52,7 @@ internal class EnvelopeEncapsulatedKeyManager : IEncapsulatedKeyManager
             return await _keyRepository.CreateAsync(
                     alias,
                     result.Encapsulation,
-                    result.Options.ToMap(),
+                    result.Metadata,
                     cancellationToken)
                 .ConfigureAwait(false);
         }
