@@ -30,6 +30,8 @@ public class EncryptedValueBytesCodecTests
     private readonly Mock<IEncryptedStructureCodec> _structureCodec = new();
 
     private static EncryptedStructure Sample() => new(
+        ProfileType: "ENVELOPE",
+        ProfileVersion: 1,
         ProfileName: "Envelope",
         CipherOutput: [0xDE, 0xAD],
         TypeName: "Integer",

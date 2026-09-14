@@ -26,7 +26,7 @@ internal class EncryptedStructureCodec : IEncryptedStructureCodec
 {
     private static readonly BoltProtocolVersion StructureVersion = BoltProtocolVersion.V6_1;
     private const byte EncryptedSignature = 0x65;
-    private const int FieldCount = 6;
+    private const int FieldCount = 8;
 
     private readonly IPackStreamMemorySerializer _packStreamMemorySerializer;
     private readonly MessageFormat _format;
@@ -46,6 +46,8 @@ internal class EncryptedStructureCodec : IEncryptedStructureCodec
             writer =>
             {
                 writer.WriteStructHeader(FieldCount, EncryptedSignature);
+                writer.Write(structure.ProfileType);
+                writer.Write(structure.ProfileVersion);
                 writer.Write(structure.ProfileName);
                 writer.Write(structure.CipherOutput);
                 writer.Write(structure.TypeName);
@@ -75,6 +77,8 @@ internal class EncryptedStructureCodec : IEncryptedStructureCodec
         ReadAndValidateSignature(reader);
 
         return new EncryptedStructure(
+            ProfileType: reader.ReadString(),
+            ProfileVersion: reader.ReadInteger(),
             ProfileName: reader.ReadString(),
             CipherOutput: reader.ReadBytes(),
             TypeName: reader.ReadString(),
@@ -86,6 +90,8 @@ internal class EncryptedStructureCodec : IEncryptedStructureCodec
     private static string ReadProfileName(IPackStreamReader reader)
     {
         ReadAndValidateSignature(reader);
+        reader.ReadString();
+        reader.ReadInteger();
         return reader.ReadString();
     }
 

@@ -70,7 +70,6 @@ internal partial class DriverComposition : IDriverComposition
             .Bind<IEnvelopeMetadataBuilder>().As(Singleton).To<EnvelopeMetadataBuilder>()
             .Bind<IEnvelopeMetadataExtractor>().As(Singleton).To<EnvelopeMetadataExtractor>()
             .Bind<IIvProvider>().As(Singleton).To<IvProvider>()
-            .Bind<IKeyDerivation>().As(Singleton).To<HkdfKeyDerivation>()
             .Bind<IMessageFormatFactory>().As(Singleton).To<MessageFormatFactory>()
             .Bind<IPackStreamMemorySerializer>().As(Singleton).To<PackStreamMemorySerializer>()
             .Bind<IPackStreamReaderWriterFactory>().As(Singleton).To<PackStreamReaderWriterFactory>()

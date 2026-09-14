@@ -30,6 +30,8 @@ public class BaselineCompatibilityGuardTests
     private static EncryptedStructure Structure(int typeSchemeMajor, int typeSchemeMinor)
     {
         return new EncryptedStructure(
+            "ENVELOPE",
+            1,
             "profile-a",
             [0xC0, 0xD0],
             "VECTOR",

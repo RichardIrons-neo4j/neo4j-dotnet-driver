@@ -23,20 +23,13 @@ namespace Neo4j.Driver.Internal.Encryption;
 
 internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
 {
-    private const int DataKeyLength = 32;
-
     private readonly IAliasToKeyIdCache _aliasToKeyIdCache;
     private readonly IEncryptionKeyCache _encryptionKeyCache;
-    private readonly IKeyDerivation _keyDerivation;
 
-    public EnvelopeDataKeyProvider(
-        IAliasToKeyIdCache aliasToKeyIdCache,
-        IEncryptionKeyCache encryptionKeyCache,
-        IKeyDerivation keyDerivation)
+    public EnvelopeDataKeyProvider(IAliasToKeyIdCache aliasToKeyIdCache, IEncryptionKeyCache encryptionKeyCache)
     {
         _aliasToKeyIdCache = aliasToKeyIdCache;
         _encryptionKeyCache = encryptionKeyCache;
-        _keyDerivation = keyDerivation;
     }
 
     public async Task<DataKeyResult> GetDataKeyAsync(
@@ -48,7 +41,7 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
         var dek = await ResolveDataEncryptionKeyAsync(profile, keyId, prefetchedKey, cancellationToken)
             .ConfigureAwait(false);
 
-        return new DataKeyResult(keyId, _keyDerivation.Derive(dek, DataKeyLength));
+        return new DataKeyResult(keyId, dek);
     }
 
     private async Task<(string KeyId, EncapsulatedKey? PrefetchedKey)> ResolveKeyIdAsync(

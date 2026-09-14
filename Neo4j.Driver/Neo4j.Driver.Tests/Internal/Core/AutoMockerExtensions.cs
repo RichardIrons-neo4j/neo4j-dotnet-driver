@@ -1,5 +1,7 @@
 // Copyright (c) "Neo4j"
-// Neo4j Sweden AB [https://neo4j.com]
+// Neo4j Sweden AB [http://neo4j.com]
+// 
+// This file is part of Neo4j.
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -13,11 +15,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#nullable enable
+using Moq.AutoMock;
+using Neo4j.Driver.Internal;
 
-namespace Neo4j.Driver.Internal.Encryption;
+namespace Neo4j.Driver.Tests.Internal.Core;
 
-internal interface IKeyDerivation
+internal static class AutoMockerExtensions
 {
-    byte[] Derive(byte[] ikm, int outputLength);
+    extension(AutoMocker)
+    {
+        public static AutoMocker ForTesting<TSubject>()
+        {
+            var autoMocker = new AutoMocker();
+            autoMocker.Use<ILogger>(new TestLogger(typeof(TSubject)));
+            return autoMocker;
+        }
+    }
 }

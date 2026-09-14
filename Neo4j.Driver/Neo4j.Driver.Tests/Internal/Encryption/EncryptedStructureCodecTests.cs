@@ -36,6 +36,8 @@ public class EncryptedStructureCodecTests
         .CreateMessageFormat(BoltProtocolVersion.V6_0);
 
     private static EncryptedStructure Sample() => new(
+        ProfileType: "ENVELOPE",
+        ProfileVersion: 1,
         ProfileName: "Envelope",
         CipherOutput: new byte[] { 0xDE, 0xAD, 0xBE, 0xEF },
         TypeName: "Integer",
@@ -130,12 +132,13 @@ public class EncryptedStructureCodecTests
     }
 
     [Fact]
-    public void PeekProfileName_ReadsOnlyTheProfileNameField()
+    public void PeekProfileName_SkipsTheProfileTypeAndVersion()
     {
         var reader = new Mock<IPackStreamReader>(MockBehavior.Strict);
         reader.Setup(r => r.ReadStructHeader()).Returns(1L);
         reader.Setup(r => r.ReadStructSignature()).Returns((byte)0x65);
-        reader.Setup(r => r.ReadString()).Returns("Envelope");
+        reader.SetupSequence(r => r.ReadString()).Returns("ENVELOPE").Returns("Envelope");
+        reader.Setup(r => r.ReadInteger()).Returns(1);
         StubHelperReadString(reader.Object);
 
         var result = CreateSubject().PeekProfileName([]);

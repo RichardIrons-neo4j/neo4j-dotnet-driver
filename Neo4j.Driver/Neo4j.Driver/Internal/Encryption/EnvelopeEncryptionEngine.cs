@@ -25,6 +25,9 @@ namespace Neo4j.Driver.Internal.Encryption;
 
 internal class EnvelopeEncryptionEngine : IEncryptionEngine
 {
+    private const string EnvelopeProfileType = "ENVELOPE";
+    private const int EnvelopeProfileVersion = 1;
+
     private static readonly int AadEncodingSchemeMajor = BoltValueSerializationSchemeVersion.Latest.Major;
     private static readonly int AadEncodingSchemeMinor = BoltValueSerializationSchemeVersion.Latest.Minor;
 
@@ -125,6 +128,8 @@ internal class EnvelopeEncryptionEngine : IEncryptionEngine
 
         var metadata = _envelopeMetadataBuilder.Build(envelopeMetadata);
         var structure = new EncryptedStructure(
+            EnvelopeProfileType,
+            EnvelopeProfileVersion,
             profile.Name,
             cipherResult.CipherOutput,
             typeInfo.Name,
@@ -142,6 +147,11 @@ internal class EnvelopeEncryptionEngine : IEncryptionEngine
         CancellationToken cancellationToken)
     {
         var structure = _encryptedValueBytesCodec.Decode(encrypted);
+
+        if (structure.ProfileType != EnvelopeProfileType)
+        {
+            throw new UnsupportedEncryptionProfileTypeException(structure.ProfileType);
+        }
 
         if (_baselineCompatibilityGuard.IsUnsupportedBaselineType(structure, out var unsupported))
         {

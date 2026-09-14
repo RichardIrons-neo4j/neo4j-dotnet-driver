@@ -20,23 +20,26 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
+using Moq.AutoMock;
 using Neo4j.Driver.Internal.Encryption;
 using Neo4j.Driver.Preview.Encryption;
+using Neo4j.Driver.Tests.Internal.Core;
 using Xunit;
 using static Neo4j.Driver.Tests.Internal.Encryption.EncryptionTestHelpers;
 
 namespace Neo4j.Driver.Tests.Internal.Encryption;
 
-public class EnvelopeDataKeyProviderTests : UnitTestBase
+public class EnvelopeDataKeyProviderTests
 {
     private const string ProfileName = "profile-a";
+
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<EnvelopeDataKeyProvider>();
 
     private readonly Mock<IKeyEncapsulationService> _kes = new();
     private readonly Mock<IEncapsulatedKeyRepository> _repository = new();
 
     private static readonly byte[] Encapsulation = [0xBB];
     private static readonly byte[] Dek = Sequence(32, seed: 0x30);
-    private static readonly byte[] DataKey = Sequence(32, seed: 0x40);
 
     private IEnvelopeEncryptionProfile Profile()
     {
@@ -56,35 +59,33 @@ public class EnvelopeDataKeyProviderTests : UnitTestBase
             new Dictionary<string, string> { ["iv"] = "wrap-iv" });
     }
 
-    private void StubDecapsulateAndDerive()
+    private void StubDecapsulate()
     {
         _kes.Setup(k => k.DecapsulateAsync(
                 Matches(Encapsulation),
                 It.IsAny<IReadOnlyDictionary<string, string>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Dek);
-
-        Freeze<IKeyDerivation>().Setup(d => d.Derive(Matches(Dek), 32)).Returns(DataKey);
     }
 
     [Fact]
-    public async Task GetDataKey_ByAliasWithColdCaches_FindsDecapsulatesAndDerives()
+    public async Task GetDataKey_ByAliasWithColdCaches_FindsAndDecapsulates()
     {
         _repository.Setup(r => r.FindAsync(
                 new KeyReference("main", KeyReferenceType.Alias),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Key());
 
-        StubDecapsulateAndDerive();
+        StubDecapsulate();
 
-        var subject = CreateSubject<EnvelopeDataKeyProvider>();
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
         var result = await subject.GetDataKeyAsync(
             Profile(),
             new KeyReference("main", KeyReferenceType.Alias),
             TestContext.Current.CancellationToken);
 
         result.KeyId.Should().Be("key-1");
-        result.DataKey.Should().BeSameAs(DataKey);
+        result.DataKey.Should().BeSameAs(Dek);
     }
 
     [Fact]
@@ -95,12 +96,12 @@ public class EnvelopeDataKeyProviderTests : UnitTestBase
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Key());
 
-        StubDecapsulateAndDerive();
+        StubDecapsulate();
 
-        var aliasCache = Freeze<IAliasToKeyIdCache>();
-        var keyCache = Freeze<IEncryptionKeyCache>();
+        var aliasCache = _autoMocker.GetMock<IAliasToKeyIdCache>();
+        var keyCache = _autoMocker.GetMock<IEncryptionKeyCache>();
 
-        var subject = CreateSubject<EnvelopeDataKeyProvider>();
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
         await subject.GetDataKeyAsync(
             Profile(),
             new KeyReference("main", KeyReferenceType.Alias),
@@ -114,7 +115,7 @@ public class EnvelopeDataKeyProviderTests : UnitTestBase
     public async Task GetDataKey_AliasCacheHit_SkipsAliasRepositoryLookup()
     {
         string? cachedKeyId = "key-1";
-        Freeze<IAliasToKeyIdCache>()
+        _autoMocker.GetMock<IAliasToKeyIdCache>()
             .Setup(c => c.TryGet(ProfileName, "main", out cachedKeyId))
             .Returns(true);
 
@@ -123,49 +124,47 @@ public class EnvelopeDataKeyProviderTests : UnitTestBase
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Key());
 
-        StubDecapsulateAndDerive();
+        StubDecapsulate();
 
-        var subject = CreateSubject<EnvelopeDataKeyProvider>();
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
         var result = await subject.GetDataKeyAsync(
             Profile(),
             new KeyReference("main", KeyReferenceType.Alias),
             TestContext.Current.CancellationToken);
 
         result.KeyId.Should().Be("key-1");
-        result.DataKey.Should().BeSameAs(DataKey);
+        result.DataKey.Should().BeSameAs(Dek);
     }
 
     [Fact]
     public async Task GetDataKey_AliasAndDekCacheHit_NeverTouchesRepositoryOrKes()
     {
         string? cachedKeyId = "key-1";
-        Freeze<IAliasToKeyIdCache>()
+        _autoMocker.GetMock<IAliasToKeyIdCache>()
             .Setup(c => c.TryGet(ProfileName, "main", out cachedKeyId))
             .Returns(true);
 
         byte[]? cachedDek = Dek;
-        Freeze<IEncryptionKeyCache>()
+        _autoMocker.GetMock<IEncryptionKeyCache>()
             .Setup(c => c.TryGet(ProfileName, "key-1", out cachedDek))
             .Returns(true);
 
 
-        Freeze<IKeyDerivation>().Setup(d => d.Derive(Matches(Dek), 32)).Returns(DataKey);
-
-        var subject = CreateSubject<EnvelopeDataKeyProvider>();
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
         var result = await subject.GetDataKeyAsync(
             Profile(),
             new KeyReference("main", KeyReferenceType.Alias),
             TestContext.Current.CancellationToken);
 
         result.KeyId.Should().Be("key-1");
-        result.DataKey.Should().BeSameAs(DataKey);
+        result.DataKey.Should().BeSameAs(Dek);
     }
 
     [Fact]
     public async Task GetDataKey_ByKeyId_IgnoresAliasCacheEvenIfPoisoned()
     {
         string? poisonedKeyId = "wrong-id";
-        Freeze<IAliasToKeyIdCache>()
+        _autoMocker.GetMock<IAliasToKeyIdCache>()
             .Setup(c => c.TryGet(ProfileName, It.IsAny<string>(), out poisonedKeyId))
             .Returns(true);
 
@@ -174,35 +173,33 @@ public class EnvelopeDataKeyProviderTests : UnitTestBase
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Key());
 
-        StubDecapsulateAndDerive();
+        StubDecapsulate();
 
-        var subject = CreateSubject<EnvelopeDataKeyProvider>();
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
         var result = await subject.GetDataKeyAsync(
             Profile(),
             new KeyReference("key-1", KeyReferenceType.Id),
             TestContext.Current.CancellationToken);
 
         result.KeyId.Should().Be("key-1");
-        result.DataKey.Should().BeSameAs(DataKey);
+        result.DataKey.Should().BeSameAs(Dek);
     }
 
     [Fact]
     public async Task GetDataKey_ByKeyIdWithDekCacheHit_NeverTouchesRepositoryOrKes()
     {
         byte[]? cachedDek = Dek;
-        Freeze<IEncryptionKeyCache>()
+        _autoMocker.GetMock<IEncryptionKeyCache>()
             .Setup(c => c.TryGet(ProfileName, "key-1", out cachedDek))
             .Returns(true);
 
-        Freeze<IKeyDerivation>().Setup(d => d.Derive(Matches(Dek), 32)).Returns(DataKey);
-
-        var subject = CreateSubject<EnvelopeDataKeyProvider>();
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
         var result = await subject.GetDataKeyAsync(
             Profile(),
             new KeyReference("key-1", KeyReferenceType.Id),
             TestContext.Current.CancellationToken);
 
         result.KeyId.Should().Be("key-1");
-        result.DataKey.Should().BeSameAs(DataKey);
+        result.DataKey.Should().BeSameAs(Dek);
     }
 }

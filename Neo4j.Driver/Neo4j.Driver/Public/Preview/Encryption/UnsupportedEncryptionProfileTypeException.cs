@@ -1,5 +1,7 @@
 // Copyright (c) "Neo4j"
-// Neo4j Sweden AB [https://neo4j.com]
+// Neo4j Sweden AB [http://neo4j.com]
+// 
+// This file is part of Neo4j.
 // 
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -15,23 +17,12 @@
 
 #nullable enable
 
-using System.Collections.Generic;
+namespace Neo4j.Driver.Preview.Encryption;
 
-namespace Neo4j.Driver.Internal.Encryption;
-
-internal interface IEncryptedStructureCodec
-{
-    byte[] Encode(EncryptedStructure structure);
-    EncryptedStructure Decode(byte[] bytes);
-    string PeekProfileName(byte[] bytes);
-}
-
-internal record EncryptedStructure(
-    string ProfileType,
-    int ProfileVersion,
-    string ProfileName,
-    byte[] CipherOutput,
-    string TypeName,
-    int TypeSerializationSchemeMajor,
-    int TypeSerializationSchemeMinor,
-    IDictionary<string, object> Metadata);
+/// <summary>
+/// Thrown when encrypted value bytes name an encryption profile type this driver cannot handle. This
+/// exception is part of the Encryption Preview feature, and is subject to change or removal.
+/// </summary>
+/// <param name="profileType">The profile type recorded in the encrypted value.</param>
+public class UnsupportedEncryptionProfileTypeException(string profileType)
+    : PropertyEncryptionException($"Unsupported encryption profile type '{profileType}'.");

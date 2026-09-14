@@ -19,26 +19,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoFixture;
 using FluentAssertions;
 using Moq;
+using Moq.AutoMock;
 using Neo4j.Driver.Internal;
 using Neo4j.Driver.Internal.Encryption;
 using Neo4j.Driver.Preview.Encryption;
+using Neo4j.Driver.Tests.Internal.Core;
 using Xunit;
 using static Neo4j.Driver.Tests.Internal.Encryption.EncryptionTestHelpers;
 
 namespace Neo4j.Driver.Tests.Internal.Encryption;
 
-public class EnvelopeEncryptionEngineTests : UnitTestBase
+public class EnvelopeEncryptionEngineTests
 {
     private const string ProfileName = "profile-a";
 
     private static readonly byte[] Iv = Sequence(12);
 
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<EnvelopeEncryptionEngine>();
+
     public EnvelopeEncryptionEngineTests()
     {
-        Fixture.Inject(Mock.Of<IIvProvider>(p => p.GetIv() == Iv));
+        _autoMocker.Use(Mock.Of<IIvProvider>(p => p.GetIv() == Iv));
     }
 
     private static IEnvelopeEncryptionProfile Profile()
@@ -60,31 +63,31 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
         byte[] expectedAad = suppliedAad ?? [];
         var profile = Profile();
 
-        Freeze<IPlaintextCodec>().Setup(s => s.Serialize(value)).Returns(plaintext);
-        Freeze<IPropertyTypeInspector>()
+        _autoMocker.GetMock<IPlaintextCodec>().Setup(s => s.Serialize(value)).Returns(plaintext);
+        _autoMocker.GetMock<IPropertyTypeInspector>()
             .Setup(n => n.GetPropertyTypeInfo(value))
             .Returns(new PropertyTypeInfo("INTEGER", new BoltValueSerializationSchemeVersion(1, 0)));
 
-        Freeze<IEnvelopeDataKeyProvider>()
+        _autoMocker.GetMock<IEnvelopeDataKeyProvider>()
             .Setup(p => p.GetDataKeyAsync(
                 profile,
                 new KeyReference("main", KeyReferenceType.Alias),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DataKeyResult("key-1", dataKey));
 
-        Freeze<IAeadCipher>()
+        _autoMocker.GetMock<IAeadCipher>()
             .Setup(c => c.Encrypt(Matches(dataKey), Matches(Iv), Matches(plaintext), Matches(expectedAad)))
             .Returns(cipher);
 
-        Freeze<IEnvelopeMetadataBuilder>()
+        _autoMocker.GetMock<IEnvelopeMetadataBuilder>()
             .Setup(b => b.Build(IsExpectedMetadata("key-1", expectedAad)))
             .Returns(builtMetadata);
 
-        Freeze<IEncryptedValueBytesCodec>()
+        _autoMocker.GetMock<IEncryptedValueBytesCodec>()
             .Setup(c => c.Encode(It.Is<EncryptedStructure>(s => IsExpectedStructure(s, cipher.CipherOutput, builtMetadata))))
             .Returns(encoded);
 
-        var subject = CreateSubject<EnvelopeEncryptionEngine>();
+        var subject = _autoMocker.CreateInstance<EnvelopeEncryptionEngine>();
         var started = subject.TryStartEncrypt(
             profile,
             value,
@@ -111,32 +114,32 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
         var profile = Profile();
         byte[]? ivGivenToCipher = null;
 
-        Freeze<IPlaintextCodec>().Setup(s => s.Serialize(value)).Returns(plaintext);
-        Freeze<IPropertyTypeInspector>()
+        _autoMocker.GetMock<IPlaintextCodec>().Setup(s => s.Serialize(value)).Returns(plaintext);
+        _autoMocker.GetMock<IPropertyTypeInspector>()
             .Setup(n => n.GetPropertyTypeInfo(value))
             .Returns(new PropertyTypeInfo("INTEGER", new BoltValueSerializationSchemeVersion(1, 0)));
 
-        Freeze<IEnvelopeDataKeyProvider>()
+        _autoMocker.GetMock<IEnvelopeDataKeyProvider>()
             .Setup(p => p.GetDataKeyAsync(
                 profile,
                 new KeyReference("main", KeyReferenceType.Alias),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DataKeyResult("key-1", dataKey));
 
-        Freeze<IAeadCipher>()
+        _autoMocker.GetMock<IAeadCipher>()
             .Setup(c => c.Encrypt(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Callback<byte[], byte[], byte[], byte[]>((_, iv, _, _) => ivGivenToCipher = iv)
             .Returns(cipher);
 
-        Freeze<IEnvelopeMetadataBuilder>()
+        _autoMocker.GetMock<IEnvelopeMetadataBuilder>()
             .Setup(b => b.Build(It.IsAny<EnvelopeMetadata>()))
             .Returns(new Dictionary<string, object> { ["key_id"] = "key-1" });
 
-        Freeze<IEncryptedValueBytesCodec>()
+        _autoMocker.GetMock<IEncryptedValueBytesCodec>()
             .Setup(c => c.Encode(It.IsAny<EncryptedStructure>()))
             .Returns([0xEE]);
 
-        var subject = CreateSubject<EnvelopeEncryptionEngine>();
+        var subject = _autoMocker.CreateInstance<EnvelopeEncryptionEngine>();
         var started = subject.TryStartEncrypt(
             profile,
             value,
@@ -161,7 +164,15 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
         var cipherOutput = new byte[] { 0xC0, 0xD0 };
         var persistedAad = new byte[] { 0xAA };
         var structureMetadata = new Dictionary<string, object> { ["key_id"] = "key-1" };
-        var structure = new EncryptedStructure(ProfileName, cipherOutput, "INTEGER", 1, 0, structureMetadata);
+        var structure = new EncryptedStructure(
+            "ENVELOPE",
+            1,
+            ProfileName,
+            cipherOutput,
+            "INTEGER",
+            1,
+            0,
+            structureMetadata);
         var envelopeMetadata = new EnvelopeMetadata(
             "key-1",
             Iv,
@@ -175,10 +186,10 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
         const long value = 5L;
         var profile = Profile();
 
-        Freeze<IEncryptedValueBytesCodec>().Setup(c => c.Decode(Matches(encrypted))).Returns(structure);
-        Freeze<IEnvelopeMetadataExtractor>().Setup(e => e.Extract(structureMetadata)).Returns(envelopeMetadata);
+        _autoMocker.GetMock<IEncryptedValueBytesCodec>().Setup(c => c.Decode(Matches(encrypted))).Returns(structure);
+        _autoMocker.GetMock<IEnvelopeMetadataExtractor>().Setup(e => e.Extract(structureMetadata)).Returns(envelopeMetadata);
 
-        Freeze<IEnvelopeDataKeyProvider>()
+        _autoMocker.GetMock<IEnvelopeDataKeyProvider>()
             .Setup(p => p.GetDataKeyAsync(
                 profile,
                 new KeyReference("key-1", KeyReferenceType.Id),
@@ -186,13 +197,13 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
             .ReturnsAsync(new DataKeyResult("key-1", dataKey));
 
         var expectedAad = suppliedAad ?? persistedAad;
-        Freeze<IAeadCipher>()
+        _autoMocker.GetMock<IAeadCipher>()
             .Setup(c => c.Decrypt(Matches(dataKey), Matches(Iv), Matches(cipherOutput), Matches(expectedAad)))
             .Returns(plaintext);
 
-        Freeze<IPlaintextCodec>().Setup(d => d.Deserialize(Matches(plaintext))).Returns(value);
+        _autoMocker.GetMock<IPlaintextCodec>().Setup(d => d.Deserialize(Matches(plaintext))).Returns(value);
 
-        var subject = CreateSubject<EnvelopeEncryptionEngine>();
+        var subject = _autoMocker.CreateInstance<EnvelopeEncryptionEngine>();
         var started = subject.TryStartDecrypt(
             profile,
             encrypted,
@@ -207,10 +218,43 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
     }
 
     [Fact]
+    public async Task TryStartDecrypt_WithAProfileTypeTheDriverCannotHandle_ThrowsNamingThatType()
+    {
+        var encrypted = new byte[] { 0xEE };
+        var structure = new EncryptedStructure(
+            "STATIC_KEYS",
+            1,
+            ProfileName,
+            [0xC0, 0xD0],
+            "INTEGER",
+            1,
+            0,
+            new Dictionary<string, object>());
+
+        _autoMocker.GetMock<IEncryptedValueBytesCodec>().Setup(c => c.Decode(Matches(encrypted))).Returns(structure);
+
+        var subject = _autoMocker.CreateInstance<EnvelopeEncryptionEngine>();
+        subject.TryStartDecrypt(
+            Profile(),
+            encrypted,
+            aad: null,
+            TestContext.Current.CancellationToken,
+            out var decryptedTask);
+
+        var act = async () => await decryptedTask!;
+
+        await act.Should()
+            .ThrowAsync<UnsupportedEncryptionProfileTypeException>()
+            .WithMessage("*STATIC_KEYS*");
+    }
+
+    [Fact]
     public async Task TryStartDecrypt_GuardReportsUnsupportedBaselineType_ReturnsItWithoutDecrypting()
     {
         var encrypted = new byte[] { 0xEE };
         var structure = new EncryptedStructure(
+            "ENVELOPE",
+            1,
             ProfileName,
             [0xC0, 0xD0],
             "VECTOR",
@@ -218,15 +262,15 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
             0,
             new Dictionary<string, object>());
 
-        Freeze<IEncryptedValueBytesCodec>().Setup(c => c.Decode(Matches(encrypted))).Returns(structure);
+        _autoMocker.GetMock<IEncryptedValueBytesCodec>().Setup(c => c.Decode(Matches(encrypted))).Returns(structure);
 
         var unsupported = new UnsupportedType("VECTOR", 7, 0, null);
         UnsupportedType? guardResult = unsupported;
-        Freeze<IBaselineCompatibilityGuard>()
+        _autoMocker.GetMock<IBaselineCompatibilityGuard>()
             .Setup(g => g.IsUnsupportedBaselineType(structure, out guardResult))
             .Returns(true);
 
-        var subject = CreateSubject<EnvelopeEncryptionEngine>();
+        var subject = _autoMocker.CreateInstance<EnvelopeEncryptionEngine>();
         var started = subject.TryStartDecrypt(
             Profile(),
             encrypted,
@@ -247,7 +291,15 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
         var cipherOutput = new byte[] { 0xC0, 0xD0 };
         var persistedAad = new byte[] { 0xAA };
         var structureMetadata = new Dictionary<string, object> { ["key_id"] = "key-1" };
-        var structure = new EncryptedStructure(ProfileName, cipherOutput, "INTEGER", 1, 0, structureMetadata);
+        var structure = new EncryptedStructure(
+            "ENVELOPE",
+            1,
+            ProfileName,
+            cipherOutput,
+            "INTEGER",
+            1,
+            0,
+            structureMetadata);
         var envelopeMetadata = new EnvelopeMetadata(
             "key-1",
             Iv,
@@ -261,29 +313,29 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
         const long value = 5L;
         var profile = Profile();
 
-        Freeze<IEncryptedValueBytesCodec>().Setup(c => c.Decode(Matches(encrypted))).Returns(structure);
-        Freeze<IEnvelopeMetadataExtractor>().Setup(e => e.Extract(structureMetadata)).Returns(envelopeMetadata);
+        _autoMocker.GetMock<IEncryptedValueBytesCodec>().Setup(c => c.Decode(Matches(encrypted))).Returns(structure);
+        _autoMocker.GetMock<IEnvelopeMetadataExtractor>().Setup(e => e.Extract(structureMetadata)).Returns(envelopeMetadata);
 
-        Freeze<IBaselineCompatibilityGuard>()
+        _autoMocker.GetMock<IBaselineCompatibilityGuard>()
             .Setup(g => g.EnsureAadEncodingSchemeCompatibility(
                 It.Is<byte[]?>(a => a != null),
                 It.IsAny<EnvelopeMetadata>()))
             .Throws(new ClientException("engine passed a non-null AAD to the guard"));
 
-        Freeze<IEnvelopeDataKeyProvider>()
+        _autoMocker.GetMock<IEnvelopeDataKeyProvider>()
             .Setup(p => p.GetDataKeyAsync(
                 profile,
                 new KeyReference("key-1", KeyReferenceType.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DataKeyResult("key-1", dataKey));
 
-        Freeze<IAeadCipher>()
+        _autoMocker.GetMock<IAeadCipher>()
             .Setup(c => c.Decrypt(Matches(dataKey), Matches(Iv), Matches(cipherOutput), Matches(persistedAad)))
             .Returns(plaintext);
 
-        Freeze<IPlaintextCodec>().Setup(d => d.Deserialize(Matches(plaintext))).Returns(value);
+        _autoMocker.GetMock<IPlaintextCodec>().Setup(d => d.Deserialize(Matches(plaintext))).Returns(value);
 
-        var subject = CreateSubject<EnvelopeEncryptionEngine>();
+        var subject = _autoMocker.CreateInstance<EnvelopeEncryptionEngine>();
         var started = subject.TryStartDecrypt(
             profile,
             encrypted,
@@ -300,7 +352,7 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
     [Fact]
     public void TryStartEncrypt_WithNonEnvelopeProfile_ReturnsFalse()
     {
-        var subject = CreateSubject<EnvelopeEncryptionEngine>();
+        var subject = _autoMocker.CreateInstance<EnvelopeEncryptionEngine>();
 
         var result = subject.TryStartEncrypt(
             Mock.Of<IInternalEncryptionProfile>(),
@@ -318,7 +370,7 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
     [Fact]
     public void TryStartDecrypt_WithNonEnvelopeProfile_ReturnsFalse()
     {
-        var subject = CreateSubject<EnvelopeEncryptionEngine>();
+        var subject = _autoMocker.CreateInstance<EnvelopeEncryptionEngine>();
 
         var result = subject.TryStartDecrypt(
             Mock.Of<IInternalEncryptionProfile>(),
@@ -336,7 +388,9 @@ public class EnvelopeEncryptionEngineTests : UnitTestBase
         byte[] expectedCipherOutput,
         IDictionary<string, object> expectedMetadata)
     {
-        return s.ProfileName == ProfileName &&
+        return s.ProfileType == "ENVELOPE" &&
+            s.ProfileVersion == 1 &&
+            s.ProfileName == ProfileName &&
             s.TypeName == "INTEGER" &&
             s.TypeSerializationSchemeMajor == 1 &&
             s.TypeSerializationSchemeMinor == 0 &&
