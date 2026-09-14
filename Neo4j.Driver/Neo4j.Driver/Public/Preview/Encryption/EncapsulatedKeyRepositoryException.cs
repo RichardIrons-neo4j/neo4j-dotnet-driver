@@ -18,21 +18,29 @@
 namespace Neo4j.Driver.Preview.Encryption;
 
 /// <summary>
-/// The base exception for failures raised by an <see cref="IEncapsulatedKeyRepository"/>. This
+/// The base exception for failures raised by an <see cref="IEncapsulatedKeyRecordRepository"/>. This
 /// exception is part of the Encryption Preview feature, and is subject to change or removal.
 /// </summary>
 public class EncapsulatedKeyRepositoryException(string message) : Neo4jException(message);
 
 /// <summary>
-/// Thrown when an <see cref="IEncapsulatedKeyRepository"/> is asked for a key id it doesn't have.
+/// Thrown when an <see cref="IEncapsulatedKeyRecordRepository"/> is asked for a key id it doesn't have.
 /// This exception is part of the Encryption Preview feature, and is subject to change or removal.
 /// </summary>
 public class EncapsulatedKeyNotFoundException(string id)
     : EncapsulatedKeyRepositoryException($"Encapsulated key with id '{id}' not found.");
 
 /// <summary>
-/// Thrown when an <see cref="IEncapsulatedKeyRepository"/> is asked for an alias it doesn't have.
+/// Thrown when an <see cref="IEncapsulatedKeyRecordRepository"/> is asked for an alias it doesn't have.
 /// This exception is part of the Encryption Preview feature, and is subject to change or removal.
 /// </summary>
 public class EncapsulatedAliasNotFoundException(string alias)
     : EncapsulatedKeyRepositoryException($"Alias '{alias}' not found.");
+
+/// <summary>
+/// Thrown when an alias is bound to a key while another key already holds it. Remove the alias from
+/// that key first. This exception is part of the Encryption Preview feature, and is subject to change
+/// or removal.
+/// </summary>
+public class EncapsulatedAliasInUseException(string alias)
+    : EncapsulatedKeyRepositoryException($"Alias '{alias}' is already in use by another encapsulated key.");

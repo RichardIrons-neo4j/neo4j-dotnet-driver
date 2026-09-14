@@ -30,7 +30,7 @@ namespace Neo4j.Driver.Tests.Internal.Encryption;
 public class EnvelopeEncapsulatedKeyManagerTests
 {
     private readonly Mock<IKeyEncapsulationService> _kes = new();
-    private readonly Mock<IEncapsulatedKeyRepository> _repository = new();
+    private readonly Mock<IEncapsulatedKeyRecordRepository> _repository = new();
     private readonly Mock<IEncryptionErrorPolicy> _errorPolicy = new();
 
     private EnvelopeEncapsulatedKeyManager CreateSubject()
@@ -44,14 +44,14 @@ public class EnvelopeEncapsulatedKeyManagerTests
         var token = TestContext.Current.CancellationToken;
         var resultOptions = new MapKeyEncapsulationOptions(new Dictionary<string, string> { ["iv"] = "abc" });
         var encapsulationResult = new EncapsulationResult([0xAA], resultOptions, [0xBB]);
-        var stored = new EncapsulatedKey("key-1", "alias-1", [0xAA], resultOptions.ToMap());
+        var stored = new EncapsulatedKeyRecord("key-1", "alias-1", [0xAA], resultOptions.ToMap());
 
         _kes.Setup(k => k.EncapsulateAsync(
                 It.Is<IKeyEncapsulationOptions>(o => o.ToMap().Count == 0),
                 token))
             .ReturnsAsync(encapsulationResult);
 
-        _repository.Setup(r => r.SaveAsync("alias-1", encapsulationResult.Encapsulation, resultOptions.ToMap(), token))
+        _repository.Setup(r => r.CreateAsync("alias-1", encapsulationResult.Encapsulation, resultOptions.ToMap(), token))
             .ReturnsAsync(stored);
 
         var result = await CreateSubject().CreateAsync("alias-1", token);

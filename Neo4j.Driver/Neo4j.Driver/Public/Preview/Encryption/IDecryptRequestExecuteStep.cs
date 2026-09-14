@@ -37,7 +37,7 @@ public interface IDecryptRequestExecuteStep
     /// accepts the request, or the additional authenticated data (AAD) does not match.
     /// </exception>
     /// <exception cref="Neo4jException">
-    /// The configured <see cref="IKeyEncapsulationService"/> or <see cref="IEncapsulatedKeyRepository"/>
+    /// The configured <see cref="IKeyEncapsulationService"/> or <see cref="IEncapsulatedKeyRecordRepository"/>
     /// raised a driver exception, which propagates unchanged.
     /// </exception>
     Task<object> DecryptAsync(CancellationToken cancellationToken = default);

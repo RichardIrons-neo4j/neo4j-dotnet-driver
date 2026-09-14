@@ -17,12 +17,21 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Neo4j.Driver.Preview.Encryption;
 
 /// <summary>
-/// A reference to an encapsulated data encryption key: its repository-assigned id, and its alias if one
-/// is bound. This record is part of the Encryption Preview feature and is subject to change or removal.
+/// An encapsulated data encryption key together with everything needed to decapsulate it, as stored in
+/// an <see cref="IEncapsulatedKeyRecordRepository"/>. This record is part of the Encryption Preview
+/// feature and is subject to change or removal.
 /// </summary>
 /// <param name="Id">The repository-assigned identifier of the key.</param>
 /// <param name="Alias">The alias currently bound to this key, if any.</param>
-public record EncapsulatedKey(string Id, string? Alias);
+/// <param name="Encapsulation">The encapsulated (wrapped) data encryption key.</param>
+/// <param name="Metadata">Metadata persisted alongside the key, supplied back to the encapsulation service.</param>
+public record EncapsulatedKeyRecord(
+    string Id,
+    string? Alias,
+    byte[] Encapsulation,
+    IReadOnlyDictionary<string, string> Metadata) : EncapsulatedKey(Id, Alias);

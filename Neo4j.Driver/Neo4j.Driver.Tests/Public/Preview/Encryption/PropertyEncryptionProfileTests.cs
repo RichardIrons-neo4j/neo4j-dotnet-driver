@@ -32,7 +32,7 @@ public class PropertyEncryptionProfileTests
         var profile = PropertyEncryptionProfile.Envelope(
             "profile-name",
             Mock.Of<IKeyEncapsulationService>(),
-            Mock.Of<IEncapsulatedKeyRepository>());
+            Mock.Of<IEncapsulatedKeyRecordRepository>());
 
         profile.Name.Should().Be("profile-name");
     }
@@ -41,7 +41,7 @@ public class PropertyEncryptionProfileTests
     public void Envelope_ReturnsAnEnvelopeProfileCarryingTheKeyEncapsulationServiceAndRepository()
     {
         var kes = Mock.Of<IKeyEncapsulationService>();
-        var repository = Mock.Of<IEncapsulatedKeyRepository>();
+        var repository = Mock.Of<IEncapsulatedKeyRecordRepository>();
 
         var profile = PropertyEncryptionProfile.Envelope("profile-name", kes, repository);
 
@@ -54,7 +54,7 @@ public class PropertyEncryptionProfileTests
     public void Envelope_ReturnsADistinctInstancePerCall()
     {
         var kes = Mock.Of<IKeyEncapsulationService>();
-        var repository = Mock.Of<IEncapsulatedKeyRepository>();
+        var repository = Mock.Of<IEncapsulatedKeyRecordRepository>();
 
         var first = PropertyEncryptionProfile.Envelope("profile-name", kes, repository);
         var second = PropertyEncryptionProfile.Envelope("profile-name", kes, repository);
@@ -71,7 +71,7 @@ public class PropertyEncryptionProfileTests
         var act = () => PropertyEncryptionProfile.Envelope(
             name!,
             Mock.Of<IKeyEncapsulationService>(),
-            Mock.Of<IEncapsulatedKeyRepository>());
+            Mock.Of<IEncapsulatedKeyRecordRepository>());
 
         act.Should().Throw<ArgumentException>();
     }
@@ -82,7 +82,7 @@ public class PropertyEncryptionProfileTests
         var act = () => PropertyEncryptionProfile.Envelope(
             "profile-name",
             null!,
-            Mock.Of<IEncapsulatedKeyRepository>());
+            Mock.Of<IEncapsulatedKeyRecordRepository>());
 
         act.Should().Throw<ArgumentNullException>();
     }

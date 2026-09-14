@@ -37,7 +37,7 @@ public interface IEncryptRequestExecuteStep
     /// accepts the request.
     /// </exception>
     /// <exception cref="Neo4jException">
-    /// The configured <see cref="IKeyEncapsulationService"/> or <see cref="IEncapsulatedKeyRepository"/>
+    /// The configured <see cref="IKeyEncapsulationService"/> or <see cref="IEncapsulatedKeyRecordRepository"/>
     /// raised a driver exception.
     /// </exception>
     Task<byte[]> EncryptToBytesAsync(CancellationToken cancellationToken = default);

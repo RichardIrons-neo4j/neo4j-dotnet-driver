@@ -15,7 +15,6 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,11 +22,11 @@ using Neo4j.Driver.Preview.Encryption;
 
 namespace Neo4j.Driver.Internal.Encryption;
 
-internal class InMemoryEncapsulatedKeyRepository : IEncapsulatedKeyRepository
+internal class InMemoryEncapsulatedKeyRepository : IEncapsulatedKeyRecordRepository
 {
     private readonly IKeyIdGenerator _keyIdGenerator;
     private readonly object _lock = new();
-    private readonly Dictionary<string, EncapsulatedKey> _idToKey = new();
+    private readonly Dictionary<string, EncapsulatedKeyRecord> _idToKey = new();
     private readonly Dictionary<string, string> _aliasToId = new();
 
     public InMemoryEncapsulatedKeyRepository(IKeyIdGenerator keyIdGenerator)
@@ -35,29 +34,27 @@ internal class InMemoryEncapsulatedKeyRepository : IEncapsulatedKeyRepository
         _keyIdGenerator = keyIdGenerator;
     }
 
-    public Task<EncapsulatedKey> FindAsync(KeyReference keyReference, CancellationToken cancellationToken = default)
+    public Task<EncapsulatedKeyRecord?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         lock (_lock)
         {
-            var id = keyReference switch
-            {
-                { Type: KeyReferenceType.Id } => keyReference.Reference,
-
-                { Type: KeyReferenceType.Alias } => _aliasToId.TryGetValue(keyReference.Reference, out var k)
-                    ? k
-                    : throw new EncapsulatedAliasNotFoundException(keyReference.Reference),
-
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(keyReference),
-                    keyReference.Type,
-                    "Unknown key reference type")
-            };
-
-            return Task.FromResult(GetKeyByIdOrThrow(id));
+            return Task.FromResult(_idToKey.TryGetValue(id, out var key) ? key : null);
         }
     }
 
-    public Task<EncapsulatedKey> SaveAsync(
+    public Task<EncapsulatedKeyRecord?> FindByAliasAsync(string alias, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var found = _aliasToId.TryGetValue(alias, out var id) && _idToKey.TryGetValue(id, out var key)
+                ? key
+                : null;
+
+            return Task.FromResult(found);
+        }
+    }
+
+    public Task<EncapsulatedKeyRecord> CreateAsync(
         string? alias,
         byte[] encapsulation,
         IReadOnlyDictionary<string, string> metadata,
@@ -68,49 +65,37 @@ internal class InMemoryEncapsulatedKeyRepository : IEncapsulatedKeyRepository
             var id = _keyIdGenerator.Get();
             if (alias is not null)
             {
-                RemoveExistingAlias(alias);
-            }
-
-            var key = new EncapsulatedKey(id, alias, encapsulation, metadata);
-            _idToKey[id] = key;
-            if (alias is not null)
-            {
+                EnsureAliasIsFree(alias, id);
                 _aliasToId[alias] = id;
             }
 
+            var key = new EncapsulatedKeyRecord(id, alias, encapsulation, metadata);
+            _idToKey[id] = key;
             return Task.FromResult(key);
         }
     }
 
-    public Task AddAliasByIdAsync(string id, string alias, CancellationToken cancellationToken = default)
+    public Task SetAliasByIdAsync(string id, string? alias, CancellationToken cancellationToken = default)
     {
         lock (_lock)
         {
             var key = GetKeyByIdOrThrow(id);
-            RemoveExistingAlias(alias);
+            if (alias is not null)
+            {
+                EnsureAliasIsFree(alias, id);
+            }
+
             if (key.Alias is not null)
             {
                 _aliasToId.Remove(key.Alias);
             }
 
-            _aliasToId[alias] = id;
-            _idToKey[id] = key with { Alias = alias };
-            return Task.CompletedTask;
-        }
-    }
-
-    public Task DeleteAliasByIdAsync(string id, string alias, CancellationToken cancellationToken = default)
-    {
-        lock (_lock)
-        {
-            var key = GetKeyByIdOrThrow(id);
-            if (key.Alias != alias)
+            if (alias is not null)
             {
-                throw new EncapsulatedAliasNotFoundException(alias);
+                _aliasToId[alias] = id;
             }
 
-            _aliasToId.Remove(alias);
-            _idToKey[id] = key with { Alias = null };
+            _idToKey[id] = key with { Alias = alias };
             return Task.CompletedTask;
         }
     }
@@ -126,27 +111,20 @@ internal class InMemoryEncapsulatedKeyRepository : IEncapsulatedKeyRepository
             }
 
             _idToKey.Remove(id);
+            return Task.CompletedTask;
         }
-
-        return Task.CompletedTask;
     }
 
-    private EncapsulatedKey GetKeyByIdOrThrow(string id)
+    private void EnsureAliasIsFree(string alias, string idClaimingIt)
     {
-        // assumes lock already held
-        return _idToKey.TryGetValue(id, out var key)
-            ? key
-            : throw new EncapsulatedKeyNotFoundException(id);
-    }
-
-    private void RemoveExistingAlias(string alias)
-    {
-        // assumes lock already held
-        if (!_aliasToId.TryGetValue(alias, out var prevKeyId))
+        if (_aliasToId.TryGetValue(alias, out var owner) && owner != idClaimingIt)
         {
-            return;
+            throw new EncapsulatedAliasInUseException(alias);
         }
+    }
 
-        _idToKey[prevKeyId] = _idToKey[prevKeyId] with { Alias = null };
+    private EncapsulatedKeyRecord GetKeyByIdOrThrow(string id)
+    {
+        return _idToKey.TryGetValue(id, out var key) ? key : throw new EncapsulatedKeyNotFoundException(id);
     }
 }

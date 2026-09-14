@@ -27,33 +27,33 @@ public class TestkitEncapsulatedKeyRepositoryTests
 
     private readonly TestkitEncapsulatedKeyRepository _repository = new();
 
-    private Task<EncapsulatedKey> Save(string? alias)
+    private Task<EncapsulatedKeyRecord> Create(string? alias)
     {
-        return _repository.SaveAsync(
+        return _repository.CreateAsync(
             alias,
             Encapsulation,
             Metadata,
             TestContext.Current.CancellationToken);
     }
 
-    private Task<EncapsulatedKey> FindByAlias(string alias)
+    private Task<EncapsulatedKeyRecord?> FindByAlias(string alias)
     {
-        return _repository.FindAsync(
-            new KeyReference(alias, KeyReferenceType.Alias),
+        return _repository.FindByAliasAsync(
+            alias,
             TestContext.Current.CancellationToken);
     }
 
-    private Task<EncapsulatedKey> FindById(string id)
+    private Task<EncapsulatedKeyRecord?> FindById(string id)
     {
-        return _repository.FindAsync(
-            new KeyReference(id, KeyReferenceType.Id),
+        return _repository.FindByIdAsync(
+            id,
             TestContext.Current.CancellationToken);
     }
 
     [Fact]
     public async Task Finds_a_saved_key_by_its_alias()
     {
-        var saved = await Save("k1");
+        var saved = await Create("k1");
 
         var found = await FindByAlias("k1");
 
@@ -63,7 +63,7 @@ public class TestkitEncapsulatedKeyRepositoryTests
     [Fact]
     public async Task Finds_a_saved_key_by_its_id()
     {
-        var saved = await Save("k1");
+        var saved = await Create("k1");
 
         var found = await FindById(saved.Id);
 
@@ -73,8 +73,8 @@ public class TestkitEncapsulatedKeyRepositoryTests
     [Fact]
     public async Task Assigns_a_distinct_id_to_each_saved_key()
     {
-        var first = await Save("k1");
-        var second = await Save("k2");
+        var first = await Create("k1");
+        var second = await Create("k2");
 
         second.Id.Should().NotBe(first.Id);
     }
@@ -101,45 +101,38 @@ public class TestkitEncapsulatedKeyRepositoryTests
     }
 
     [Fact]
-    public async Task Throws_when_the_id_is_unknown()
+    public async Task Returns_null_when_the_id_is_unknown()
     {
-        var act = () => FindById("nope");
+        var found = await FindById("nope");
 
-        await act.Should().ThrowAsync<EncapsulatedKeyNotFoundException>();
+        found.Should().BeNull();
     }
 
     [Fact]
-    public async Task Throws_when_the_alias_is_unknown()
+    public async Task Returns_null_when_the_alias_is_unknown()
     {
-        var act = () => FindByAlias("nope");
+        var found = await FindByAlias("nope");
 
-        await act.Should().ThrowAsync<EncapsulatedAliasNotFoundException>();
+        found.Should().BeNull();
     }
 
     [Fact]
-    public async Task Saving_moves_an_alias_off_its_previous_key()
+    public async Task Creating_throws_when_another_key_already_holds_the_alias()
     {
-        var first = await Save("k1");
-        var second = await Save("k1");
+        await Create("k1");
 
-        var aliased = await FindByAlias("k1");
-        var abandoned = await FindById(first.Id);
+        var act = () => Create("k1");
 
-        aliased.Id.Should().Be(second.Id);
-        abandoned.Alias.Should().BeNull();
+        await act.Should().ThrowAsync<EncapsulatedAliasInUseException>().WithMessage("*k1*");
     }
 
     [Fact]
-    public async Task Importing_moves_an_alias_off_its_previous_key()
+    public async Task Importing_throws_when_another_key_already_holds_the_alias()
     {
-        var saved = await Save("k1");
+        await Create("k1");
 
-        _repository.Import("testkit-key", "k1", Encapsulation, Metadata);
+        var act = () => _repository.Import("testkit-key", "k1", Encapsulation, Metadata);
 
-        var aliased = await FindByAlias("k1");
-        var abandoned = await FindById(saved.Id);
-
-        aliased.Id.Should().Be("testkit-key");
-        abandoned.Alias.Should().BeNull();
+        act.Should().Throw<EncapsulatedAliasInUseException>().WithMessage("*k1*");
     }
 }

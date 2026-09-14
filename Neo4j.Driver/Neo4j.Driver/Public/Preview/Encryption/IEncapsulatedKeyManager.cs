@@ -36,7 +36,7 @@ public interface IEncapsulatedKeyManager
     /// <returns>The stored key.</returns>
     /// <exception cref="PropertyEncryptionException">The key could not be created.</exception>
     /// <exception cref="Neo4jException">
-    /// The configured <see cref="IKeyEncapsulationService"/> or <see cref="IEncapsulatedKeyRepository"/>
+    /// The configured <see cref="IKeyEncapsulationService"/> or <see cref="IEncapsulatedKeyRecordRepository"/>
     /// raised a driver exception.
     /// </exception>
     Task<EncapsulatedKey> CreateAsync(string alias, CancellationToken cancellationToken = default);

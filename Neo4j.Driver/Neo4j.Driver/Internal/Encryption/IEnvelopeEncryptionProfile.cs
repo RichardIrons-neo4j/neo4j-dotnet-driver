@@ -22,5 +22,5 @@ namespace Neo4j.Driver.Internal.Encryption;
 internal interface IEnvelopeEncryptionProfile : IInternalEncryptionProfile
 {
     IKeyEncapsulationService KeyEncapsulationService { get; }
-    IEncapsulatedKeyRepository KeyRepository { get; }
+    IEncapsulatedKeyRecordRepository KeyRepository { get; }
 }

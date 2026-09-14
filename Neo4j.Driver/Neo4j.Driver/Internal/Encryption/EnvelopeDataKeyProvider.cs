@@ -44,7 +44,7 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
         return new DataKeyResult(keyId, dek);
     }
 
-    private async Task<(string KeyId, EncapsulatedKey? PrefetchedKey)> ResolveKeyIdAsync(
+    private async Task<(string KeyId, EncapsulatedKeyRecord? PrefetchedKey)> ResolveKeyIdAsync(
         IEnvelopeEncryptionProfile profile,
         KeyReference keyRef,
         CancellationToken cancellationToken)
@@ -59,7 +59,9 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
             return (cachedKeyId, null);
         }
 
-        var key = await profile.KeyRepository.FindAsync(keyRef, cancellationToken).ConfigureAwait(false);
+        var key = await profile.KeyRepository.FindByAliasAsync(keyRef.Reference, cancellationToken)
+            .ConfigureAwait(false) ?? throw new EncapsulatedAliasNotFoundException(keyRef.Reference);
+
         _aliasToKeyIdCache.Set(profile.Name, keyRef.Reference, key.Id);
         return (key.Id, key);
     }
@@ -67,7 +69,7 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
     private async Task<byte[]> ResolveDataEncryptionKeyAsync(
         IEnvelopeEncryptionProfile profile,
         string keyId,
-        EncapsulatedKey? prefetchedKey,
+        EncapsulatedKeyRecord? prefetchedKey,
         CancellationToken cancellationToken)
     {
         if (_encryptionKeyCache.TryGet(profile.Name, keyId, out var cached))
@@ -75,9 +77,8 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
             return cached;
         }
 
-        var key = prefetchedKey ?? await profile.KeyRepository
-            .FindAsync(new KeyReference(keyId, KeyReferenceType.Id), cancellationToken)
-            .ConfigureAwait(false);
+        var key = prefetchedKey ?? await profile.KeyRepository.FindByIdAsync(keyId, cancellationToken)
+            .ConfigureAwait(false) ?? throw new EncapsulatedKeyNotFoundException(keyId);
 
         var dek = await profile.KeyEncapsulationService
             .DecapsulateAsync(key.Encapsulation, key.Metadata, cancellationToken)

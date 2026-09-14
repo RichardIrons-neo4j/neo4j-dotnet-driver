@@ -42,7 +42,7 @@ public static class PropertyEncryptionProfile
     public static IPropertyEncryptionProfile Envelope(
         string name,
         IKeyEncapsulationService keyEncapsulationService,
-        IEncapsulatedKeyRepository keyRepository)
+        IEncapsulatedKeyRecordRepository keyRepository)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(keyEncapsulationService);

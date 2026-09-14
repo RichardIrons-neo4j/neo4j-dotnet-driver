@@ -36,7 +36,7 @@ public class EnvelopeDataKeyProviderTests
     private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<EnvelopeDataKeyProvider>();
 
     private readonly Mock<IKeyEncapsulationService> _kes = new();
-    private readonly Mock<IEncapsulatedKeyRepository> _repository = new();
+    private readonly Mock<IEncapsulatedKeyRecordRepository> _repository = new();
 
     private static readonly byte[] Encapsulation = [0xBB];
     private static readonly byte[] Dek = Sequence(32, seed: 0x30);
@@ -50,9 +50,9 @@ public class EnvelopeDataKeyProviderTests
         return profile.Object;
     }
 
-    private static EncapsulatedKey Key()
+    private static EncapsulatedKeyRecord Key()
     {
-        return new EncapsulatedKey(
+        return new EncapsulatedKeyRecord(
             "key-1",
             "main",
             Encapsulation,
@@ -71,9 +71,7 @@ public class EnvelopeDataKeyProviderTests
     [Fact]
     public async Task GetDataKey_ByAliasWithColdCaches_FindsAndDecapsulates()
     {
-        _repository.Setup(r => r.FindAsync(
-                new KeyReference("main", KeyReferenceType.Alias),
-                It.IsAny<CancellationToken>()))
+        _repository.Setup(r => r.FindByAliasAsync("main", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Key());
 
         StubDecapsulate();
@@ -89,11 +87,39 @@ public class EnvelopeDataKeyProviderTests
     }
 
     [Fact]
+    public async Task GetDataKey_WhenTheAliasIsNotInTheRepository_ThrowsAliasNotFound()
+    {
+        _repository.Setup(r => r.FindByAliasAsync("main", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((EncapsulatedKeyRecord?)null);
+
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
+        var act = async () => await subject.GetDataKeyAsync(
+            Profile(),
+            new KeyReference("main", KeyReferenceType.Alias),
+            TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<EncapsulatedAliasNotFoundException>().WithMessage("*main*");
+    }
+
+    [Fact]
+    public async Task GetDataKey_WhenTheIdIsNotInTheRepository_ThrowsKeyNotFound()
+    {
+        _repository.Setup(r => r.FindByIdAsync("key-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((EncapsulatedKeyRecord?)null);
+
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
+        var act = async () => await subject.GetDataKeyAsync(
+            Profile(),
+            new KeyReference("key-1", KeyReferenceType.Id),
+            TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<EncapsulatedKeyNotFoundException>().WithMessage("*key-1*");
+    }
+
+    [Fact]
     public async Task GetDataKey_ByAliasWithColdCaches_PrimesBothCaches()
     {
-        _repository.Setup(r => r.FindAsync(
-                new KeyReference("main", KeyReferenceType.Alias),
-                It.IsAny<CancellationToken>()))
+        _repository.Setup(r => r.FindByAliasAsync("main", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Key());
 
         StubDecapsulate();
@@ -119,9 +145,7 @@ public class EnvelopeDataKeyProviderTests
             .Setup(c => c.TryGet(ProfileName, "main", out cachedKeyId))
             .Returns(true);
 
-        _repository.Setup(r => r.FindAsync(
-                new KeyReference("key-1", KeyReferenceType.Id),
-                It.IsAny<CancellationToken>()))
+        _repository.Setup(r => r.FindByIdAsync("key-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Key());
 
         StubDecapsulate();
@@ -168,9 +192,7 @@ public class EnvelopeDataKeyProviderTests
             .Setup(c => c.TryGet(ProfileName, It.IsAny<string>(), out poisonedKeyId))
             .Returns(true);
 
-        _repository.Setup(r => r.FindAsync(
-                new KeyReference("key-1", KeyReferenceType.Id),
-                It.IsAny<CancellationToken>()))
+        _repository.Setup(r => r.FindByIdAsync("key-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Key());
 
         StubDecapsulate();

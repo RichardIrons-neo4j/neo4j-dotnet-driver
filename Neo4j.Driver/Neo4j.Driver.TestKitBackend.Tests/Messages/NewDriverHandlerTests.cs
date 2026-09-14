@@ -126,7 +126,7 @@ public class NewDriverHandlerTests
         return PropertyEncryptionProfile.Envelope(
             name,
             Mock.Of<IKeyEncapsulationService>(),
-            Mock.Of<IEncapsulatedKeyRepository>());
+            Mock.Of<IEncapsulatedKeyRecordRepository>());
     }
 
     private DriverEncryptionObjects PrepareReturnsSetupForTheRequestedProfiles()

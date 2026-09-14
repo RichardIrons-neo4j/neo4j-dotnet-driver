@@ -37,16 +37,16 @@ public class EnvelopeEncapsulatedKeyManagerProviderTests
     public async Task TryCreateKeyManager_WithEnvelopeProfile_ReturnsManagerCarryingTheProfilesKesAndRepository()
     {
         var kes = new Mock<IKeyEncapsulationService>();
-        var repository = new Mock<IEncapsulatedKeyRepository>();
+        var repository = new Mock<IEncapsulatedKeyRecordRepository>();
         var encapsulationResult = new EncapsulationResult(
             [0xAA],
             new MapKeyEncapsulationOptions(new Dictionary<string, string> { ["iv"] = "abc" }),
             [0xBB]);
-        var stored = new EncapsulatedKey("key-1", "alias-1", [0xAA], new Dictionary<string, string> { ["iv"] = "abc" });
+        var stored = new EncapsulatedKeyRecord("key-1", "alias-1", [0xAA], new Dictionary<string, string> { ["iv"] = "abc" });
 
         kes.Setup(k => k.EncapsulateAsync(It.IsAny<IKeyEncapsulationOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(encapsulationResult);
-        repository.Setup(r => r.SaveAsync(
+        repository.Setup(r => r.CreateAsync(
                 "alias-1",
                 encapsulationResult.Encapsulation,
                 It.IsAny<IReadOnlyDictionary<string, string>>(),

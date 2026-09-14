@@ -56,10 +56,10 @@ public class InMemoryEncapsulatedKeyRepositoryTests
         var subject = CreateSubject();
         SetGeneratedIds("key-1");
 
-        var saved = await subject.SaveAsync("primary", Encapsulation, Metadata);
+        var saved = await subject.CreateAsync("primary", Encapsulation, Metadata);
 
-        saved.Id.Should().Be("key-1");
-        saved.Alias.Should().Be("primary");
+        saved!.Id.Should().Be("key-1");
+        saved!.Alias.Should().Be("primary");
         saved.Encapsulation.Should().Equal(Encapsulation);
         saved.Metadata.Should().Equal(Metadata);
     }
@@ -70,9 +70,9 @@ public class InMemoryEncapsulatedKeyRepositoryTests
         var subject = CreateSubject();
         SetGeneratedIds("key-1");
 
-        var saved = await subject.SaveAsync(null, Encapsulation, Metadata);
+        var saved = await subject.CreateAsync(null, Encapsulation, Metadata);
 
-        saved.Alias.Should().BeNull();
+        saved!.Alias.Should().BeNull();
     }
 
     [Fact]
@@ -81,11 +81,11 @@ public class InMemoryEncapsulatedKeyRepositoryTests
         var subject = CreateSubject();
         SetGeneratedIds("key-1", "key-2");
 
-        var first = await subject.SaveAsync(null, Encapsulation, Metadata);
-        var second = await subject.SaveAsync(null, Encapsulation, Metadata);
+        var first = await subject.CreateAsync(null, Encapsulation, Metadata);
+        var second = await subject.CreateAsync(null, Encapsulation, Metadata);
 
-        first.Id.Should().Be("key-1");
-        second.Id.Should().Be("key-2");
+        first!.Id.Should().Be("key-1");
+        second!.Id.Should().Be("key-2");
     }
 
     [Fact]
@@ -94,9 +94,9 @@ public class InMemoryEncapsulatedKeyRepositoryTests
         var subject = CreateSubject();
         SetGeneratedIds("key-1");
 
-        var saved = await subject.SaveAsync("primary", Encapsulation, Metadata);
+        var saved = await subject.CreateAsync("primary", Encapsulation, Metadata);
 
-        var found = await subject.FindAsync(new KeyReference("key-1", KeyReferenceType.Id));
+        var found = await subject.FindByIdAsync("key-1");
 
         found.Should().BeEquivalentTo(saved);
     }
@@ -107,103 +107,104 @@ public class InMemoryEncapsulatedKeyRepositoryTests
         var subject = CreateSubject();
         SetGeneratedIds("key-1");
 
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
+        await subject.CreateAsync("primary", Encapsulation, Metadata);
 
-        var found = await subject.FindAsync(new KeyReference("primary", KeyReferenceType.Alias));
+        var found = await subject.FindByAliasAsync("primary");
 
-        found.Id.Should().Be("key-1");
+        found!.Id.Should().Be("key-1");
     }
 
     [Fact]
-    public async Task FindById_ThrowsWhenTheKeyIsUnknown()
+    public async Task FindById_ReturnsNullWhenTheKeyIsUnknown()
     {
         var subject = CreateSubject();
 
-        var act = () => subject.FindAsync(new KeyReference("missing", KeyReferenceType.Id));
+        var found = await subject.FindByIdAsync("missing");
+
+        found.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task FindByAlias_ReturnsNullWhenTheAliasIsUnknown()
+    {
+        var subject = CreateSubject();
+
+        var found = await subject.FindByAliasAsync("missing");
+
+        found.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SetAliasById_MakesTheKeyDiscoverableByTheNewAlias()
+    {
+        var subject = CreateSubject();
+        SetGeneratedIds("key-1");
+
+        await subject.CreateAsync("primary", Encapsulation, Metadata);
+
+        await subject.SetAliasByIdAsync("key-1", "extra");
+
+        var found = await subject.FindByAliasAsync("extra");
+        found!.Id.Should().Be("key-1");
+        found!.Alias.Should().Be("extra");
+    }
+
+    [Fact]
+    public async Task SetAliasById_ReplacesAnyExistingAliasOnTheSameKey()
+    {
+        var subject = CreateSubject();
+        SetGeneratedIds("key-1");
+
+        await subject.CreateAsync("primary", Encapsulation, Metadata);
+
+        await subject.SetAliasByIdAsync("key-1", "extra");
+
+        var key = await subject.FindByIdAsync("key-1");
+        key!.Alias.Should().Be("extra");
+
+        var gone = await subject.FindByAliasAsync("primary");
+        gone.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SetAliasById_ThrowsWhenTheIdIsUnknown()
+    {
+        var subject = CreateSubject();
+
+        var act = () => subject.SetAliasByIdAsync("missing", "extra");
 
         await act.Should().ThrowAsync<EncapsulatedKeyNotFoundException>();
     }
 
     [Fact]
-    public async Task FindByAlias_ThrowsWhenTheAliasIsUnknown()
-    {
-        var subject = CreateSubject();
-
-        var act = () => subject.FindAsync(new KeyReference("missing", KeyReferenceType.Alias));
-
-        await act.Should().ThrowAsync<EncapsulatedAliasNotFoundException>();
-    }
-
-    [Fact]
-    public async Task AddAliasById_MakesTheKeyDiscoverableByTheNewAlias()
+    public async Task SetAliasByIdToNull_RemovesTheAliasButKeepsTheKey()
     {
         var subject = CreateSubject();
         SetGeneratedIds("key-1");
 
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
+        await subject.CreateAsync("primary", Encapsulation, Metadata);
 
-        await subject.AddAliasByIdAsync("key-1", "extra");
+        await subject.SetAliasByIdAsync("key-1", null);
 
-        var found = await subject.FindAsync(new KeyReference("extra", KeyReferenceType.Alias));
-        found.Id.Should().Be("key-1");
-        found.Alias.Should().Be("extra");
+        var byId = await subject.FindByIdAsync("key-1");
+        byId!.Alias.Should().BeNull();
+
+        var gone = await subject.FindByAliasAsync("primary");
+        gone.Should().BeNull();
     }
 
     [Fact]
-    public async Task AddAliasById_ReplacesAnyExistingAliasOnTheSameKey()
+    public async Task SetAliasByIdToNull_OnAKeyWithNoAlias_IsANoOp()
     {
         var subject = CreateSubject();
         SetGeneratedIds("key-1");
 
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
+        await subject.CreateAsync(null, Encapsulation, Metadata);
 
-        await subject.AddAliasByIdAsync("key-1", "extra");
+        await subject.SetAliasByIdAsync("key-1", null);
 
-        var key = await subject.FindAsync(new KeyReference("key-1", KeyReferenceType.Id));
-        key.Alias.Should().Be("extra");
-
-        var act = () => subject.FindAsync(new KeyReference("primary", KeyReferenceType.Alias));
-        await act.Should().ThrowAsync<EncapsulatedAliasNotFoundException>();
-    }
-
-    [Fact]
-    public async Task AddAliasById_ThrowsWhenTheIdIsUnknown()
-    {
-        var subject = CreateSubject();
-
-        var act = () => subject.AddAliasByIdAsync("missing", "extra");
-
-        await act.Should().ThrowAsync<EncapsulatedKeyNotFoundException>();
-    }
-
-    [Fact]
-    public async Task DeleteAliasById_RemovesTheAliasButKeepsTheKey()
-    {
-        var subject = CreateSubject();
-        SetGeneratedIds("key-1");
-
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
-
-        await subject.DeleteAliasByIdAsync("key-1", "primary");
-
-        var byId = await subject.FindAsync(new KeyReference("key-1", KeyReferenceType.Id));
-        byId.Alias.Should().BeNull();
-
-        var act = () => subject.FindAsync(new KeyReference("primary", KeyReferenceType.Alias));
-        await act.Should().ThrowAsync<EncapsulatedAliasNotFoundException>();
-    }
-
-    [Fact]
-    public async Task DeleteAliasById_ThrowsWhenTheAliasIsNotBoundToTheKey()
-    {
-        var subject = CreateSubject();
-        SetGeneratedIds("key-1");
-
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
-
-        var act = () => subject.DeleteAliasByIdAsync("key-1", "never-added");
-
-        await act.Should().ThrowAsync<EncapsulatedAliasNotFoundException>();
+        var key = await subject.FindByIdAsync("key-1");
+        key!.Alias.Should().BeNull();
     }
 
     [Fact]
@@ -212,15 +213,15 @@ public class InMemoryEncapsulatedKeyRepositoryTests
         var subject = CreateSubject();
         SetGeneratedIds("key-1");
 
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
+        await subject.CreateAsync("primary", Encapsulation, Metadata);
 
         await subject.DeleteByIdAsync("key-1");
 
-        var byId = () => subject.FindAsync(new KeyReference("key-1", KeyReferenceType.Id));
-        await byId.Should().ThrowAsync<EncapsulatedKeyNotFoundException>();
+        var byId = await subject.FindByIdAsync("key-1");
+        byId.Should().BeNull();
 
-        var byAlias = () => subject.FindAsync(new KeyReference("primary", KeyReferenceType.Alias));
-        await byAlias.Should().ThrowAsync<EncapsulatedAliasNotFoundException>();
+        var byAlias = await subject.FindByAliasAsync("primary");
+        byAlias.Should().BeNull();
     }
 
     [Fact]
@@ -239,67 +240,72 @@ public class InMemoryEncapsulatedKeyRepositoryTests
         var subject = CreateSubject();
         SetGeneratedIds("key-1", "key-2");
 
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
+        await subject.CreateAsync("primary", Encapsulation, Metadata);
         await subject.DeleteByIdAsync("key-1");
 
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
+        await subject.CreateAsync("primary", Encapsulation, Metadata);
 
-        var byAlias = await subject.FindAsync(new KeyReference("primary", KeyReferenceType.Alias));
-        byAlias.Id.Should().Be("key-2");
+        var byAlias = await subject.FindByAliasAsync("primary");
+        byAlias!.Id.Should().Be("key-2");
     }
 
     [Fact]
-    public async Task AddAliasById_MovesTheAliasFromAnotherKey()
+    public async Task SetAliasById_ThrowsWhenAnotherKeyAlreadyHoldsTheAlias()
     {
         var subject = CreateSubject();
         SetGeneratedIds("key-1", "key-2");
 
-        await subject.SaveAsync("shared", Encapsulation, Metadata);
-        await subject.SaveAsync(null, Encapsulation, Metadata);
+        await subject.CreateAsync("shared", Encapsulation, Metadata);
+        await subject.CreateAsync(null, Encapsulation, Metadata);
 
-        await subject.AddAliasByIdAsync("key-2", "shared");
+        var act = () => subject.SetAliasByIdAsync("key-2", "shared");
 
-        var byAlias = await subject.FindAsync(new KeyReference("shared", KeyReferenceType.Alias));
-        byAlias.Id.Should().Be("key-2");
-
-        var losing = await subject.FindAsync(new KeyReference("key-1", KeyReferenceType.Id));
-        losing.Alias.Should().BeNull();
-
-        var gaining = await subject.FindAsync(new KeyReference("key-2", KeyReferenceType.Id));
-        gaining.Alias.Should().Be("shared");
+        await act.Should().ThrowAsync<EncapsulatedAliasInUseException>().WithMessage("*shared*");
     }
 
     [Fact]
-    public async Task AddAliasById_IsIdempotentWhenTheAliasIsAlreadyOnTheKey()
+    public async Task SetAliasById_AfterTheHoldingKeyReleasesIt_BindsTheAlias()
+    {
+        var subject = CreateSubject();
+        SetGeneratedIds("key-1", "key-2");
+
+        await subject.CreateAsync("shared", Encapsulation, Metadata);
+        await subject.CreateAsync(null, Encapsulation, Metadata);
+
+        await subject.SetAliasByIdAsync("key-1", null);
+        await subject.SetAliasByIdAsync("key-2", "shared");
+
+        var byAlias = await subject.FindByAliasAsync("shared");
+        byAlias!.Id.Should().Be("key-2");
+    }
+
+    [Fact]
+    public async Task SetAliasById_IsIdempotentWhenTheAliasIsAlreadyOnTheKey()
     {
         var subject = CreateSubject();
         SetGeneratedIds("key-1");
 
-        await subject.SaveAsync("primary", Encapsulation, Metadata);
+        await subject.CreateAsync("primary", Encapsulation, Metadata);
 
-        await subject.AddAliasByIdAsync("key-1", "primary");
+        await subject.SetAliasByIdAsync("key-1", "primary");
 
-        var key = await subject.FindAsync(new KeyReference("key-1", KeyReferenceType.Id));
-        key.Alias.Should().Be("primary");
+        var key = await subject.FindByIdAsync("key-1");
+        key!.Alias.Should().Be("primary");
 
-        var byAlias = await subject.FindAsync(new KeyReference("primary", KeyReferenceType.Alias));
-        byAlias.Id.Should().Be("key-1");
+        var byAlias = await subject.FindByAliasAsync("primary");
+        byAlias!.Id.Should().Be("key-1");
     }
 
     [Fact]
-    public async Task Save_MovesAnAliasAlreadyOwnedByAnotherKey()
+    public async Task Create_ThrowsWhenAnotherKeyAlreadyHoldsTheAlias()
     {
         var subject = CreateSubject();
         SetGeneratedIds("key-1", "key-2");
 
-        await subject.SaveAsync("shared", Encapsulation, Metadata);
+        await subject.CreateAsync("shared", Encapsulation, Metadata);
 
-        await subject.SaveAsync("shared", Encapsulation, Metadata);
+        var act = () => subject.CreateAsync("shared", Encapsulation, Metadata);
 
-        var byAlias = await subject.FindAsync(new KeyReference("shared", KeyReferenceType.Alias));
-        byAlias.Id.Should().Be("key-2");
-
-        var losing = await subject.FindAsync(new KeyReference("key-1", KeyReferenceType.Id));
-        losing.Alias.Should().BeNull();
+        await act.Should().ThrowAsync<EncapsulatedAliasInUseException>().WithMessage("*shared*");
     }
 }

@@ -29,12 +29,12 @@ internal class EnvelopeEncapsulatedKeyManager : IEncapsulatedKeyManager
         new MapKeyEncapsulationOptions(new Dictionary<string, string>());
 
     private readonly IKeyEncapsulationService _keyEncapsulationService;
-    private readonly IEncapsulatedKeyRepository _keyRepository;
+    private readonly IEncapsulatedKeyRecordRepository _keyRepository;
     private readonly IEncryptionErrorPolicy _errorPolicy;
 
     public EnvelopeEncapsulatedKeyManager(
         IKeyEncapsulationService keyEncapsulationService,
-        IEncapsulatedKeyRepository keyRepository,
+        IEncapsulatedKeyRecordRepository keyRepository,
         IEncryptionErrorPolicy errorPolicy)
     {
         _keyEncapsulationService = keyEncapsulationService;
@@ -49,7 +49,7 @@ internal class EnvelopeEncapsulatedKeyManager : IEncapsulatedKeyManager
             var result = await _keyEncapsulationService.EncapsulateAsync(EmptyOptions, cancellationToken)
                 .ConfigureAwait(false);
 
-            return await _keyRepository.SaveAsync(
+            return await _keyRepository.CreateAsync(
                     alias,
                     result.Encapsulation,
                     result.Options.ToMap(),
