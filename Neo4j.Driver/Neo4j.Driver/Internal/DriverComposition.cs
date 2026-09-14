@@ -16,6 +16,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Neo4j.Driver.Internal.Encryption;
 using Neo4j.Driver.Internal.IO;
@@ -33,7 +34,7 @@ internal interface IDriverComposition
 
 internal partial class DriverComposition : IDriverComposition
 {
-    // ReSharper disable once UnusedMember.Local
+    [SuppressMessage("ReSharper", "UnusedMember.Local", Justification = "Used to setup DI")]
     private static void Setup()
     {
         DI.Setup(nameof(DriverComposition))
