@@ -54,7 +54,7 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
             return (keyRef.Reference, null);
         }
 
-        if (_aliasToKeyIdCache.TryGet(profile.Name, keyRef.Reference, out var cachedKeyId))
+        if (_aliasToKeyIdCache.TryGet(profile, keyRef.Reference, out var cachedKeyId))
         {
             return (cachedKeyId, null);
         }
@@ -62,7 +62,7 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
         var key = await profile.KeyRepository.FindByAliasAsync(keyRef.Reference, cancellationToken)
             .ConfigureAwait(false) ?? throw new EncapsulatedAliasNotFoundException(keyRef.Reference);
 
-        _aliasToKeyIdCache.Set(profile.Name, keyRef.Reference, key.Id);
+        _aliasToKeyIdCache.Set(profile, keyRef.Reference, key.Id);
         return (key.Id, key);
     }
 
@@ -72,7 +72,7 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
         EncapsulatedKeyRecord? prefetchedKey,
         CancellationToken cancellationToken)
     {
-        if (_encryptionKeyCache.TryGet(profile.Name, keyId, out var cached))
+        if (_encryptionKeyCache.TryGet(profile, keyId, out var cached))
         {
             return cached;
         }
@@ -84,7 +84,7 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
             .DecapsulateAsync(key.Encapsulation, key.Metadata, cancellationToken)
             .ConfigureAwait(false);
 
-        _encryptionKeyCache.Set(profile.Name, keyId, dek);
+        _encryptionKeyCache.Set(profile, keyId, dek);
         return dek;
     }
 }

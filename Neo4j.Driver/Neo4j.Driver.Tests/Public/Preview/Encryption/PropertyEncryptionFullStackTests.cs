@@ -60,7 +60,9 @@ public class PropertyEncryptionFullStackTests : IAsyncLifetime
             new CryptoRandomProvider(),
             new Base64Codec());
 
-        return PropertyEncryptionProfile.Envelope(name, kes, new InMemoryEncapsulatedKeyRepository(new KeyIdGenerator()));
+        return PropertyEncryptionProfile
+            .EnvelopeBuilder(name, kes, new InMemoryEncapsulatedKeyRepository(new KeyIdGenerator()))
+            .Build();
     }
 
     public static TheoryData<object> SupportedValues() => new()

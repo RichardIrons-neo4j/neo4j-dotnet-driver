@@ -20,6 +20,7 @@ using FluentAssertions;
 using Moq;
 using Neo4j.Driver.Internal.Caching;
 using Neo4j.Driver.Internal.Services;
+using Neo4j.Driver.Preview.Encryption;
 using Xunit;
 
 namespace Neo4j.Driver.Tests.Internal.Caching;
@@ -36,16 +37,19 @@ public class PerProfileBoundedCacheTests
 
     private PerProfileBoundedCache<string> CreateSubject(int capacityPerProfile, TimeSpan? ttl)
     {
-        return new PerProfileBoundedCache<string>(capacityPerProfile, ttl, _clock.Object);
+        _config = new CacheConfig(capacityPerProfile, ttl ?? TimeSpan.FromDays(365));
+        return new PerProfileBoundedCache<string>(_clock.Object);
     }
+
+    private CacheConfig _config = new(100, TimeSpan.FromDays(365));
 
     [Fact]
     public void TryGet_AfterSet_ReturnsCachedValue()
     {
         var subject = CreateSubject(capacityPerProfile: 10, ttl: null);
 
-        subject.Set("profile-a", "k1", "v1");
-        var found = subject.TryGet("profile-a", "k1", out var value);
+        subject.Set("profile-a", _config, "k1", "v1");
+        var found = subject.TryGet("profile-a", _config, "k1", out var value);
 
         found.Should().BeTrue();
         value.Should().Be("v1");
@@ -56,7 +60,7 @@ public class PerProfileBoundedCacheTests
     {
         var subject = CreateSubject(capacityPerProfile: 10, ttl: null);
 
-        var found = subject.TryGet("profile-a", "absent", out var value);
+        var found = subject.TryGet("profile-a", _config, "absent", out var value);
 
         found.Should().BeFalse();
         value.Should().BeNull();
@@ -67,11 +71,11 @@ public class PerProfileBoundedCacheTests
     {
         var subject = CreateSubject(capacityPerProfile: 10, ttl: null);
 
-        subject.Set("profile-a", "k1", "va");
-        subject.Set("profile-b", "k1", "vb");
+        subject.Set("profile-a", _config, "k1", "va");
+        subject.Set("profile-b", _config, "k1", "vb");
 
-        subject.TryGet("profile-a", "k1", out var a);
-        subject.TryGet("profile-b", "k1", out var b);
+        subject.TryGet("profile-a", _config, "k1", out var a);
+        subject.TryGet("profile-b", _config, "k1", out var b);
 
         a.Should().Be("va");
         b.Should().Be("vb");
@@ -82,14 +86,14 @@ public class PerProfileBoundedCacheTests
     {
         var subject = CreateSubject(capacityPerProfile: 1, ttl: null);
 
-        subject.Set("profile-a", "k1", "va1");
-        subject.Set("profile-b", "k1", "vb1");
-        subject.Set("profile-a", "k2", "va2"); // should evict profile-a's k1 only
+        subject.Set("profile-a", _config, "k1", "va1");
+        subject.Set("profile-b", _config, "k1", "vb1");
+        subject.Set("profile-a", _config, "k2", "va2"); // should evict profile-a's k1 only
 
-        subject.TryGet("profile-a", "k1", out _).Should().BeFalse();
-        subject.TryGet("profile-a", "k2", out var va2).Should().BeTrue();
+        subject.TryGet("profile-a", _config, "k1", out _).Should().BeFalse();
+        subject.TryGet("profile-a", _config, "k2", out var va2).Should().BeTrue();
         va2.Should().Be("va2");
-        subject.TryGet("profile-b", "k1", out var vb1).Should().BeTrue();
+        subject.TryGet("profile-b", _config, "k1", out var vb1).Should().BeTrue();
         vb1.Should().Be("vb1");
     }
 
@@ -98,9 +102,9 @@ public class PerProfileBoundedCacheTests
     {
         var subject = CreateSubject(capacityPerProfile: 10, ttl: TimeSpan.FromSeconds(15));
 
-        subject.Set("profile-a", "k1", "v1");
+        subject.Set("profile-a", _config, "k1", "v1");
         _now += TimeSpan.FromSeconds(16);
 
-        subject.TryGet("profile-a", "k1", out _).Should().BeFalse();
+        subject.TryGet("profile-a", _config, "k1", out _).Should().BeFalse();
     }
 }

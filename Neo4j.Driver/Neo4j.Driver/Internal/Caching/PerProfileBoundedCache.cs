@@ -15,39 +15,35 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Neo4j.Driver.Internal.Services;
+using Neo4j.Driver.Preview.Encryption;
 
 namespace Neo4j.Driver.Internal.Caching;
 
 internal class PerProfileBoundedCache<TValue>
 {
-    private readonly int _capacityPerProfile;
-    private readonly TimeSpan? _ttl;
     private readonly IDateTimeProvider _clock;
     private readonly object _lock = new();
     private readonly Dictionary<string, IBoundedCache<string, TValue>> _perProfile = new();
 
-    public PerProfileBoundedCache(int capacityPerProfile, TimeSpan? ttl, IDateTimeProvider clock)
+    public PerProfileBoundedCache(IDateTimeProvider clock)
     {
-        _capacityPerProfile = capacityPerProfile;
-        _ttl = ttl;
         _clock = clock;
     }
 
-    public bool TryGet(string profileName, string key, [NotNullWhen(true)] out TValue? value)
+    public bool TryGet(string profileName, CacheConfig config, string key, [NotNullWhen(true)] out TValue? value)
     {
-        return GetOrAddProfileCache(profileName).TryGet(key, out value);
+        return GetOrAddProfileCache(profileName, config).TryGet(key, out value);
     }
 
-    public void Set(string profileName, string key, TValue value)
+    public void Set(string profileName, CacheConfig config, string key, TValue value)
     {
-        GetOrAddProfileCache(profileName).Set(key, value);
+        GetOrAddProfileCache(profileName, config).Set(key, value);
     }
 
-    private IBoundedCache<string, TValue> GetOrAddProfileCache(string profileName)
+    private IBoundedCache<string, TValue> GetOrAddProfileCache(string profileName, CacheConfig config)
     {
         lock (_lock)
         {
@@ -56,7 +52,7 @@ internal class PerProfileBoundedCache<TValue>
                 return cache;
             }
 
-            cache = new BoundedLruCache<string, TValue>(_capacityPerProfile, _ttl, _clock);
+            cache = new BoundedLruCache<string, TValue>(config.MaxSize, config.Ttl, _clock);
             _perProfile[profileName] = cache;
 
             return cache;

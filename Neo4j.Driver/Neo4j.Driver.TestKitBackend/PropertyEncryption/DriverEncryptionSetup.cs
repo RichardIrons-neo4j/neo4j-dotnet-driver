@@ -53,7 +53,10 @@ internal class DriverEncryptionSetup : IDriverEncryptionSetup
             var repository = _repositoryFactory();
 
             repositories[profile.Name] = repository;
-            resultProfiles.Add(PropertyEncryptionProfile.Envelope(profile.Name, keyEncapsulationService, repository));
+            resultProfiles.Add(
+                PropertyEncryptionProfile
+                    .EnvelopeBuilder(profile.Name, keyEncapsulationService, repository)
+                    .Build());
         }
 
         return new DriverEncryptionObjects(resultProfiles, repositories);

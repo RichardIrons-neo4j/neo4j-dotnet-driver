@@ -46,7 +46,9 @@ public sealed class PropertyEncryptionIT : DirectDriverTestBase
             new Base64Codec());
 
         var repository = new InMemoryEncapsulatedKeyRepository(new KeyIdGenerator());
-        var profile = PropertyEncryptionProfile.Envelope("integration-test", kes, repository);
+        var profile = PropertyEncryptionProfile
+            .EnvelopeBuilder("integration-test", kes, repository)
+            .Build();
 
         await using var driver = GraphDatabase.Driver(
             ServerEndPoint,

@@ -21,6 +21,6 @@ namespace Neo4j.Driver.Internal.Encryption;
 
 internal interface IEncryptionKeyCache
 {
-    bool TryGet(string profileName, string keyId, [NotNullWhen(true)] out byte[]? key);
-    void Set(string profileName, string keyId, byte[] key);
+    bool TryGet(IEnvelopeEncryptionProfile profile, string keyId, [NotNullWhen(true)] out byte[]? key);
+    void Set(IEnvelopeEncryptionProfile profile, string keyId, byte[] key);
 }

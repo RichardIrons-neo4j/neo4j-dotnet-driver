@@ -133,8 +133,8 @@ public class EnvelopeDataKeyProviderTests
             new KeyReference("main", KeyReferenceType.Alias),
             TestContext.Current.CancellationToken);
 
-        aliasCache.Verify(c => c.Set(ProfileName, "main", "key-1"));
-        keyCache.Verify(c => c.Set(ProfileName, "key-1", Matches(Dek)));
+        aliasCache.Verify(c => c.Set(It.IsAny<IEnvelopeEncryptionProfile>(), "main", "key-1"));
+        keyCache.Verify(c => c.Set(It.IsAny<IEnvelopeEncryptionProfile>(), "key-1", Matches(Dek)));
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class EnvelopeDataKeyProviderTests
     {
         string? cachedKeyId = "key-1";
         _autoMocker.GetMock<IAliasToKeyIdCache>()
-            .Setup(c => c.TryGet(ProfileName, "main", out cachedKeyId))
+            .Setup(c => c.TryGet(It.IsAny<IEnvelopeEncryptionProfile>(), "main", out cachedKeyId))
             .Returns(true);
 
         _repository.Setup(r => r.FindByIdAsync("key-1", It.IsAny<CancellationToken>()))
@@ -165,12 +165,12 @@ public class EnvelopeDataKeyProviderTests
     {
         string? cachedKeyId = "key-1";
         _autoMocker.GetMock<IAliasToKeyIdCache>()
-            .Setup(c => c.TryGet(ProfileName, "main", out cachedKeyId))
+            .Setup(c => c.TryGet(It.IsAny<IEnvelopeEncryptionProfile>(), "main", out cachedKeyId))
             .Returns(true);
 
         byte[]? cachedDek = Dek;
         _autoMocker.GetMock<IEncryptionKeyCache>()
-            .Setup(c => c.TryGet(ProfileName, "key-1", out cachedDek))
+            .Setup(c => c.TryGet(It.IsAny<IEnvelopeEncryptionProfile>(), "key-1", out cachedDek))
             .Returns(true);
 
 
@@ -189,7 +189,7 @@ public class EnvelopeDataKeyProviderTests
     {
         string? poisonedKeyId = "wrong-id";
         _autoMocker.GetMock<IAliasToKeyIdCache>()
-            .Setup(c => c.TryGet(ProfileName, It.IsAny<string>(), out poisonedKeyId))
+            .Setup(c => c.TryGet(It.IsAny<IEnvelopeEncryptionProfile>(), It.IsAny<string>(), out poisonedKeyId))
             .Returns(true);
 
         _repository.Setup(r => r.FindByIdAsync("key-1", It.IsAny<CancellationToken>()))
@@ -212,7 +212,7 @@ public class EnvelopeDataKeyProviderTests
     {
         byte[]? cachedDek = Dek;
         _autoMocker.GetMock<IEncryptionKeyCache>()
-            .Setup(c => c.TryGet(ProfileName, "key-1", out cachedDek))
+            .Setup(c => c.TryGet(It.IsAny<IEnvelopeEncryptionProfile>(), "key-1", out cachedDek))
             .Returns(true);
 
         var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();

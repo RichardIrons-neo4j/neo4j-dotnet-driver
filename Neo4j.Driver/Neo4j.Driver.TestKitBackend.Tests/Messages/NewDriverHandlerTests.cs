@@ -123,10 +123,11 @@ public class NewDriverHandlerTests
 
     private static IPropertyEncryptionProfile Profile(string name)
     {
-        return PropertyEncryptionProfile.Envelope(
-            name,
-            Mock.Of<IKeyEncapsulationService>(),
-            Mock.Of<IEncapsulatedKeyRecordRepository>());
+        return PropertyEncryptionProfile.EnvelopeBuilder(
+                name,
+                Mock.Of<IKeyEncapsulationService>(),
+                Mock.Of<IEncapsulatedKeyRecordRepository>())
+            .Build();
     }
 
     private DriverEncryptionObjects PrepareReturnsSetupForTheRequestedProfiles()

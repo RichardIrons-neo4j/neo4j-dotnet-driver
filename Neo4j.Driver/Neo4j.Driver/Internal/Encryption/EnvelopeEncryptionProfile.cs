@@ -22,4 +22,6 @@ namespace Neo4j.Driver.Internal.Encryption;
 internal record EnvelopeEncryptionProfile(
     string Name,
     IKeyEncapsulationService KeyEncapsulationService,
-    IEncapsulatedKeyRecordRepository KeyRepository) : IPropertyEncryptionProfile, IEnvelopeEncryptionProfile;
+    IEncapsulatedKeyRecordRepository KeyRepository,
+    CacheConfig? KeyCacheConfig,
+    CacheConfig? KeyAliasIndexConfig) : IPropertyEncryptionProfile, IEnvelopeEncryptionProfile;

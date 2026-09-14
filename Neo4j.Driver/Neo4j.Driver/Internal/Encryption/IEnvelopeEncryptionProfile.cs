@@ -23,4 +23,6 @@ internal interface IEnvelopeEncryptionProfile : IInternalEncryptionProfile
 {
     IKeyEncapsulationService KeyEncapsulationService { get; }
     IEncapsulatedKeyRecordRepository KeyRepository { get; }
+    CacheConfig? KeyCacheConfig { get; }
+    CacheConfig? KeyAliasIndexConfig { get; }
 }
