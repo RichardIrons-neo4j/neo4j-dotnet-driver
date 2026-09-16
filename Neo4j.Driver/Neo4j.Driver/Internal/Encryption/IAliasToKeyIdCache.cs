@@ -23,4 +23,5 @@ internal interface IAliasToKeyIdCache
 {
     bool TryGet(IEnvelopeEncryptionProfile profile, string alias, [NotNullWhen(true)] out string? keyId);
     void Set(IEnvelopeEncryptionProfile profile, string alias, string keyId);
+    void Remove(IEnvelopeEncryptionProfile profile, string alias);
 }

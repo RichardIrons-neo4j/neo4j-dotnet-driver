@@ -52,4 +52,9 @@ internal class AliasToKeyIdCache : IAliasToKeyIdCache
 
         _cache.Set(profile.Name, config, alias, value);
     }
+
+    public void Remove(IEnvelopeEncryptionProfile profile, string alias)
+    {
+        _cache.Remove(profile.Name, alias);
+    }
 }

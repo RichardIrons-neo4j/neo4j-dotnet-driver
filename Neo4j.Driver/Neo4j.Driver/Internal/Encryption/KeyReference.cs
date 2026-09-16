@@ -15,24 +15,12 @@
 
 #nullable enable
 
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Neo4j.Driver.Internal.Encryption;
 
-internal interface IEncryptionEngineDispatcher
+internal enum KeyReferenceType
 {
-    Task<byte[]> DispatchEncryptAsync(
-        IInternalEncryptionProfile profile,
-        object value,
-        KeyReference keyRef,
-        byte[]? aad,
-        byte[]? iv,
-        CancellationToken cancellationToken);
-
-    Task<object> DispatchDecryptAsync(
-        IInternalEncryptionProfile profile,
-        byte[] encrypted,
-        byte[]? aad,
-        CancellationToken cancellationToken);
+    Id,
+    Alias
 }
+
+internal record KeyReference(string Reference, KeyReferenceType Type);

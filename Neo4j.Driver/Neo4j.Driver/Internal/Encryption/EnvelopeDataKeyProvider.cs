@@ -37,54 +37,69 @@ internal class EnvelopeDataKeyProvider : IEnvelopeDataKeyProvider
         KeyReference keyRef,
         CancellationToken cancellationToken)
     {
-        var (keyId, prefetchedKey) = await ResolveKeyIdAsync(profile, keyRef, cancellationToken).ConfigureAwait(false);
-        var dek = await ResolveDataEncryptionKeyAsync(profile, keyId, prefetchedKey, cancellationToken)
-            .ConfigureAwait(false);
-
-        return new DataKeyResult(keyId, dek);
-    }
-
-    private async Task<(string KeyId, EncapsulatedKeyRecord? PrefetchedKey)> ResolveKeyIdAsync(
-        IEnvelopeEncryptionProfile profile,
-        KeyReference keyRef,
-        CancellationToken cancellationToken)
-    {
         if (keyRef.Type == KeyReferenceType.Id)
         {
-            return (keyRef.Reference, null);
+            return await GetDataKeyByIdAsync(profile, keyRef.Reference, cancellationToken).ConfigureAwait(false);
         }
 
-        if (_aliasToKeyIdCache.TryGet(profile, keyRef.Reference, out var cachedKeyId))
-        {
-            return (cachedKeyId, null);
-        }
-
-        var key = await profile.KeyRepository.FindByAliasAsync(keyRef.Reference, cancellationToken)
-            .ConfigureAwait(false) ?? throw new EncapsulatedAliasNotFoundException(keyRef.Reference);
-
-        _aliasToKeyIdCache.Set(profile, keyRef.Reference, key.Id);
-        return (key.Id, key);
+        return await GetDataKeyByAliasAsync(profile, keyRef.Reference, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<byte[]> ResolveDataEncryptionKeyAsync(
+    private async Task<DataKeyResult> GetDataKeyByIdAsync(
         IEnvelopeEncryptionProfile profile,
         string keyId,
-        EncapsulatedKeyRecord? prefetchedKey,
         CancellationToken cancellationToken)
     {
-        if (_encryptionKeyCache.TryGet(profile, keyId, out var cached))
+        if (_encryptionKeyCache.TryGet(profile, keyId, out var cachedDek))
         {
-            return cached;
+            return new DataKeyResult(keyId, cachedDek);
         }
 
-        var key = prefetchedKey ?? await profile.KeyRepository.FindByIdAsync(keyId, cancellationToken)
-            .ConfigureAwait(false) ?? throw new EncapsulatedKeyNotFoundException(keyId);
+        var key = await profile.KeyRepository.FindByIdAsync(keyId, cancellationToken).ConfigureAwait(false)
+            ?? throw new EncapsulatedKeyNotFoundException(keyId);
+
+        return await GetOrDecapsulateDataKeyAsync(profile, key, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<DataKeyResult> GetDataKeyByAliasAsync(
+        IEnvelopeEncryptionProfile profile,
+        string alias,
+        CancellationToken cancellationToken)
+    {
+        if (_aliasToKeyIdCache.TryGet(profile, alias, out var indexedKeyId))
+        {
+            if (_encryptionKeyCache.TryGet(profile, indexedKeyId, out var cachedDek))
+            {
+                return new DataKeyResult(indexedKeyId, cachedDek);
+            }
+
+            _aliasToKeyIdCache.Remove(profile, alias);
+        }
+
+        var key = await profile.KeyRepository.FindByAliasAsync(alias, cancellationToken).ConfigureAwait(false)
+            ?? throw new EncapsulatedAliasNotFoundException(alias);
+
+        _aliasToKeyIdCache.Set(profile, alias, key.Id);
+
+        return await GetOrDecapsulateDataKeyAsync(profile, key, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<DataKeyResult> GetOrDecapsulateDataKeyAsync(
+        IEnvelopeEncryptionProfile profile,
+        EncapsulatedKeyRecord key,
+        CancellationToken cancellationToken)
+    {
+        if (_encryptionKeyCache.TryGet(profile, key.Id, out var cachedDek))
+        {
+            return new DataKeyResult(key.Id, cachedDek);
+        }
 
         var dek = await profile.KeyEncapsulationService
             .DecapsulateAsync(key.Encapsulation, key.Metadata, cancellationToken)
             .ConfigureAwait(false);
 
-        _encryptionKeyCache.Set(profile, keyId, dek);
-        return dek;
+        _encryptionKeyCache.Set(profile, key.Id, dek);
+
+        return new DataKeyResult(key.Id, dek);
     }
 }

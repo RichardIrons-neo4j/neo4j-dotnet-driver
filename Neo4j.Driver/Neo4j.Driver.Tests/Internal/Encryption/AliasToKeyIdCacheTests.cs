@@ -99,6 +99,31 @@ public class AliasToKeyIdCacheTests
     }
 
     [Fact]
+    public void Remove_AfterSet_MakesTheNextTryGetMiss()
+    {
+        _subject.Set(Profile(), "main", "key-1");
+
+        _subject.Remove(Profile(), "main");
+        var found = _subject.TryGet(Profile(), "main", out var keyId);
+
+        found.Should().BeFalse();
+        keyId.Should().BeNull();
+    }
+
+    [Fact]
+    public void Remove_LeavesOtherAliasesInPlace()
+    {
+        _subject.Set(Profile(), "main", "key-1");
+        _subject.Set(Profile(), "spare", "key-2");
+
+        _subject.Remove(Profile(), "main");
+        var found = _subject.TryGet(Profile(), "spare", out var keyId);
+
+        found.Should().BeTrue();
+        keyId.Should().Be("key-2");
+    }
+
+    [Fact]
     public void TryGet_AfterTheConfiguredTtlHasPassed_Misses()
     {
         var now = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);

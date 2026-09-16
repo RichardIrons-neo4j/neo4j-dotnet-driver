@@ -87,5 +87,17 @@ internal class BoundedLruCache<TKey, TValue> : IBoundedCache<TKey, TValue> where
         }
     }
 
+    public void Remove(TKey key)
+    {
+        lock (_lock)
+        {
+            if (_index.TryGetValue(key, out var node))
+            {
+                _entries.Remove(node);
+                _index.Remove(key);
+            }
+        }
+    }
+
     private readonly record struct CacheEntry(TKey Key, TValue Value, DateTime? ExpiresAt);
 }

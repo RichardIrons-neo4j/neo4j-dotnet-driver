@@ -41,6 +41,9 @@ public class EnvelopeDataKeyProviderTests
     private static readonly byte[] Encapsulation = [0xBB];
     private static readonly byte[] Dek = Sequence(32, seed: 0x30);
 
+    private static readonly byte[] ReassignedEncapsulation = [0xCC];
+    private static readonly byte[] ReassignedDek = Sequence(32, seed: 0x60);
+
     private IEnvelopeEncryptionProfile Profile()
     {
         var profile = new Mock<IEnvelopeEncryptionProfile>();
@@ -50,13 +53,26 @@ public class EnvelopeDataKeyProviderTests
         return profile.Object;
     }
 
-    private static EncapsulatedKeyRecord Key()
+    private static EncapsulatedKeyRecord Key(
+        string id = "key-1",
+        string? alias = "main",
+        byte[]? encapsulation = null)
     {
         return new EncapsulatedKeyRecord(
-            "key-1",
-            "main",
-            Encapsulation,
+            id,
+            alias,
+            encapsulation ?? Encapsulation,
             new Dictionary<string, string> { ["iv"] = "wrap-iv" });
+    }
+
+    private Mock<IAliasToKeyIdCache> StubAliasIndexHit(string alias, string keyId)
+    {
+        var aliasIndex = _autoMocker.GetMock<IAliasToKeyIdCache>();
+        string? indexed = keyId;
+        aliasIndex.Setup(c => c.TryGet(It.IsAny<IEnvelopeEncryptionProfile>(), alias, out indexed))
+            .Returns(true);
+
+        return aliasIndex;
     }
 
     private void StubDecapsulate()
@@ -66,6 +82,12 @@ public class EnvelopeDataKeyProviderTests
                 It.IsAny<IReadOnlyDictionary<string, string>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Dek);
+
+        _kes.Setup(k => k.DecapsulateAsync(
+                Matches(ReassignedEncapsulation),
+                It.IsAny<IReadOnlyDictionary<string, string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ReassignedDek);
     }
 
     [Fact]
@@ -138,15 +160,15 @@ public class EnvelopeDataKeyProviderTests
     }
 
     [Fact]
-    public async Task GetDataKey_AliasCacheHit_SkipsAliasRepositoryLookup()
+    public async Task GetDataKey_ByAliasWhoseIndexedKeyWasDeleted_ResolvesTheAliasToItsCurrentKey()
     {
-        string? cachedKeyId = "key-1";
-        _autoMocker.GetMock<IAliasToKeyIdCache>()
-            .Setup(c => c.TryGet(It.IsAny<IEnvelopeEncryptionProfile>(), "main", out cachedKeyId))
-            .Returns(true);
+        StubAliasIndexHit("main", "key-1");
 
         _repository.Setup(r => r.FindByIdAsync("key-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Key());
+            .ReturnsAsync((EncapsulatedKeyRecord?)null);
+
+        _repository.Setup(r => r.FindByAliasAsync("main", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Key("key-2", "main", ReassignedEncapsulation));
 
         StubDecapsulate();
 
@@ -156,8 +178,79 @@ public class EnvelopeDataKeyProviderTests
             new KeyReference("main", KeyReferenceType.Alias),
             TestContext.Current.CancellationToken);
 
-        result.KeyId.Should().Be("key-1");
+        result.KeyId.Should().Be("key-2");
+        result.DataKey.Should().BeSameAs(ReassignedDek);
+    }
+
+    [Fact]
+    public async Task GetDataKey_ByAliasReassignedWhileItsOldKeySurvives_ResolvesTheAliasToItsCurrentKey()
+    {
+        StubAliasIndexHit("main", "key-1");
+
+        _repository.Setup(r => r.FindByIdAsync("key-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Key("key-1", alias: null));
+
+        _repository.Setup(r => r.FindByAliasAsync("main", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Key("key-2", "main", ReassignedEncapsulation));
+
+        StubDecapsulate();
+
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
+        var result = await subject.GetDataKeyAsync(
+            Profile(),
+            new KeyReference("main", KeyReferenceType.Alias),
+            TestContext.Current.CancellationToken);
+
+        result.KeyId.Should().Be("key-2");
+        result.DataKey.Should().BeSameAs(ReassignedDek);
+    }
+
+    [Fact]
+    public async Task GetDataKey_ByAliasWithAColdIndexButACachedKey_DoesNotDecapsulateAgain()
+    {
+        _repository.Setup(r => r.FindByAliasAsync("main", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Key());
+
+        byte[]? cachedDek = Dek;
+        _autoMocker.GetMock<IEncryptionKeyCache>()
+            .Setup(c => c.TryGet(It.IsAny<IEnvelopeEncryptionProfile>(), "key-1", out cachedDek))
+            .Returns(true);
+
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
+        var result = await subject.GetDataKeyAsync(
+            Profile(),
+            new KeyReference("main", KeyReferenceType.Alias),
+            TestContext.Current.CancellationToken);
+
         result.DataKey.Should().BeSameAs(Dek);
+        _kes.Verify(
+            k => k.DecapsulateAsync(
+                It.IsAny<byte[]>(),
+                It.IsAny<IReadOnlyDictionary<string, string>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetDataKey_ByAliasWhoseIndexedKeyIsNotCached_DropsTheStaleMapping()
+    {
+        var aliasIndex = StubAliasIndexHit("main", "key-1");
+
+        _repository.Setup(r => r.FindByIdAsync("key-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Key());
+
+        _repository.Setup(r => r.FindByAliasAsync("main", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Key());
+
+        StubDecapsulate();
+
+        var subject = _autoMocker.CreateInstance<EnvelopeDataKeyProvider>();
+        await subject.GetDataKeyAsync(
+            Profile(),
+            new KeyReference("main", KeyReferenceType.Alias),
+            TestContext.Current.CancellationToken);
+
+        aliasIndex.Verify(c => c.Remove(It.IsAny<IEnvelopeEncryptionProfile>(), "main"));
     }
 
     [Fact]

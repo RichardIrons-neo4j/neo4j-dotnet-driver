@@ -43,6 +43,17 @@ internal class PerProfileBoundedCache<TValue>
         GetOrAddProfileCache(profileName, config).Set(key, value);
     }
 
+    public void Remove(string profileName, string key)
+    {
+        IBoundedCache<string, TValue>? cache;
+        lock (_lock)
+        {
+            _perProfile.TryGetValue(profileName, out cache);
+        }
+
+        cache?.Remove(key);
+    }
+
     private IBoundedCache<string, TValue> GetOrAddProfileCache(string profileName, CacheConfig config)
     {
         lock (_lock)

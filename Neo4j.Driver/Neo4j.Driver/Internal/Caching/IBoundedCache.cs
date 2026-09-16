@@ -23,4 +23,5 @@ internal interface IBoundedCache<TKey, TValue> where TKey : notnull
 {
     bool TryGet(TKey key, [NotNullWhen(true)] out TValue? value);
     void Set(TKey key, TValue value);
+    void Remove(TKey key);
 }
