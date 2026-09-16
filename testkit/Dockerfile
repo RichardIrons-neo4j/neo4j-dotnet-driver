@@ -12,7 +12,7 @@ RUN command -v python3 > /dev/null \
 RUN wget https://dot.net/v1/dotnet-install.sh \
 	&& bash dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet \
 	&& bash dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet \
-	&& bash dotnet-install.sh --runtime aspnetcore --channel 10.0 --install-dir /usr/share/dotnet \
+	&& bash dotnet-install.sh --channel 10.0 --install-dir /usr/share/dotnet \
 	&& rm dotnet-install.sh
 
 ENV PYTHON=python3
