@@ -144,6 +144,52 @@ public class BoundedLruCacheTests
     }
 
     [Fact]
+    public void Set_WhenAnExpiredEntryIsNotTheLeastRecentlyUsed_PurgesItRatherThanEvictingALiveEntry()
+    {
+        const string expiredButMostRecentlyUsed = "set-at-0s";
+        const string liveButLeastRecentlyUsed = "set-at-50s";
+        const string incoming = "set-at-110s";
+
+        // 2 slots, cache entries expire after 100s
+        var subject = CreateSubject(capacity: 2, ttl: TimeSpan.FromSeconds(100));
+
+        // T+0s: takes the first slot. Expires at T+100s.
+        subject.Set(expiredButMostRecentlyUsed, "1");
+
+        // T+50s: add another, so cache is now full. Expires at T+150s.
+        _now += TimeSpan.FromSeconds(50);
+        subject.Set(liveButLeastRecentlyUsed, "2");
+
+        // T+90s: inside the TTL, so read succeeds and makes it the most-recently-used
+        // it still expires at T+100s
+        _now += TimeSpan.FromSeconds(40);
+        subject.TryGet(expiredButMostRecentlyUsed, out _).Should().BeTrue();
+
+        // T+110s: recency order and expiry order now disagree
+        //   most recently used  -> expiredButMostRecentlyUsed, dead since T+100s
+        //   least recently used -> liveButLeastRecentlyUsed, alive until T+150s
+        _now += TimeSpan.FromSeconds(20);
+
+        // Adding another means one must be purged. The expired entry should be purged, even though it is
+        // the most recently used
+        subject.Set(incoming, "3");
+
+        // the expired entry should be gone
+        var expiredEntrySurvived = subject.TryGet(expiredButMostRecentlyUsed, out _);
+        expiredEntrySurvived.Should().BeFalse();
+
+        // the live entry should still be there
+        var liveEntrySurvived = subject.TryGet(liveButLeastRecentlyUsed, out var value);
+        liveEntrySurvived.Should().BeTrue();
+        value.Should().Be("2");
+
+        // the new entry should be there
+        var newEntrySurvived = subject.TryGet(incoming, out value);
+        newEntrySurvived.Should().BeTrue();
+        value.Should().Be("3");
+    }
+
+    [Fact]
     public void Set_ExistingKey_DoesNotCountTwiceTowardsCapacity()
     {
         var subject = CreateSubject(capacity: 2, ttl: null);

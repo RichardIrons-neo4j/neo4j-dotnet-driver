@@ -68,6 +68,8 @@ internal class BoundedLruCache<TKey, TValue> : IBoundedCache<TKey, TValue> where
     {
         lock (_lock)
         {
+            PurgeExpiredEntries();
+
             if (_index.TryGetValue(key, out var existing))
             {
                 _entries.Remove(existing);
@@ -96,6 +98,23 @@ internal class BoundedLruCache<TKey, TValue> : IBoundedCache<TKey, TValue> where
                 _entries.Remove(node);
                 _index.Remove(key);
             }
+        }
+    }
+
+    private void PurgeExpiredEntries()
+    {
+        var now = _clock.Now();
+        var node = _entries.First;
+        while (node is not null)
+        {
+            var next = node.Next;
+            if (node.Value.ExpiresAt is { } expiresAt && expiresAt <= now)
+            {
+                _entries.Remove(node);
+                _index.Remove(node.Value.Key);
+            }
+
+            node = next;
         }
     }
 
