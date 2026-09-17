@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Neo4j.Driver.Preview.Encryption;
@@ -47,6 +48,7 @@ internal class EncryptRequestBuilder :
 
     public IEncryptRequestKeyStep WithAad(object aad)
     {
+        ArgumentNullException.ThrowIfNull(aad);
         _aad = aad;
         return this;
     }

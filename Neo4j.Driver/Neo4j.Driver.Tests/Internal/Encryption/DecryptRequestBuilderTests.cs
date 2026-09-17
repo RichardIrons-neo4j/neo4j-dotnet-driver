@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
@@ -57,5 +58,15 @@ public class DecryptRequestBuilderTests
         var result = await builder.FromValue(encrypted).WithPersistedAad().DecryptAsync(token);
 
         result.Should().BeSameAs(expected);
+    }
+
+    [Fact]
+    public void WithAad_WithANullAad_Throws()
+    {
+        var builder = new DecryptRequestBuilder(Mock.Of<IEncryptionRequestRunner>());
+
+        var act = () => builder.FromValue([0xEE]).WithAad(null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 }

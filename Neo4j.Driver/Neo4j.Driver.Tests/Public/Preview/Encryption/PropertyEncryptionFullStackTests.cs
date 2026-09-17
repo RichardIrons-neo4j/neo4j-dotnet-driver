@@ -156,43 +156,6 @@ public class PropertyEncryptionFullStackTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task EncryptThenDecrypt_WithANullAadOnEncrypt_IsTheSameAsSupplyingNoAad()
-    {
-        var token = TestContext.Current.CancellationToken;
-
-        var encrypted = await _propertyEncryption.EncryptRequest()
-            .FromValue("no-aad")
-            .WithAad(null!)
-            .UsingKeyAlias("main")
-            .EncryptToBytesAsync(token);
-
-        var decrypted = await _propertyEncryption.DecryptRequest()
-            .FromValue(encrypted)
-            .WithPersistedAad()
-            .DecryptAsync(token);
-
-        decrypted.Should().Be("no-aad");
-    }
-
-    [Fact]
-    public async Task EncryptThenDecrypt_WithANullAadOnDecrypt_IsTheSameAsSupplyingNoAad()
-    {
-        var token = TestContext.Current.CancellationToken;
-
-        var encrypted = await _propertyEncryption.EncryptRequest()
-            .FromValue("no-aad")
-            .UsingKeyAlias("main")
-            .EncryptToBytesAsync(token);
-
-        var decrypted = await _propertyEncryption.DecryptRequest()
-            .FromValue(encrypted)
-            .WithAad(null!)
-            .DecryptAsync(token);
-
-        decrypted.Should().Be("no-aad");
-    }
-
-    [Fact]
     public async Task Decrypt_WithTheWrongAad_Throws()
     {
         var token = TestContext.Current.CancellationToken;

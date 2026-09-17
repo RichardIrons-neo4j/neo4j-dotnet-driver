@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
@@ -102,5 +103,15 @@ public class EncryptRequestBuilderTests
         var result = await step.UsingKeyId("id-1").EncryptToBytesAsync(token);
 
         result.Should().BeSameAs(expected);
+    }
+
+    [Fact]
+    public void WithAad_WithANullAad_Throws()
+    {
+        var builder = new EncryptRequestBuilder(Mock.Of<IEncryptionRequestRunner>());
+
+        var act = () => builder.FromValue("hello").WithAad(null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 }
