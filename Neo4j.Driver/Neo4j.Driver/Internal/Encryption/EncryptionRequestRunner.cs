@@ -50,7 +50,10 @@ internal class EncryptionRequestRunner : IEncryptionRequestRunner
     {
         var profileName = _encryptedValueBytesCodec.PeekProfileName(request.Value);
         var profile = _registry.Get(profileName);
-        var aad = request.UsePersistedAad ? null : _plaintextCodec.Serialize(request.Aad!);
+        var aad = request.Aad is null || request.UsePersistedAad 
+            ? null 
+            : _plaintextCodec.Serialize(request.Aad);
+
         return _dispatcher.DispatchDecryptAsync(profile, request.Value, aad, cancellationToken);
     }
 }
