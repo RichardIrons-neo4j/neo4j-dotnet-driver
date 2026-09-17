@@ -11,7 +11,7 @@ def run(args):
         args, universal_newlines=True, stderr=subprocess.STDOUT, check=True)
 
 if __name__ == "__main__":
-    run(["dotnet", "restore", "--disable-parallel", "-v", "n", "Neo4j.Driver/Neo4j.Driver.sln"])
+    run(["dotnet", "restore", "-v", "n", "Neo4j.Driver/Neo4j.Driver.sln"])
     run(["dotnet", "clean", "./Neo4j.Driver/Neo4j.Driver.sln"])
     run(["dotnet", "build", "./Neo4j.Driver/Neo4j.Driver.sln", "--configuration", "CI"])
-    run(["dotnet", "publish", "./Neo4j.Driver/Neo4j.Driver.TestKitBackend/Neo4j.Driver.TestKitBackend.csproj", "--self-contained", "false", "--output", "./bin/Publish", "--configuration", "CI"])
+    run(["dotnet", "publish", "./Neo4j.Driver/Neo4j.Driver.TestKitBackend/Neo4j.Driver.TestKitBackend.csproj", "--self-contained", "false", "--output", "./bin/Publish", "--configuration", "CI", "--no-build"])
