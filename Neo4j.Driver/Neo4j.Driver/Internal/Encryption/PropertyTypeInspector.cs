@@ -51,18 +51,27 @@ internal class PropertyTypeInspector : IPropertyTypeInspector
 
     private static PropertyTypeInfo GetListTypeInfo(IEnumerable list)
     {
-        var baseline = Baseline1_0;
+        PropertyTypeInfo? elementInfo = null;
 
         foreach (var item in list)
         {
             var itemInfo = GetPropertyTypeInfo(item, allowList: false);
-            if (itemInfo.Baseline > baseline)
+            elementInfo ??= itemInfo;
+
+            if (itemInfo != elementInfo)
             {
-                baseline = itemInfo.Baseline;
+                throw Heterogeneous(elementInfo, itemInfo);
             }
         }
 
-        return new PropertyTypeInfo("LIST", baseline);
+        return new PropertyTypeInfo("LIST", elementInfo?.Baseline ?? Baseline1_0);
+    }
+
+    private static ArgumentException Heterogeneous(PropertyTypeInfo expected, PropertyTypeInfo actual)
+    {
+        return new ArgumentException(
+            $"A list property must be homogeneous, but this one mixes '{expected.Name}' and '{actual.Name}'.",
+            "value");
     }
 
     private static ArgumentException Unsupported(object value)

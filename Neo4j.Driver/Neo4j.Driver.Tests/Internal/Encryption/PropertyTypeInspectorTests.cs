@@ -36,6 +36,12 @@ public class PropertyTypeInspectorTests
         new object[] { new List<object> { new List<long> { 1L } } }
     };
 
+    public static IEnumerable<object[]> HeterogeneousLists => new[]
+    {
+        new object[] { new List<object> { 1L, "a" } },
+        new object[] { new List<object> { 1L, 2.0 } }
+    };
+
     [Theory]
     [InlineData(true, "BOOLEAN")]
     [InlineData(5L, "INTEGER")]
@@ -76,20 +82,18 @@ public class PropertyTypeInspectorTests
         info.Baseline.Should().Be(Baseline1_0);
     }
 
-    [Fact]
-    public void GetPropertyTypeInfo_ReturnsListBaseline_AsMaxOfElementBaselines()
-    {
-        // everything currently 1.0 so test isn't doing much yet -
-        // update when we have something that has a different baseline
-        var info = _subject.GetPropertyTypeInfo(new List<object> { 1L, "x", true });
-
-        info.Name.Should().Be("LIST");
-        info.Baseline.Should().Be(Baseline1_0);
-    }
-
     [Theory]
     [MemberData(nameof(UnsupportedValues))]
     public void GetPropertyTypeInfo_Throws_ForUnsupportedType(object value)
+    {
+        var act = () => _subject.GetPropertyTypeInfo(value);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [MemberData(nameof(HeterogeneousLists))]
+    public void GetPropertyTypeInfo_Throws_ForHeterogeneousList(object value)
     {
         var act = () => _subject.GetPropertyTypeInfo(value);
 
