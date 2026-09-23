@@ -65,7 +65,7 @@ internal class EnvelopeEncryptionEngine : IEncryptionEngine
 
     public bool TryStartEncrypt(
         IInternalEncryptionProfile profile,
-        object value,
+        object? value,
         KeyReference keyRef,
         byte[]? aad,
         byte[]? iv,
@@ -87,7 +87,7 @@ internal class EnvelopeEncryptionEngine : IEncryptionEngine
         byte[] encrypted,
         byte[]? aad,
         CancellationToken cancellationToken,
-        [NotNullWhen(true)] out Task<object>? decryptionTask)
+        [NotNullWhen(true)] out Task<object?>? decryptionTask)
     {
         if (profile is not IEnvelopeEncryptionProfile envelopeProfile)
         {
@@ -101,7 +101,7 @@ internal class EnvelopeEncryptionEngine : IEncryptionEngine
 
     private async Task<byte[]> EncryptAsync(
         IEnvelopeEncryptionProfile profile,
-        object value,
+        object? value,
         KeyReference keyRef,
         byte[]? aad,
         byte[]? suppliedIv,
@@ -140,7 +140,7 @@ internal class EnvelopeEncryptionEngine : IEncryptionEngine
         return _encryptedValueBytesCodec.Encode(structure);
     }
 
-    private async Task<object> DecryptAsync(
+    private async Task<object?> DecryptAsync(
         IEnvelopeEncryptionProfile profile,
         byte[] encrypted,
         byte[]? aad,

@@ -46,7 +46,7 @@ internal class EncryptionRequestRunner : IEncryptionRequestRunner
         return _dispatcher.DispatchEncryptAsync(profile, request.Value, request.KeyReference, aad, request.Iv, cancellationToken);
     }
 
-    public Task<object> DecryptAsync(DecryptRequest request, CancellationToken cancellationToken)
+    public Task<object?> DecryptAsync(DecryptRequest request, CancellationToken cancellationToken)
     {
         var profileName = _encryptedValueBytesCodec.PeekProfileName(request.Value);
         var profile = _registry.Get(profileName);

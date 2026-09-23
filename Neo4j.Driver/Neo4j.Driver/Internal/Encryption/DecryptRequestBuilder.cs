@@ -58,7 +58,7 @@ internal class DecryptRequestBuilder :
         return this;
     }
 
-    public Task<object> DecryptAsync(CancellationToken cancellationToken = default)
+    public Task<object?> DecryptAsync(CancellationToken cancellationToken = default)
     {
         var request = new DecryptRequest(_value!, _aad, _usePersistedAad);
         return _runner.DecryptAsync(request, cancellationToken);

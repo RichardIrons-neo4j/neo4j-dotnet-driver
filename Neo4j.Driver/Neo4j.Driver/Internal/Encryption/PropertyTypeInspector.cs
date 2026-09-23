@@ -24,15 +24,17 @@ internal class PropertyTypeInspector : IPropertyTypeInspector
 {
     private static readonly BoltValueSerializationSchemeVersion Baseline1_0 = new(1, 0);
 
-    public PropertyTypeInfo GetPropertyTypeInfo(object value)
+    public PropertyTypeInfo GetPropertyTypeInfo(object? value)
     {
-        return GetPropertyTypeInfo(value, allowList: true);
+        return GetPropertyTypeInfo(value, allowList: true, allowNull: true);
     }
 
-    private static PropertyTypeInfo GetPropertyTypeInfo(object value, bool allowList)
+    private static PropertyTypeInfo GetPropertyTypeInfo(object? value, bool allowList, bool allowNull)
     {
         return value switch
         {
+            null when allowNull => new PropertyTypeInfo("NULL", Baseline1_0),
+
             bool => new PropertyTypeInfo("BOOLEAN", Baseline1_0),
             long => new PropertyTypeInfo("INTEGER", Baseline1_0),
             double => new PropertyTypeInfo("FLOAT", Baseline1_0),
@@ -55,7 +57,7 @@ internal class PropertyTypeInspector : IPropertyTypeInspector
 
         foreach (var item in list)
         {
-            var itemInfo = GetPropertyTypeInfo(item, allowList: false);
+            var itemInfo = GetPropertyTypeInfo(item, allowList: false, allowNull: false);
             elementInfo ??= itemInfo;
 
             if (itemInfo != elementInfo)
@@ -74,7 +76,7 @@ internal class PropertyTypeInspector : IPropertyTypeInspector
             "value");
     }
 
-    private static ArgumentException Unsupported(object value)
+    private static ArgumentException Unsupported(object? value)
     {
         var typeName = value?.GetType().FullName ?? "null";
         return new ArgumentException(

@@ -19,5 +19,5 @@ namespace Neo4j.Driver.Internal.Encryption;
 
 internal interface IPropertyTypeInspector
 {
-    PropertyTypeInfo GetPropertyTypeInfo(object value);
+    PropertyTypeInfo GetPropertyTypeInfo(object? value);
 }

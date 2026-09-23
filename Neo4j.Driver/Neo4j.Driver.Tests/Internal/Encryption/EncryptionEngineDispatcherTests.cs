@@ -125,7 +125,7 @@ public class EncryptionEngineDispatcherTests
     {
         var encrypted = new byte[] { 4, 5, 6 };
         object expected = "decrypted-value";
-        Task<object>? decryptionTask = Task.FromResult(expected);
+        Task<object?>? decryptionTask = Task.FromResult<object?>(expected);
 
         var engine = new Mock<IEncryptionEngine>();
         engine.Setup(e => e.TryStartDecrypt(
@@ -147,7 +147,7 @@ public class EncryptionEngineDispatcherTests
     public async Task DispatchDecryptAsync_ThrowsWhenNoEngineAccepts()
     {
         var encrypted = new byte[] { 4, 5, 6 };
-        Task<object>? noTask = null;
+        Task<object?>? noTask = null;
 
         var engine = new Mock<IEncryptionEngine>();
         engine.Setup(e => e.TryStartDecrypt(
@@ -200,7 +200,7 @@ public class EncryptionEngineDispatcherTests
     {
         var encrypted = new byte[] { 4, 5, 6 };
         var cause = new InvalidOperationException("kes blew up");
-        Task<object>? failingTask = Task.FromException<object>(cause);
+        Task<object?>? failingTask = Task.FromException<object?>(cause);
 
         var engine = new Mock<IEncryptionEngine>();
         engine.Setup(e => e.TryStartDecrypt(

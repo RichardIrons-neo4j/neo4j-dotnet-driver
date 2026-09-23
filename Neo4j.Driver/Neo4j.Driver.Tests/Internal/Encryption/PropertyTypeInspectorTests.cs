@@ -101,9 +101,18 @@ public class PropertyTypeInspectorTests
     }
 
     [Fact]
-    public void GetPropertyTypeInfo_Throws_ForNull()
+    public void GetPropertyTypeInfo_ReturnsNullAndBaseline1_0_ForNull()
     {
-        var act = () => _subject.GetPropertyTypeInfo(null!);
+        var info = _subject.GetPropertyTypeInfo(null);
+
+        info.Name.Should().Be("NULL");
+        info.Baseline.Should().Be(Baseline1_0);
+    }
+
+    [Fact]
+    public void GetPropertyTypeInfo_Throws_ForANullInsideAList()
+    {
+        var act = () => _subject.GetPropertyTypeInfo(new List<object?> { 1L, null });
 
         act.Should().Throw<ArgumentException>();
     }

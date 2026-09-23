@@ -33,12 +33,12 @@ internal class PlaintextCodec : IPlaintextCodec
         _format = messageFormatFactory.CreateMessageFormat(PlaintextVersion);
     }
 
-    public byte[] Serialize(object value)
+    public byte[] Serialize(object? value)
     {
         return _packStreamMemorySerializer.Serialize(_format, writer => writer.Write(value));
     }
 
-    public object Deserialize(byte[] plaintext)
+    public object? Deserialize(byte[] plaintext)
     {
         return _packStreamMemorySerializer.Deserialize(_format, plaintext, reader => reader.Read());
     }

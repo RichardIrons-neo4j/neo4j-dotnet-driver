@@ -24,13 +24,13 @@ internal interface IEncryptionEngineDispatcher
 {
     Task<byte[]> DispatchEncryptAsync(
         IInternalEncryptionProfile profile,
-        object value,
+        object? value,
         KeyReference keyRef,
         byte[]? aad,
         byte[]? iv,
         CancellationToken cancellationToken);
 
-    Task<object> DispatchDecryptAsync(
+    Task<object?> DispatchDecryptAsync(
         IInternalEncryptionProfile profile,
         byte[] encrypted,
         byte[]? aad,

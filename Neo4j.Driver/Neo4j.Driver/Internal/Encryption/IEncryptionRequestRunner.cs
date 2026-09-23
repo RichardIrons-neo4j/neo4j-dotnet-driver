@@ -23,11 +23,11 @@ namespace Neo4j.Driver.Internal.Encryption;
 internal interface IEncryptionRequestRunner
 {
     Task<byte[]> EncryptToBytesAsync(EncryptRequest request, CancellationToken cancellationToken);
-    Task<object> DecryptAsync(DecryptRequest request, CancellationToken cancellationToken);
+    Task<object?> DecryptAsync(DecryptRequest request, CancellationToken cancellationToken);
 }
 
 internal record EncryptRequest(
-    object Value,
+    object? Value,
     object? Aad,
     string? ProfileName,
     KeyReference KeyReference,

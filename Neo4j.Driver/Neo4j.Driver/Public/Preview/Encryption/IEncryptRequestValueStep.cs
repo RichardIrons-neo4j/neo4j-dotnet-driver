@@ -29,5 +29,5 @@ public interface IEncryptRequestValueStep
     /// </summary>
     /// <param name="value">The property value to encrypt.</param>
     /// <returns>The next stage of the request.</returns>
-    IEncryptRequestKeyStep FromValue(object value);
+    IEncryptRequestKeyStep FromValue(object? value);
 }

@@ -25,7 +25,7 @@ internal interface IEncryptionEngine
 {
     bool TryStartEncrypt(
         IInternalEncryptionProfile profile,
-        object value,
+        object? value,
         KeyReference keyRef,
         byte[]? aad,
         byte[]? iv,
@@ -37,5 +37,5 @@ internal interface IEncryptionEngine
         byte[] encrypted,
         byte[]? aad,
         CancellationToken cancellationToken,
-        [NotNullWhen(true)] out Task<object>? decryptionTask);
+        [NotNullWhen(true)] out Task<object?>? decryptionTask);
 }

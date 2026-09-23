@@ -19,7 +19,7 @@ namespace Neo4j.Driver.Internal.Encryption;
 
 internal interface IPlaintextCodec
 {
-    byte[] Serialize(object value);
+    byte[] Serialize(object? value);
 
-    object Deserialize(byte[] plaintext);
+    object? Deserialize(byte[] plaintext);
 }

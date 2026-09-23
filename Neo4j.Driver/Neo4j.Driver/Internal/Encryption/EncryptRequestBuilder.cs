@@ -40,7 +40,7 @@ internal class EncryptRequestBuilder :
         _runner = runner;
     }
 
-    public IEncryptRequestKeyStep FromValue(object value)
+    public IEncryptRequestKeyStep FromValue(object? value)
     {
         _value = value;
         return this;

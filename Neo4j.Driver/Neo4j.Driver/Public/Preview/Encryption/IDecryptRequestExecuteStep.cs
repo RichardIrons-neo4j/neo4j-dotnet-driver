@@ -40,5 +40,5 @@ public interface IDecryptRequestExecuteStep
     /// The configured <see cref="IKeyEncapsulationService"/> or <see cref="IEncapsulatedKeyRecordRepository"/>
     /// raised a driver exception, which propagates unchanged.
     /// </exception>
-    Task<object> DecryptAsync(CancellationToken cancellationToken = default);
+    Task<object?> DecryptAsync(CancellationToken cancellationToken = default);
 }

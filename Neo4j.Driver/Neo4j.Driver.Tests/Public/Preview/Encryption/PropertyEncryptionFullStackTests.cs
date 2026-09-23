@@ -156,6 +156,24 @@ public class PropertyEncryptionFullStackTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task EncryptThenDecrypt_WithANullValue_RoundTrips()
+    {
+        var token = TestContext.Current.CancellationToken;
+
+        var encrypted = await _propertyEncryption.EncryptRequest()
+            .FromValue(null)
+            .UsingKeyAlias("main")
+            .EncryptToBytesAsync(token);
+
+        var decrypted = await _propertyEncryption.DecryptRequest()
+            .FromValue(encrypted)
+            .WithPersistedAad()
+            .DecryptAsync(token);
+
+        decrypted.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Decrypt_WithTheWrongAad_Throws()
     {
         var token = TestContext.Current.CancellationToken;

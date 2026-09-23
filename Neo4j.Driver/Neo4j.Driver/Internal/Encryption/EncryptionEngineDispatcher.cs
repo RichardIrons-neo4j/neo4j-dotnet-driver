@@ -36,7 +36,7 @@ internal class EncryptionEngineDispatcher : IEncryptionEngineDispatcher
 
     public async Task<byte[]> DispatchEncryptAsync(
         IInternalEncryptionProfile profile,
-        object value,
+        object? value,
         KeyReference keyRef,
         byte[]? aad,
         byte[]? iv,
@@ -61,7 +61,7 @@ internal class EncryptionEngineDispatcher : IEncryptionEngineDispatcher
         }
     }
 
-    public async Task<object> DispatchDecryptAsync(
+    public async Task<object?> DispatchDecryptAsync(
         IInternalEncryptionProfile profile,
         byte[] encrypted,
         byte[]? aad,
