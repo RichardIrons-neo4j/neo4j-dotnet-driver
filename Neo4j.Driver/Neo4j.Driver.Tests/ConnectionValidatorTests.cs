@@ -123,6 +123,20 @@ public class ConnectionValidatorTests
         }
 
         [Fact]
+        public void ShouldBeUnhealthyWhenTheSystemReportsTheConnectionDead()
+        {
+            var (conn, _, _) = Mock();
+            conn.Setup(x => x.IsOpen).Returns(true);
+            conn.Setup(x => x.SystemReportsDead()).Returns(true);
+
+            var validator = NewConnectionValidator(TimeSpan.MaxValue, TimeSpan.MaxValue);
+
+            var status = validator.GetConnectionLifetimeStatus(conn.Object);
+
+            status.Should().Be(AcquireStatus.Unhealthy);
+        }
+
+        [Fact]
         public void ShouldBeValidAndResetIdleTimer()
         {
             var (conn, idleTimer, _) = Mock();

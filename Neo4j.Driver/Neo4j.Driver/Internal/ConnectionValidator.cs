@@ -87,7 +87,8 @@ internal class ConnectionValidator : IConnectionValidator
             !HasBeenIdleForTooLong(idleTime) &&
             !HasBeenAliveForTooLong(connection) &&
             !MarkedStale(connection) &&
-            AuthStatusIsRecoverable(connection);
+            AuthStatusIsRecoverable(connection) &&
+            !connection.SystemReportsDead();
 
         if (!isRequirable)
         {
