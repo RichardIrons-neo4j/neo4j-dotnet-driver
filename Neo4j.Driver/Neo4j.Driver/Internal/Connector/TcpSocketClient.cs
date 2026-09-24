@@ -73,6 +73,18 @@ internal sealed class TcpSocketClient : ITcpSocketClient
         }
     }
 
+    public bool SystemReportsDead()
+    {
+        if (_client.Poll(0, SelectMode.SelectError))
+        {
+            return true;
+        }
+
+        var readableWithNothingToRead = _client.Poll(0, SelectMode.SelectRead) && _client.Available == 0;
+
+        return readableWithNothingToRead;
+    }
+
     public void Dispose()
     {
         if (_client != null)

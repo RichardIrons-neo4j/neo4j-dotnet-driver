@@ -17,6 +17,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Neo4j.Driver.Internal;
@@ -114,6 +115,105 @@ public class TcpSocketClientTests
             var baseException = exception.GetBaseException();
             baseException.Should().BeOfType<OperationCanceledException>(exception.ToString());
             baseException.Message.Should().Be("Failed to connect to server 192.168.0.0:9998 within 1000ms.");
+        }
+    }
+
+    public class SystemReportsDeadMethod
+    {
+        [Fact]
+        public async Task ShouldReportAliveWhileThePeerHoldsTheConnectionOpen()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            try
+            {
+                var client = await ConnectedClientAsync(listener);
+                using var accepted = await listener.AcceptSocketAsync();
+
+                var reportedDead = client.SystemReportsDead();
+
+                reportedDead.Should().BeFalse();
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+
+        [Fact]
+        public async Task ShouldReportDeadAfterThePeerClosesGracefully()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            try
+            {
+                var client = await ConnectedClientAsync(listener);
+                var accepted = await listener.AcceptSocketAsync();
+
+                accepted.Shutdown(SocketShutdown.Both);
+                accepted.Close();
+
+                var reportedDead = WaitForReportedDead(client);
+
+                reportedDead.Should().BeTrue();
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+
+        [Fact]
+        public async Task ShouldReportDeadAfterThePeerAbortsTheConnection()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            try
+            {
+                var client = await ConnectedClientAsync(listener);
+                var accepted = await listener.AcceptSocketAsync();
+
+                accepted.LingerState = new LingerOption(true, 0);
+                accepted.Close();
+
+                var reportedDead = WaitForReportedDead(client);
+
+                reportedDead.Should().BeTrue();
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+
+        private async Task<TcpSocketClient> ConnectedClientAsync(TcpListener listener)
+        {
+            var client = new TcpSocketClient(
+                new DriverContext(
+                    new Uri("bolt://localhost:7687"),
+                    new StaticAuthTokenManager(AuthTokens.None),
+                    new Config { ConnectionTimeout = TimeSpan.FromSeconds(10) }));
+
+            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            await client.ConnectSocketAsync(IPAddress.Loopback, port);
+
+            return client;
+        }
+
+        private bool WaitForReportedDead(TcpSocketClient client)
+        {
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+            while (DateTime.UtcNow < deadline)
+            {
+                if (client.SystemReportsDead())
+                {
+                    return true;
+                }
+
+                Thread.Sleep(10);
+            }
+
+            return false;
         }
     }
 }
