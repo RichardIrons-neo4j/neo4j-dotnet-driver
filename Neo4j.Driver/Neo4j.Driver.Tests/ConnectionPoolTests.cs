@@ -490,7 +490,7 @@ public class ConnectionPoolTests
             else
             {
                 validator.Setup(x => x.OnReleaseAsync(It.IsAny<IPooledConnection>())).ReturnsAsync(true);
-                validator.Setup(x => x.GetConnectionLifetimeStatus(It.IsAny<IPooledConnection>()))
+                validator.Setup(x => x.GetConnectionLifetimeStatus(It.IsAny<IPooledConnection>(), It.IsAny<bool>()))
                     .Returns(AcquireStatus.Healthy);
             }
 
@@ -1930,7 +1930,7 @@ public class ConnectionPoolTests
     private sealed class LivenessProbeValidator : IConnectionValidator
     {
         public Task<bool> OnReleaseAsync(IPooledConnection connection) => Task.FromResult(true);
-        public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection) => AcquireStatus.RequiresLivenessProbe;
+        public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection, bool fromPool) => AcquireStatus.RequiresLivenessProbe;
     }
 
     private sealed class BlockingReleaseValidator : IConnectionValidator
@@ -1950,7 +1950,7 @@ public class ConnectionPoolTests
             return _mayFinish.Task;
         }
 
-        public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection)
+        public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection, bool fromPool)
         {
             return AcquireStatus.Healthy;
         }
@@ -1970,7 +1970,7 @@ public class ConnectionPoolTests
             return Task.FromResult(_isValid);
         }
 
-        public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection)
+        public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection, bool fromPool)
         {
             return _isValid ? AcquireStatus.Healthy : AcquireStatus.Unhealthy;
         }

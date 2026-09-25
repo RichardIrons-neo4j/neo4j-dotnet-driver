@@ -96,7 +96,7 @@ public class ConnectionValidatorTests
             var (conn, _, _) = Mock();
             conn.Setup(x => x.IsOpen).Returns(false);
             var validator = NewConnectionValidator();
-            validator.GetConnectionLifetimeStatus(conn.Object).Should().Be(AcquireStatus.Unhealthy);
+            validator.GetConnectionLifetimeStatus(conn.Object, true).Should().Be(AcquireStatus.Unhealthy);
         }
 
         [Fact]
@@ -107,7 +107,7 @@ public class ConnectionValidatorTests
             idleTimer.Setup(x => x.ElapsedMilliseconds).Returns(10);
 
             var validator = NewConnectionValidator(TimeSpan.Zero);
-            validator.GetConnectionLifetimeStatus(conn.Object).Should().Be(AcquireStatus.Unhealthy);
+            validator.GetConnectionLifetimeStatus(conn.Object, true).Should().Be(AcquireStatus.Unhealthy);
         }
 
         [Fact]
@@ -119,11 +119,11 @@ public class ConnectionValidatorTests
             lifeTimer.Setup(x => x.ElapsedMilliseconds).Returns(10);
 
             var validator = NewConnectionValidator(maxConnLifetime: TimeSpan.Zero);
-            validator.GetConnectionLifetimeStatus(conn.Object).Should().Be(AcquireStatus.Unhealthy);
+            validator.GetConnectionLifetimeStatus(conn.Object, true).Should().Be(AcquireStatus.Unhealthy);
         }
 
         [Fact]
-        public void ShouldBeUnhealthyWhenTheSystemReportsTheConnectionDead()
+        public void ShouldBeUnhealthyWhenTheSystemReportsAPooledConnectionDead()
         {
             var (conn, _, _) = Mock();
             conn.Setup(x => x.IsOpen).Returns(true);
@@ -131,9 +131,23 @@ public class ConnectionValidatorTests
 
             var validator = NewConnectionValidator(TimeSpan.MaxValue, TimeSpan.MaxValue);
 
-            var status = validator.GetConnectionLifetimeStatus(conn.Object);
+            var status = validator.GetConnectionLifetimeStatus(conn.Object, true);
 
             status.Should().Be(AcquireStatus.Unhealthy);
+        }
+
+        [Fact]
+        public void ShouldNotAskTheSystemAboutAFreshlyCreatedConnection()
+        {
+            var (conn, _, _) = Mock();
+            conn.Setup(x => x.IsOpen).Returns(true);
+            conn.Setup(x => x.SystemReportsDead()).Returns(true);
+
+            var validator = NewConnectionValidator(TimeSpan.MaxValue, TimeSpan.MaxValue);
+
+            var status = validator.GetConnectionLifetimeStatus(conn.Object, false);
+
+            status.Should().Be(AcquireStatus.Healthy);
         }
 
         [Fact]
@@ -144,7 +158,7 @@ public class ConnectionValidatorTests
             conn.Setup(x => x.IsOpen).Returns(true);
 
             var validator = NewConnectionValidator(TimeSpan.MaxValue, TimeSpan.MaxValue);
-            validator.GetConnectionLifetimeStatus(conn.Object).Should().Be(AcquireStatus.Healthy);
+            validator.GetConnectionLifetimeStatus(conn.Object, true).Should().Be(AcquireStatus.Healthy);
             idleTimer.Verify(x => x.Reset(), Times.Once);
         }
 
@@ -156,7 +170,7 @@ public class ConnectionValidatorTests
             conn.Setup(x => x.IsOpen).Returns(true);
 
             var validator = NewConnectionValidator(TimeSpan.MaxValue, TimeSpan.MaxValue, TimeSpan.FromMilliseconds(9));
-            validator.GetConnectionLifetimeStatus(conn.Object).Should().Be(AcquireStatus.RequiresLivenessProbe);
+            validator.GetConnectionLifetimeStatus(conn.Object, true).Should().Be(AcquireStatus.RequiresLivenessProbe);
             idleTimer.Verify(x => x.Reset(), Times.Once);
         }
     }

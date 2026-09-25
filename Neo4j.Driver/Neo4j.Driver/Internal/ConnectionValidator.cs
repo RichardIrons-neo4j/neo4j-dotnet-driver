@@ -28,8 +28,9 @@ internal interface IConnectionValidator
 
     /// <summary>Healthy check before lending the connection outside the pool.</summary>
     /// <param name="connection">The connection to be checked.</param>
+    /// <param name="fromPool">Whether the connection came out of the idle pool rather than being freshly created.</param>
     /// <returns>True if the connection is in a good state to be used by transactions and sessions, otherwise false.</returns>
-    AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection);
+    AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection, bool fromPool);
 }
 
 internal class ConnectionValidator : IConnectionValidator
@@ -79,7 +80,7 @@ internal class ConnectionValidator : IConnectionValidator
         return true;
     }
 
-    public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection)
+    public AcquireStatus GetConnectionLifetimeStatus(IPooledConnection connection, bool fromPool)
     {
         var idleTime = connection?.IdleTimer.ElapsedMilliseconds ?? 0L;
 
@@ -88,7 +89,7 @@ internal class ConnectionValidator : IConnectionValidator
             !HasBeenAliveForTooLong(connection) &&
             !MarkedStale(connection) &&
             AuthStatusIsRecoverable(connection) &&
-            !connection.SystemReportsDead();
+            !WasClosedWhilePooled(connection, fromPool);
 
         if (!isRequirable)
         {
@@ -105,6 +106,11 @@ internal class ConnectionValidator : IConnectionValidator
         return connection.AuthorizationStatus is AuthorizationStatus.FreshlyAuthenticated
                 or AuthorizationStatus.Pooled ||
             connection.SupportsReAuth();
+    }
+
+    private bool WasClosedWhilePooled(IPooledConnection connection, bool fromPool)
+    {
+        return fromPool && connection.SystemReportsDead();
     }
 
     private bool MarkedStale(IPooledConnection connection)
