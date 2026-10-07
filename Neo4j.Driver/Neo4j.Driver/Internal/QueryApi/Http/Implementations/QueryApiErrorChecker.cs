@@ -48,18 +48,18 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
         }
 
         var responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        var first = await TryParseFirstErrorAsync(responseText, cancellationToken).ConfigureAwait(false);
+        var last = await TryParseLastErrorAsync(responseText, cancellationToken).ConfigureAwait(false);
 
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw ToServerException(
-                first?.Code ?? "Neo.ClientError.Security.Unauthorized",
-                first?.Message ?? response.ReasonPhrase ?? "Unauthorized");
+                last?.Code ?? "Neo.ClientError.Security.Unauthorized",
+                last?.Message ?? response.ReasonPhrase ?? "Unauthorized");
         }
 
-        if (first is not null)
+        if (last is not null)
         {
-            throw ToServerException(first.Code, first.Message);
+            throw ToServerException(last.Code, last.Message);
         }
 
         var method = response.RequestMessage?.Method;
@@ -70,7 +70,7 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
         throw new ServiceUnavailableException(message);
     }
 
-    private async Task<ErrorBody?> TryParseFirstErrorAsync(string responseText, CancellationToken cancellationToken)
+    private async Task<ErrorBody?> TryParseLastErrorAsync(string responseText, CancellationToken cancellationToken)
     {
         try
         {
@@ -78,7 +78,7 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
                 .DeserializeAsync<ErrorResponseBody>(responseText, cancellationToken)
                 .ConfigureAwait(false);
 
-            return parsed?.Errors is { Length: > 0 } e ? e[0] : null;
+            return parsed?.Errors is { Length: > 0 } e ? e[^1] : null;
         }
         catch
         {
@@ -90,7 +90,8 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
     {
         if (errors is { Length: > 0 })
         {
-            throw ToServerException(errors[0].Code, errors[0].Message);
+            var last = errors[^1];
+            throw ToServerException(last.Code, last.Message);
         }
     }
 

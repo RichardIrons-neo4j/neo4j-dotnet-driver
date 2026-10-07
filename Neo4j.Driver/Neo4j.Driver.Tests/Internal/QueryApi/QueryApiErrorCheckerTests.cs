@@ -170,6 +170,35 @@ public class QueryApiErrorCheckerTests
         }
 
         [Fact]
+        public async Task ThrowsTheLastError_WhenBodyContainsSeveral()
+        {
+            const string responseBody = "test-response-body";
+            var errorBody = new QueryApiErrorChecker.ErrorResponseBody
+            {
+                Errors =
+                [
+                    new QueryApiErrorChecker.ErrorBody { Code = "Neo.ClientError.Oh.Err1", Message = "Error message 1" },
+                    new QueryApiErrorChecker.ErrorBody { Code = "Neo.ClientError.Oh.Err2", Message = "Error message 2" },
+                    new QueryApiErrorChecker.ErrorBody { Code = "Neo.ClientError.Oh.Err3", Message = "Error message 3" }
+                ]
+            };
+
+            var mockDeserializer = new Mock<IJsonDeserializer>();
+            mockDeserializer
+                .Setup(x => x.DeserializeAsync<QueryApiErrorChecker.ErrorResponseBody>(
+                    responseBody, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(errorBody);
+
+            var response = StringResponse(HttpStatusCode.BadRequest, responseBody);
+
+            var act = () => BuildChecker(mockDeserializer.Object).EnsureSuccessAsync(response);
+
+            var thrown = (await act.Should().ThrowAsync<Neo4jException>()).Which;
+            thrown.Code.Should().Be("Neo.ClientError.Oh.Err3");
+            thrown.Message.Should().Be("Error message 3");
+        }
+
+        [Fact]
         public async Task ThrowsServiceUnavailableException_WhenStatusIsUnexpected()
         {
             var response = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
@@ -231,6 +260,21 @@ public class QueryApiErrorCheckerTests
             thrown.GqlStatusDescription.Should().Be("error: general processing exception - unexpected error. Invalid input");
             thrown.GqlClassification.Should().Be("UNKNOWN");
             thrown.GqlDiagnosticRecord.Should().Contain("OPERATION_CODE", "0");
+        }
+
+        [Fact]
+        public void ThrowsTheLastError_WhenSeveralErrorsArePresent()
+        {
+            var act = () => BuildChecker().ThrowIfErrors(
+            [
+                new QueryApiErrorBody("Neo.ClientError.Oh.Err1", "Error message 1"),
+                new QueryApiErrorBody("Neo.ClientError.Oh.Err2", "Error message 2"),
+                new QueryApiErrorBody("Neo.ClientError.Oh.Err3", "Error message 3")
+            ]);
+
+            var thrown = act.Should().Throw<Neo4jException>().Which;
+            thrown.Code.Should().Be("Neo.ClientError.Oh.Err3");
+            thrown.Message.Should().Be("Error message 3");
         }
 
         [Fact]
