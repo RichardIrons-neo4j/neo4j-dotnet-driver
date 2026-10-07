@@ -16,7 +16,9 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
+using Moq;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.Messaging;
 using Xunit;
 
@@ -47,10 +49,60 @@ public class Neo4jExceptionFactoryTests
     [MemberData(nameof(CodeToTypeMapping))]
     public void ShouldCreateCorrectExceptionType(string code, Type exceptionType)
     {
-        var subject = new Neo4jExceptionFactory();
+        var subject = new Neo4jExceptionFactory(new GqlErrorDefaults());
         var exception = subject.GetException(new FailureMessage(code, "test message"));
         exception.Should().BeOfType(exceptionType);
         exception.Code.Should().Be(code);
         exception.Message.Should().Be("test message");
+    }
+
+    [Fact]
+    public void ShouldFillGqlDefaultsOnTheMessage()
+    {
+        var message = new FailureMessage("Neo.ClientError.Statement.SyntaxError", "test message");
+        var subject = new Neo4jExceptionFactory(GqlErrorDefaultsMarking(message));
+
+        var exception = subject.GetException(message);
+
+        exception.GqlStatus.Should().Be("FILLED");
+    }
+
+    [Fact]
+    public void ShouldFillGqlDefaultsOnTheCause()
+    {
+        var cause = new FailureMessage("Neo.ClientError.Transaction.LockClientStopped", "cause message");
+        var message = new FailureMessage("Neo.ClientError.Transaction.Terminated", "test message") { GqlCause = cause };
+        var subject = new Neo4jExceptionFactory(GqlErrorDefaultsMarking(message, cause));
+
+        var exception = subject.GetException(message);
+
+        exception.InnerException.Should().BeAssignableTo<Neo4jException>()
+            .Which.GqlStatus.Should().Be("FILLED");
+    }
+
+    [Fact]
+    public void ShouldFillGqlDefaultsBeforeMatchingTheCode()
+    {
+        var message = new FailureMessage { Message = "test message" };
+        var gqlErrorDefaults = new Mock<IGqlErrorDefaults>();
+        gqlErrorDefaults
+            .Setup(x => x.Fill(message))
+            .Callback(() => message.CodeInternal = "Neo.ClientError.Security.Unauthorized");
+        var subject = new Neo4jExceptionFactory(gqlErrorDefaults.Object);
+
+        var exception = subject.GetException(message);
+
+        exception.Should().BeOfType<AuthenticationException>();
+    }
+
+    private static IGqlErrorDefaults GqlErrorDefaultsMarking(params FailureMessage[] messages)
+    {
+        var gqlErrorDefaults = new Mock<IGqlErrorDefaults>();
+        foreach (var message in messages)
+        {
+            gqlErrorDefaults.Setup(x => x.Fill(message)).Callback(() => message.GqlStatus = "FILLED");
+        }
+
+        return gqlErrorDefaults.Object;
     }
 }

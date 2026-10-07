@@ -17,13 +17,14 @@ using System;
 using System.IO;
 using System.Net.Sockets;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver.Internal;
 
 internal static class ErrorExtensions
 {
-    private static readonly Neo4jExceptionFactory _exceptionFactory = new();
+    private static readonly Neo4jExceptionFactory _exceptionFactory = new(new GqlErrorDefaults());
 
     public static Neo4jException ParseServerException(FailureMessage failureMessage)
     {

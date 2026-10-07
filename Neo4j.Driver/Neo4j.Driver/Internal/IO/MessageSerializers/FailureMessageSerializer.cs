@@ -14,7 +14,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.Messaging;
 using Neo4j.Driver.Internal.Protocol;
 
@@ -23,9 +22,8 @@ namespace Neo4j.Driver.Internal.IO.MessageSerializers;
 internal sealed class FailureMessageSerializer : ReadOnlySerializer, IPackStreamMessageDeserializer
 {
     internal static FailureMessageSerializer Instance = new();
-    internal static GqlErrorDefaults GqlErrorDefaults = new();
+
     private static readonly byte[] StructTags = [MessageFormat.MsgFailure];
-    
     public override byte[] ReadableStructs => StructTags;
 
     public IResponseMessage DeserializeMessage(
@@ -86,7 +84,6 @@ internal sealed class FailureMessageSerializer : ReadOnlySerializer, IPackStream
             }
         }
 
-        GqlErrorDefaults.Fill(response);
         return response;
     }
 

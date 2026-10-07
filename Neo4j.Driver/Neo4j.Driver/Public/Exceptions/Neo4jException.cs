@@ -182,15 +182,4 @@ public class Neo4jException : Exception
         result = null;
         return false;
     }
-
-    internal static Neo4jException Create(FailureMessage failureMessage)
-    {
-        Exception innerException = null;
-        if (failureMessage.GqlCause is not null)
-        {
-            innerException = Create(failureMessage.GqlCause);
-        }
-
-        return new Neo4jException(failureMessage, innerException);
-    }
 }

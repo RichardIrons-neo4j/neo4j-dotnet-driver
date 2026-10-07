@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using FluentAssertions;
 using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.IO.MessageSerializers;
 using Neo4j.Driver.Internal.Messaging;
 using Xunit;
@@ -59,17 +60,6 @@ public class GqlErrorTests
         result.GqlCause.Should().NotBeNull();
         result.GqlCause.Code.Should().Be("Neo.ClientError.Transaction.LockClientStopped");
         result.GqlCause.Message.Should().Be("Lock client stopped");
-
-        // Assert defaults added by FillGqlDefaults
-        result.GqlDiagnosticRecord.Should().ContainKey("OPERATION");
-        result.GqlDiagnosticRecord["OPERATION"].Should().Be("");
-        result.GqlDiagnosticRecord.Should().ContainKey("OPERATION_CODE");
-        result.GqlDiagnosticRecord["OPERATION_CODE"].Should().Be("0");
-        result.GqlDiagnosticRecord.Should().ContainKey("CURRENT_SCHEMA");
-        result.GqlDiagnosticRecord["CURRENT_SCHEMA"].Should().Be("/");
-
-        result.GqlRawClassification.Should().Be(null);
-        result.GqlClassification.Should().Be("UNKNOWN");
     }
 
     [Fact]
@@ -82,9 +72,11 @@ public class GqlErrorTests
             Message = "Lock client stopped",
             GqlStatus = "GQL_STATUS_INNER",
             GqlStatusDescription = "Inner status description",
-            GqlDiagnosticRecord = new Dictionary<string, object> { { "inner_key", "inner_value" } },
-            GqlRawClassification = "INNER_CLASSIFICATION",
-            GqlClassification = "CLIENT_ERROR"
+            GqlDiagnosticRecord = new Dictionary<string, object>
+            {
+                { "inner_key", "inner_value" },
+                { "_classification", "CLIENT_ERROR" }
+            }
         };
 
         var outerFailureMessage = new FailureMessage
@@ -93,13 +85,15 @@ public class GqlErrorTests
             Message = "Transaction terminated",
             GqlStatus = "GQL_STATUS_OUTER",
             GqlStatusDescription = "Outer status description",
-            GqlDiagnosticRecord = new Dictionary<string, object> { { "outer_key", "outer_value" } },
-            GqlRawClassification = "OUTER_CLASSIFICATION",
-            GqlClassification = "DATABASE_ERROR",
+            GqlDiagnosticRecord = new Dictionary<string, object>
+            {
+                { "outer_key", "outer_value" },
+                { "_classification", "DATABASE_ERROR" }
+            },
             GqlCause = innerFailureMessage
         };
 
-        var exceptionFactory = new Neo4jExceptionFactory();
+        var exceptionFactory = new Neo4jExceptionFactory(new GqlErrorDefaults());
 
         // Act
         var result = exceptionFactory.GetException(outerFailureMessage);
@@ -112,7 +106,7 @@ public class GqlErrorTests
         result.GqlStatusDescription.Should().Be("Outer status description");
         result.GqlDiagnosticRecord.Should().NotBeNull();
         result.GqlDiagnosticRecord["outer_key"].Should().Be("outer_value");
-        result.GqlRawClassification.Should().Be("OUTER_CLASSIFICATION");
+        result.GqlRawClassification.Should().Be("DATABASE_ERROR");
         result.GqlClassification.Should().Be("DATABASE_ERROR");
 
         var innerException = (Neo4jException)result.InnerException;
@@ -125,7 +119,7 @@ public class GqlErrorTests
         gqlError.GqlStatusDescription.Should().Be("Inner status description");
         gqlError.GqlDiagnosticRecord.Should().NotBeNull();
         gqlError.GqlDiagnosticRecord["inner_key"].Should().Be("inner_value");
-        gqlError.GqlRawClassification.Should().Be("INNER_CLASSIFICATION");
+        gqlError.GqlRawClassification.Should().Be("CLIENT_ERROR");
         gqlError.GqlClassification.Should().Be("CLIENT_ERROR");
     }
 }

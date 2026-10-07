@@ -15,6 +15,8 @@
 
 using System;
 using FluentAssertions;
+using Neo4j.Driver.Internal.ExceptionHandling;
+using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.Messaging;
 using Xunit;
 
@@ -22,10 +24,12 @@ namespace Neo4j.Driver.Tests.Exceptions;
 
 public class Neo4jExceptionGqlStatusFinderTests
 {
+    private static readonly Neo4jExceptionFactory ExceptionFactory = new(new GqlErrorDefaults());
+
     private static Neo4jException ExceptionWithStatus(string gqlStatus, FailureMessage cause = null)
     {
         var msg = new FailureMessage { GqlStatus = gqlStatus, GqlCause = cause };
-        return Neo4jException.Create(msg);
+        return ExceptionFactory.GetException(msg);
     }
 
     public class FindByGqlStatus
@@ -43,7 +47,7 @@ public class Neo4jExceptionGqlStatusFinderTests
         {
             var causeMsg = new FailureMessage { GqlStatus = "42N04" };
             var rootMsg = new FailureMessage { GqlStatus = "08N01", GqlCause = causeMsg };
-            var root = Neo4jException.Create(rootMsg);
+            var root = ExceptionFactory.GetException(rootMsg);
             var cause = (Neo4jException)root.InnerException;
 
             root.FindByGqlStatus("42N04").Should().BeSameAs(cause);
@@ -54,7 +58,7 @@ public class Neo4jExceptionGqlStatusFinderTests
         {
             var causeMsg = new FailureMessage { GqlStatus = "42N04" };
             var rootMsg = new FailureMessage { GqlStatus = "42N04", GqlCause = causeMsg };
-            var root = Neo4jException.Create(rootMsg);
+            var root = ExceptionFactory.GetException(rootMsg);
 
             root.FindByGqlStatus("42N04").Should().BeSameAs(root);
         }
@@ -64,7 +68,7 @@ public class Neo4jExceptionGqlStatusFinderTests
         {
             var causeMsg = new FailureMessage { GqlStatus = "08N01" };
             var rootMsg = new FailureMessage { GqlStatus = "42N04", GqlCause = causeMsg };
-            var root = Neo4jException.Create(rootMsg);
+            var root = ExceptionFactory.GetException(rootMsg);
 
             var act = () => root.FindByGqlStatus("99Z99");
 
@@ -99,7 +103,7 @@ public class Neo4jExceptionGqlStatusFinderTests
         {
             var causeMsg = new FailureMessage { GqlStatus = "42N04" };
             var rootMsg = new FailureMessage { GqlStatus = "08N01", GqlCause = causeMsg };
-            var root = Neo4jException.Create(rootMsg);
+            var root = ExceptionFactory.GetException(rootMsg);
             var cause = (Neo4jException)root.InnerException;
 
             root.TryFindByGqlStatus("42N04", out var result).Should().BeTrue();
@@ -111,7 +115,7 @@ public class Neo4jExceptionGqlStatusFinderTests
         {
             var causeMsg = new FailureMessage { GqlStatus = "08N01" };
             var rootMsg = new FailureMessage { GqlStatus = "42N04", GqlCause = causeMsg };
-            var root = Neo4jException.Create(rootMsg);
+            var root = ExceptionFactory.GetException(rootMsg);
 
             root.TryFindByGqlStatus("99Z99", out var result).Should().BeFalse();
             result.Should().BeNull();
@@ -142,7 +146,7 @@ public class Neo4jExceptionGqlStatusFinderTests
         {
             var causeMsg = new FailureMessage { GqlStatus = "42N04" };
             var rootMsg = new FailureMessage { GqlStatus = "08N01", GqlCause = causeMsg };
-            var root = Neo4jException.Create(rootMsg);
+            var root = ExceptionFactory.GetException(rootMsg);
 
             root.ContainsGqlStatus("42N04").Should().BeTrue();
         }
@@ -152,7 +156,7 @@ public class Neo4jExceptionGqlStatusFinderTests
         {
             var causeMsg = new FailureMessage { GqlStatus = "08N01" };
             var rootMsg = new FailureMessage { GqlStatus = "42N04", GqlCause = causeMsg };
-            var root = Neo4jException.Create(rootMsg);
+            var root = ExceptionFactory.GetException(rootMsg);
 
             root.ContainsGqlStatus("99Z99").Should().BeFalse();
         }

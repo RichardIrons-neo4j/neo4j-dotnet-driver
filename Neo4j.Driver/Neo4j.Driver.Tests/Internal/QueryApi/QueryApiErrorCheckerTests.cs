@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Neo4j.Driver.Internal;
+using Neo4j.Driver.Internal.ExceptionHandling;
 using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.QueryApi;
 using Xunit;
@@ -37,7 +38,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 public class QueryApiErrorCheckerTests
 {
     private static QueryApiErrorChecker BuildChecker(IJsonDeserializer? deserializer = null) =>
-        new(deserializer ?? new Mock<IJsonDeserializer>().Object, new GqlErrorDefaults(), new Mock<ILogger>().Object);
+        new(deserializer ?? new Mock<IJsonDeserializer>().Object, new Neo4jExceptionFactory(new GqlErrorDefaults()), new Mock<ILogger>().Object);
 
     private static HttpResponseMessage StringResponse(HttpStatusCode status, string body = "") =>
         new(status) { Content = new StringContent(body) };

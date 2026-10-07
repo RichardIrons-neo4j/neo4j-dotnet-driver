@@ -49,7 +49,7 @@ public class DriverErrorMapperTests
             GqlDiagnosticRecord = new Dictionary<string, object> { ["CURRENT_SCHEMA"] = "/" },
             GqlCause = causeFailureMessage
         };
-        Neo4jException exception = Neo4jException.Create(failureMessage);
+        var exception = new Neo4jException(failureMessage, new Neo4jException(causeFailureMessage, null));
         var diagnosticRecordValue = new CypherString("/");
         var causeDiagnosticRecordValue = new CypherString("");
         _autoMocker.GetMock<INativeToCypherMapper>().Setup(m => m.Map("/")).Returns(diagnosticRecordValue);

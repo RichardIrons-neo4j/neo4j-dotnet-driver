@@ -17,22 +17,41 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.Helpers;
 using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver.Internal.ExceptionHandling;
 
-internal class Neo4jExceptionFactory
+internal class Neo4jExceptionFactory : INeo4jExceptionFactory
 {
-    private readonly List<FactoryInfo> _exceptionFactories = new();
-    private readonly SimpleWildcardHelper _simpleWildcardHelper = new();
+    private static readonly SimpleWildcardHelper SimpleWildcardHelper = new();
+    private static readonly List<FactoryInfo> ExceptionFactories = BuildExceptionFactories();
 
-    public Neo4jExceptionFactory()
+    private readonly IGqlErrorDefaults _gqlErrorDefaults;
+
+    public Neo4jExceptionFactory(IGqlErrorDefaults gqlErrorDefaults)
     {
-        // get all the types
+        _gqlErrorDefaults = gqlErrorDefaults;
+    }
+
+    public Neo4jException GetException(FailureMessage failureMessage)
+    {
+        _gqlErrorDefaults.Fill(failureMessage);
+
+        var factoryInfo = ExceptionFactories.First(
+            f => SimpleWildcardHelper.StringMatches(failureMessage.CodeInternal, f.Code));
+
+        var innerException = failureMessage.GqlCause != null ? GetException(failureMessage.GqlCause) : null;
+
+        return factoryInfo.ExceptionFactory(failureMessage, innerException);
+    }
+
+    private static List<FactoryInfo> BuildExceptionFactories()
+    {
         var codesAndExceptions = GetCodesAndExceptions();
         codesAndExceptions.Sort(CompareByCode);
-        BuildExceptionFactories(codesAndExceptions);
+        return codesAndExceptions.Select(x => new FactoryInfo(x.code, CreateFactory(x.exceptionType))).ToList();
     }
 
     private static List<(string code, Type exceptionType)> GetCodesAndExceptions()
@@ -51,7 +70,7 @@ internal class Neo4jExceptionFactory
             .ToList();
     }
 
-    private int CompareByCode((string code, Type exceptionType) x, (string code, Type exceptionType) y)
+    private static int CompareByCode((string code, Type exceptionType) x, (string code, Type exceptionType) y)
     {
         // x comes before y if y matches x - this would happen if:
         // x = Error.Specific
@@ -59,12 +78,12 @@ internal class Neo4jExceptionFactory
         // this means that less-specific wildcards are at the end of the list, so the first
         // matching wildcard will always be the most specific
 
-        if (_simpleWildcardHelper.StringMatches(x.code, y.code))
+        if (SimpleWildcardHelper.StringMatches(x.code, y.code))
         {
             return -1;
         }
 
-        if (_simpleWildcardHelper.StringMatches(y.code, x.code))
+        if (SimpleWildcardHelper.StringMatches(y.code, x.code))
         {
             return 1;
         }
@@ -73,50 +92,22 @@ internal class Neo4jExceptionFactory
         return string.Compare(x.code, y.code, StringComparison.InvariantCultureIgnoreCase);
     }
 
-    private void BuildExceptionFactories(IEnumerable<(string code, Type exceptionType)> codesAndExceptions)
+    private static Func<FailureMessage, Exception, Neo4jException> CreateFactory(Type type)
     {
-        foreach (var (code, type) in codesAndExceptions)
+        var ctor = type.GetConstructor(
+            BindingFlags.NonPublic | BindingFlags.Instance,
+            null,
+            [typeof(FailureMessage), typeof(Exception)],
+            null);
+
+        if (ctor is null)
         {
-            var ctor = type.GetConstructor(
-                BindingFlags.NonPublic | BindingFlags.Instance,
-                null,
-                [typeof(FailureMessage), typeof(Exception)],
-                null);
-
-            if (ctor is not null)
-            {
-                // create a factory function that will create the exception
-                Neo4jException Factory(FailureMessage message, Exception inner)
-                {
-                    return (Neo4jException)ctor.Invoke([message, inner]);
-                }
-
-                _exceptionFactories.Add(new FactoryInfo(code, Factory));
-            }
-            else
-            {
-                throw new Neo4jException(
-                    $"Neo4jException type {type.FullName} does not have a constructor that takes " +
-                    $"a {nameof(FailureMessage)} and an {nameof(Exception)}");
-            }
-        }
-    }
-
-    public Neo4jException GetException(FailureMessage failureMessage)
-    {
-        var factoryInfo =
-            _exceptionFactories.FirstOrDefault(
-                f => _simpleWildcardHelper.StringMatches(failureMessage.CodeInternal, f.Code));
-
-        if (factoryInfo is null)
-        {
-            return Neo4jException.Create(failureMessage);
+            throw new Neo4jException(
+                $"Neo4jException type {type.FullName} does not have a constructor that takes " +
+                $"a {nameof(FailureMessage)} and an {nameof(Exception)}");
         }
 
-        var innerException = failureMessage.GqlCause != null ? GetException(failureMessage.GqlCause) : null;
-
-        var exception = factoryInfo.ExceptionFactory(failureMessage, innerException);
-        return exception;
+        return (message, inner) => (Neo4jException)ctor.Invoke([message, inner]);
     }
 
     private record FactoryInfo(string Code, Func<FailureMessage, Exception, Neo4jException> ExceptionFactory);
