@@ -23,8 +23,9 @@ namespace Neo4j.Driver.Internal.IO.MessageSerializers;
 internal sealed class FailureMessageSerializer : ReadOnlySerializer, IPackStreamMessageDeserializer
 {
     internal static FailureMessageSerializer Instance = new();
-
-    private static readonly byte[] StructTags = { MessageFormat.MsgFailure };
+    internal static GqlErrorDefaults GqlErrorDefaults = new();
+    private static readonly byte[] StructTags = [MessageFormat.MsgFailure];
+    
     public override byte[] ReadableStructs => StructTags;
 
     public IResponseMessage DeserializeMessage(
@@ -85,7 +86,7 @@ internal sealed class FailureMessageSerializer : ReadOnlySerializer, IPackStream
             }
         }
 
-        GqlErrors.FillGqlDefaults(response);
+        GqlErrorDefaults.Fill(response);
         return response;
     }
 

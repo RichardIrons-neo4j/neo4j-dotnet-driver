@@ -19,6 +19,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Neo4j.Driver.Internal.GqlCompliance;
 using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver.Internal.QueryApi;
@@ -26,11 +27,16 @@ namespace Neo4j.Driver.Internal.QueryApi;
 internal class QueryApiErrorChecker : IQueryApiErrorChecker
 {
     private readonly IJsonDeserializer _jsonDeserializer;
+    private readonly IGqlErrorDefaults _gqlErrorDefaults;
     private readonly ILogger _logger;
 
-    public QueryApiErrorChecker(IJsonDeserializer jsonDeserializer, ILogger logger)
+    public QueryApiErrorChecker(
+        IJsonDeserializer jsonDeserializer,
+        IGqlErrorDefaults gqlErrorDefaults,
+        ILogger logger)
     {
         _jsonDeserializer = jsonDeserializer;
+        _gqlErrorDefaults = gqlErrorDefaults;
         _logger = logger;
     }
 
@@ -46,15 +52,14 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
 
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            throw ErrorExtensions.ParseServerException(
-                new FailureMessage(
-                    first?.Code ?? "Neo.ClientError.Security.Unauthorized",
-                    first?.Message ?? response.ReasonPhrase ?? "Unauthorized"));
+            throw ToServerException(
+                first?.Code ?? "Neo.ClientError.Security.Unauthorized",
+                first?.Message ?? response.ReasonPhrase ?? "Unauthorized");
         }
 
         if (first is not null)
         {
-            throw ErrorExtensions.ParseServerException(new FailureMessage(first.Code, first.Message));
+            throw ToServerException(first.Code, first.Message);
         }
 
         var method = response.RequestMessage?.Method;
@@ -85,8 +90,15 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
     {
         if (errors is { Length: > 0 })
         {
-            throw ErrorExtensions.ParseServerException(new FailureMessage(errors[0].Code, errors[0].Message));
+            throw ToServerException(errors[0].Code, errors[0].Message);
         }
+    }
+
+    private Neo4jException ToServerException(string code, string message)
+    {
+        var failure = new FailureMessage(code, message);
+        _gqlErrorDefaults.Fill(failure);
+        return ErrorExtensions.ParseServerException(failure);
     }
 
     internal class ErrorResponseBody

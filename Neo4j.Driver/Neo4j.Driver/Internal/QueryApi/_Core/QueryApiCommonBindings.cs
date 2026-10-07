@@ -16,6 +16,7 @@
 #nullable enable
 
 using System.Diagnostics.CodeAnalysis;
+using Neo4j.Driver.Internal.GqlCompliance;
 using Pure.DI;
 
 namespace Neo4j.Driver.Internal.QueryApi;
@@ -45,6 +46,7 @@ internal static class QueryApiCommonBindings
             .Bind<IHttpRequestEnricher>(nameof(QueryApiAuthEnricher)).To<QueryApiAuthEnricher>()
             .Bind<IQueryApiClient>().To<QueryApiClient>()
             .Bind<IQueryApiErrorChecker>().To<QueryApiErrorChecker>()
+            .Bind<IGqlErrorDefaults>().To<GqlErrorDefaults>()
             .Bind<IQueryApiRequestBuilder>().To<QueryApiRequestBuilder>()
             .Bind<IQueryApiRequestHeaderWriter>().To<QueryApiRequestHeaderWriter>()
             .Bind<IQueryApiUrlBuilder>().To<QueryApiUrlBuilder>()

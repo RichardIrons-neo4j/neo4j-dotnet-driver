@@ -18,7 +18,7 @@ using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver.Internal.GqlCompliance;
 
-internal static class GqlErrors
+internal class GqlErrorDefaults : IGqlErrorDefaults
 {
     private const string UnknownNeo4JCode = "Neo.DatabaseError.General.UnknownError";
     private const string UnknownMessage = "An unknown error occurred";
@@ -30,7 +30,7 @@ internal static class GqlErrors
     private const string TransientError = "TRANSIENT_ERROR";
     private const string UnknownError = "UNKNOWN";
 
-    public static void FillGqlDefaults(FailureMessage message)
+    public void Fill(FailureMessage message)
     {
         message.CodeInternal ??= UnknownNeo4JCode;
         message.Message ??= UnknownMessage;
