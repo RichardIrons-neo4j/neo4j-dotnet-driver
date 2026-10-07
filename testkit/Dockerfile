@@ -1,20 +1,19 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG BASE_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
+FROM ${BASE_IMAGE} AS build
 
-RUN apt -o Acquire::Retries=5 update \
-	&& ln -fs /usr/share/zoneinfo/Europe/London /etc/localtime \
-	&& DEBIAN_FRONTEND=noninteractive apt -o Acquire::Retries=5 install -y tzdata \
-	&& DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend noninteractive tzdata \
-	&& rm -rf /var/lib/apt/lists/*
+ENV TZ=Europe/London
 
-RUN apt -o Acquire::Retries=5 update \
-	&& apt -o Acquire::Retries=5 install -y python3 \
-	&& rm -rf /var/lib/apt/lists/*
+RUN command -v python3 > /dev/null \
+	|| { apt -o Acquire::Retries=5 -o Acquire::Languages=none update \
+	&& DEBIAN_FRONTEND=noninteractive apt -o Acquire::Retries=5 install -y --no-install-recommends python3 \
+	&& rm -rf /var/lib/apt/lists/*; }
 
 # install .NET runtimes
-RUN wget https://dot.net/v1/dotnet-install.sh
-RUN bash dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet
-RUN bash dotnet-install.sh --channel 9.0 --install-dir /usr/share/dotnet
-RUN bash dotnet-install.sh --channel 10.0 --install-dir /usr/share/dotnet
+RUN wget https://dot.net/v1/dotnet-install.sh \
+	&& bash dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet \
+	&& bash dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet \
+	&& bash dotnet-install.sh --channel 10.0 --install-dir /usr/share/dotnet \
+	&& rm dotnet-install.sh
 
 ENV PYTHON=python3
 ENV DOTNET_DRIVER_USING_LOCAL_SERVER=true
