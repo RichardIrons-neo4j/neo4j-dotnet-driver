@@ -73,7 +73,7 @@ internal class QueryApiClient : IQueryApiClient
         var (body, headers, json, failure) =
             await SendAndReadAsync<QueryApiResultBody>(request, cancellationToken).ConfigureAwait(false);
 
-        var hasHeader = body?.Data is not null;
+        var hasHeader = body?.Data?.Fields is not null;
         if (failure is not null && !hasHeader)
         {
             throw failure;

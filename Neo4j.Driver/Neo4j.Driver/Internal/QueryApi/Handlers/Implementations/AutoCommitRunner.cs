@@ -53,14 +53,15 @@ internal class AutoCommitRunner : IAutoCommitRunner
 
         var bookmarks = _bookmarkTracker.CurrentBookmarks.Values;
         using var request = await BuildRequestAsync(query, bookmarks, cancellationToken).ConfigureAwait(false);
-        var result = await _client.ExecuteAsync<QueryApiResultBody>(request, cancellationToken).ConfigureAwait(false);
+        var result = await _client.ExecuteQueryAsync(request, cancellationToken).ConfigureAwait(false);
 
         var body = result.Body;
         var resultSet = new QueryApiResultSet
         {
             Fields = body.Data?.Fields ?? [],
             Rows = body.Data?.Values ?? [],
-            Bookmarks = body.Bookmarks ?? []
+            Bookmarks = body.Bookmarks ?? [],
+            Failure = result.Failure
         };
 
         _bookmarkTracker.UpdateBookmarks(resultSet.Bookmarks);

@@ -39,7 +39,7 @@ public class AutoCommitRunnerTests
         _autoMocker.Use<IBookmarkTracker>(_bookmarkTracker);
     }
 
-    private void SetupChain(QueryApiResultBody? body = null)
+    private void SetupChain(QueryApiResultBody? body = null, Neo4jException? failure = null)
     {
         body ??= new QueryApiResultBody();
         var request = new HttpRequestMessage();
@@ -52,8 +52,8 @@ public class AutoCommitRunnerTests
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteAsync<QueryApiResultBody>(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new QueryApiResult<QueryApiResultBody>(body, new HttpResponseMessage().Headers));
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new QueryApiQueryResult(body, new HttpResponseMessage().Headers, failure));
     }
 
     [Fact]
@@ -116,9 +116,9 @@ public class AutoCommitRunnerTests
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteAsync<QueryApiResultBody>(request, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
-                new QueryApiResult<QueryApiResultBody>(new QueryApiResultBody(), new HttpResponseMessage().Headers));
+                new QueryApiQueryResult(new QueryApiResultBody(), new HttpResponseMessage().Headers, null));
 
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
             .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
@@ -144,7 +144,7 @@ public class AutoCommitRunnerTests
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteAsync<QueryApiResultBody>(request, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ServiceUnavailableException("HTTP 503"));
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
@@ -176,9 +176,9 @@ public class AutoCommitRunnerTests
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteAsync<QueryApiResultBody>(request, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
-                new QueryApiResult<QueryApiResultBody>(new QueryApiResultBody(), new HttpResponseMessage().Headers));
+                new QueryApiQueryResult(new QueryApiResultBody(), new HttpResponseMessage().Headers, null));
 
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
             .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
@@ -190,5 +190,22 @@ public class AutoCommitRunnerTests
         var body = capturedBody.Should().BeOfType<AutoCommitRunner.RequestBody>().Subject;
         body.ImpersonatedUser.Should().Be("banana_bob");
         body.AccessMode.Should().Be("Read");
+    }
+
+    [Fact]
+    public async Task RunAsync_PassesADeferredFailure_ToTheCursor()
+    {
+        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        SetupChain(new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["n"] } }, failure);
+
+        var expectedCursor = new Mock<IResultCursor>().Object;
+        _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
+            .Setup(x => x.Build(It.Is<QueryApiResultSet>(rs => rs.Failure == failure), It.IsAny<Query>()))
+            .Returns(expectedCursor);
+
+        var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
+        var cursor = await subject.RunAsync(new Query("RETURN 1/0 AS n"), TestContext.Current.CancellationToken);
+
+        cursor.Should().BeSameAs(expectedCursor);
     }
 }

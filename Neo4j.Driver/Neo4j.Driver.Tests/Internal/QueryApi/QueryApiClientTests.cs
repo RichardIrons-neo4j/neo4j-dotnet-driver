@@ -225,6 +225,24 @@ public class QueryApiClientTests
     }
 
     [Fact]
+    public async Task ExecuteQueryAsync_ThrowsTheFailure_WhenTheDataCarriesNoFields()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("empty data") };
+        var body = new QueryApiResultBody
+        {
+            Data = new QueryApiDataBody(),
+            Errors = [new QueryApiErrorBody("Neo.ClientError.Statement.ArithmeticError", "/ by zero")]
+        };
+        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        SetupQueryResponse(response, "empty data", body, failure);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
+    }
+
+    [Fact]
     public async Task ExecuteQueryAsync_ReturnsNoFailure_WhenTheResponseSucceeded()
     {
         var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("ok") };

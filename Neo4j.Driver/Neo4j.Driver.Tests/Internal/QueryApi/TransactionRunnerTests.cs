@@ -45,7 +45,7 @@ public class TransactionRunnerTests
             .Returns(new QueryApiTransactionContext(TxId, null));
     }
 
-    private void SetupChain(QueryApiResultBody? body = null)
+    private void SetupChain(QueryApiResultBody? body = null, Neo4jException? failure = null)
     {
         body ??= new QueryApiResultBody();
         var request = new HttpRequestMessage();
@@ -55,8 +55,8 @@ public class TransactionRunnerTests
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteAsync<QueryApiResultBody>(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new QueryApiResult<QueryApiResultBody>(body, new HttpResponseMessage().Headers));
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new QueryApiQueryResult(body, new HttpResponseMessage().Headers, failure));
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class TransactionRunnerTests
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteAsync<QueryApiResultBody>(request, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ServiceUnavailableException("HTTP 503"));
 
         var subject = _autoMocker.CreateInstance<TransactionRunner>();
@@ -111,7 +111,7 @@ public class TransactionRunnerTests
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteAsync<QueryApiResultBody>(request, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ClientException("Neo.ClientError.Statement.SyntaxError", "Invalid input"));
 
         var subject = _autoMocker.CreateInstance<TransactionRunner>();
@@ -133,7 +133,7 @@ public class TransactionRunnerTests
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteAsync<QueryApiResultBody>(request, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ServiceUnavailableException("HTTP 503"));
 
         var subject = _autoMocker.CreateInstance<TransactionRunner>();
@@ -142,5 +142,36 @@ public class TransactionRunnerTests
         await act.Should().ThrowAsync<ServiceUnavailableException>();
 
         txContextTracker.Verify(x => x.MarkFailed(), Times.Never);
+    }
+
+    [Fact]
+    public async Task RunAsync_PassesADeferredFailure_ToTheCursor()
+    {
+        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        SetupChain(new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["n"] } }, failure);
+
+        var expectedCursor = new Mock<IResultCursor>().Object;
+        _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
+            .Setup(x => x.Build(It.Is<QueryApiResultSet>(rs => rs.Failure == failure), It.IsAny<Query>()))
+            .Returns(expectedCursor);
+
+        var subject = _autoMocker.CreateInstance<TransactionRunner>();
+        var cursor = await subject.RunAsync(new Query("RETURN 1/0 AS n"), TestContext.Current.CancellationToken);
+
+        cursor.Should().BeSameAs(expectedCursor);
+    }
+
+    [Fact]
+    public async Task RunAsync_MarksTransactionFailed_WhenTheFailureIsDeferred()
+    {
+        var txContextTracker = _autoMocker.GetMock<IQueryApiTransactionContextTracker>();
+        SetupChain(
+            new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["n"] } },
+            new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero"));
+
+        var subject = _autoMocker.CreateInstance<TransactionRunner>();
+        await subject.RunAsync(new Query("RETURN 1/0 AS n"), TestContext.Current.CancellationToken);
+
+        txContextTracker.Verify(x => x.MarkFailed(), Times.Once);
     }
 }

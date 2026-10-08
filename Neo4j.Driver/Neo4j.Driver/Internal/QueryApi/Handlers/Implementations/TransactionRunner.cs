@@ -50,10 +50,10 @@ internal class TransactionRunner : ITransactionRunner
         _logger.LogDebug("Running query in tx {txId}: {query}", _txContextTracker.Context!.TxId, query.Text);
 
         using var request = await BuildRequestAsync(query, cancellationToken).ConfigureAwait(false);
-        QueryApiResult<QueryApiResultBody> result;
+        QueryApiQueryResult result;
         try
         {
-            result = await _client.ExecuteAsync<QueryApiResultBody>(request, cancellationToken).ConfigureAwait(false);
+            result = await _client.ExecuteQueryAsync(request, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex.HasServerErrorCode())
         {
@@ -61,12 +61,18 @@ internal class TransactionRunner : ITransactionRunner
             throw;
         }
 
+        if (result.Failure is not null)
+        {
+            _txContextTracker.MarkFailed();
+        }
+
         var body = result.Body;
         var resultSet = new QueryApiResultSet
         {
             Fields = body.Data?.Fields ?? [],
             Rows = body.Data?.Values ?? [],
-            Bookmarks = body.Bookmarks ?? []
+            Bookmarks = body.Bookmarks ?? [],
+            Failure = result.Failure
         };
 
         _logger.LogDebug(

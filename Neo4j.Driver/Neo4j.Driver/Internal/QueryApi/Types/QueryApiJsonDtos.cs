@@ -22,13 +22,10 @@ namespace Neo4j.Driver.Internal.QueryApi;
 /// <summary>Appears in error arrays on both auto-commit and explicit-transaction responses.</summary>
 internal record QueryApiErrorBody(string Code = "", string Message = "");
 
-/// <summary>
-/// The data envelope returned by auto-commit and run-in-transaction responses.
-/// <c>Fields</c> defaults to an empty array so callers never receive null.
-/// </summary>
+/// <summary>The data envelope returned by auto-commit and run-in-transaction responses.</summary>
 internal record QueryApiDataBody
 {
-    public string[] Fields { get; init; } = [];
+    public string[]? Fields { get; init; }
     public JsonElement[][]? Values { get; init; }
 }
 
