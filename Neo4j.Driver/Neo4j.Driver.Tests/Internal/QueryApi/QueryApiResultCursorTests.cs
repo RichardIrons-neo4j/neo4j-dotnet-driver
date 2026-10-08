@@ -59,7 +59,7 @@ public class QueryApiResultCursorTests
             .Select(row => (IRecord)new DriverRecord(lookup, invariantLookup, row!))
             .ToList();
 
-        return new QueryApiResultCursor(records, keys, query ?? AnyQuery, summaryFactory ?? AnyFactory, database);
+        return new QueryApiResultCursor(records, keys, query ?? AnyQuery, summaryFactory ?? AnyFactory, database, null);
     }
 
     // --- Iteration ---

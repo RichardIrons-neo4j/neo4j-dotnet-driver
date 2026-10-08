@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Neo4j.Driver.Internal.MessageHandling;
 using Neo4j.Driver.Internal.Result;
 
 namespace Neo4j.Driver.Internal.QueryApi;
@@ -27,6 +28,7 @@ internal class QueryApiResultCursor : IResultCursor, IAsyncEnumerator<IRecord>
 {
     private readonly string _database;
     private readonly string[] _keys;
+    private readonly IResponsePipelineError? _pendingError;
     private readonly Query _query;
     private readonly IReadOnlyList<IRecord> _records;
     private readonly IResultSummaryFactory _summaryFactory;
@@ -39,13 +41,15 @@ internal class QueryApiResultCursor : IResultCursor, IAsyncEnumerator<IRecord>
         string[] keys,
         Query query,
         IResultSummaryFactory summaryFactory,
-        string database)
+        string database,
+        IResponsePipelineError? pendingError)
     {
         _records = records;
         _keys = keys;
         _query = query;
         _summaryFactory = summaryFactory;
         _database = database;
+        _pendingError = pendingError;
     }
 
     IRecord IAsyncEnumerator<IRecord>.Current => _records[_currentIndex];
@@ -56,6 +60,7 @@ internal class QueryApiResultCursor : IResultCursor, IAsyncEnumerator<IRecord>
         var nextIndex = _currentIndex + 1;
         if (nextIndex >= _records.Count)
         {
+            _pendingError?.EnsureThrown();
             return new ValueTask<bool>(false);
         }
 
@@ -95,14 +100,19 @@ internal class QueryApiResultCursor : IResultCursor, IAsyncEnumerator<IRecord>
     {
         AssertNotConsumed();
         var nextIndex = _currentIndex + 1;
-        return nextIndex < _records.Count
-            ? Task.FromResult(_records[nextIndex])
-            : Task.FromResult<IRecord>(null!);
+        if (nextIndex < _records.Count)
+        {
+            return Task.FromResult(_records[nextIndex]);
+        }
+
+        _pendingError?.EnsureThrown();
+        return Task.FromResult<IRecord>(null!);
     }
 
     public Task<IResultSummary> ConsumeAsync()
     {
         _isConsumed = true;
+        _pendingError?.EnsureThrown();
         return Task.FromResult(_summaryFactory.Create(_query, _database));
     }
 

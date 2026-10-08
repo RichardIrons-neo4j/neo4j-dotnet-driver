@@ -16,6 +16,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -168,5 +169,77 @@ public class QueryApiResultCursorBuilderTests
             .Should()
             .ThrowAsync<ProtocolException>()
             .WithMessage("*Node*");
+    }
+
+    // --- Deferred failure ---
+
+    private static readonly ClientException Failure =
+        new("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+
+    private static IResultCursor BuildWithFailure(params object?[] values)
+    {
+        var response = new QueryApiResultSet
+        {
+            Fields = ["n"],
+            Rows = [.. values.Select(v => new[] { JsonSerializer.SerializeToElement(v) })],
+            Failure = Failure
+        };
+
+        return Builder.Build(response, AnyQuery);
+    }
+
+    [Fact]
+    public async Task FetchAsync_ThrowsTheFailure_AfterTheLastRecord()
+    {
+        var cursor = BuildWithFailure(1);
+        var first = await cursor.FetchAsync();
+
+        var act = () => cursor.FetchAsync();
+
+        first.Should().BeTrue();
+        cursor.Current["n"].Should().Be(1L);
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(Failure);
+    }
+
+    [Fact]
+    public async Task FetchAsync_ThrowsTheFailure_WhenThereAreNoRecords()
+    {
+        var cursor = BuildWithFailure();
+
+        var act = () => cursor.FetchAsync();
+
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(Failure);
+    }
+
+    [Fact]
+    public async Task FetchAsync_ThrowsTheFailureOnlyOnce()
+    {
+        var cursor = BuildWithFailure();
+        await cursor.Invoking(c => c.FetchAsync()).Should().ThrowAsync<ClientException>();
+
+        var fetched = await cursor.FetchAsync();
+
+        fetched.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task PeekAsync_ThrowsTheFailure_AfterTheLastRecord()
+    {
+        var cursor = BuildWithFailure(1);
+        await cursor.FetchAsync();
+
+        var act = () => cursor.PeekAsync();
+
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(Failure);
+    }
+
+    [Fact]
+    public async Task ConsumeAsync_ThrowsTheFailure()
+    {
+        var cursor = BuildWithFailure(1);
+
+        var act = () => cursor.ConsumeAsync();
+
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(Failure);
     }
 }

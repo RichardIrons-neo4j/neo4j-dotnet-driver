@@ -33,4 +33,5 @@ internal class QueryApiResultSet
     public string[] Fields { get; init; } = [];
     public JsonElement[][] Rows { get; init; } = [];
     public string[] Bookmarks { get; init; } = [];
+    public Neo4jException? Failure { get; init; }
 }
