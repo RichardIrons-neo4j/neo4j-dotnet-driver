@@ -29,10 +29,4 @@ internal interface IQueryApiErrorChecker
     /// the specific error code.
     /// </summary>
     Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Throws the appropriate <see cref="Neo4jException"/> for the first error in the array, if any.
-    /// No-ops when <paramref name="errors"/> is null or empty.
-    /// </summary>
-    void ThrowIfErrors(QueryApiErrorBody[]? errors);
 }

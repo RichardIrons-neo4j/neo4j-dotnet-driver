@@ -95,24 +95,27 @@ public class QueryApiClientTests
     }
 
     [Fact]
-    public async Task PropagatesException_WhenErrorCheckerThrows()
+    public async Task Throws_WhenTheFailureReaderReturnsAFailure()
     {
+        var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new ByteArrayContent([]) };
+        QueryApiErrorBody[] errors = [new QueryApiErrorBody("Neo.ClientError.General.Unknown", "error")];
+
         _autoMocker.GetMock<IQueryApiHttpTransport>()
             .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new ByteArrayContent([]) });
+            .ReturnsAsync(response);
 
         _autoMocker.GetMock<IJsonDeserializer>()
             .Setup(x => x.DeserializeAsync<TestBody>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(
-                new TestBody { Errors = [new QueryApiErrorBody("Neo.ClientError.General.Unknown", "error")] });
+            .ReturnsAsync(new TestBody { Errors = errors });
 
-        _autoMocker.GetMock<IQueryApiErrorChecker>()
-            .Setup(x => x.ThrowIfErrors(It.IsAny<QueryApiErrorBody[]?>()))
-            .Throws(new ClientException("Neo.ClientError.General.Unknown", "error"));
+        var failure = new ClientException("Neo.ClientError.General.Unknown", "error");
+        _autoMocker.GetMock<IQueryApiFailureReader>()
+            .Setup(x => x.Read(response, "", errors))
+            .Returns(failure);
 
         var subject = _autoMocker.CreateInstance<QueryApiClient>();
         var act = () => subject.ExecuteAsync<TestBody>(new HttpRequestMessage(), TestContext.Current.CancellationToken);
 
-        await act.Should().ThrowAsync<ClientException>();
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
     }
 }

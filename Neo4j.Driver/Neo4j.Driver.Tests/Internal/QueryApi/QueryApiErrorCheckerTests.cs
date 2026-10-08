@@ -38,7 +38,9 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 public class QueryApiErrorCheckerTests
 {
     private static QueryApiErrorChecker BuildChecker(IJsonDeserializer? deserializer = null) =>
-        new(deserializer ?? new Mock<IJsonDeserializer>().Object, new Neo4jExceptionFactory(new GqlErrorDefaults()), new Mock<ILogger>().Object);
+        new(
+            deserializer ?? new Mock<IJsonDeserializer>().Object,
+            new QueryApiFailureReader(new Neo4jExceptionFactory(new GqlErrorDefaults()), new Mock<ILogger>().Object));
 
     private static HttpResponseMessage StringResponse(HttpStatusCode status, string body = "") =>
         new(status) { Content = new StringContent(body) };
@@ -67,7 +69,7 @@ public class QueryApiErrorCheckerTests
             {
                 Errors =
                 [
-                    new QueryApiErrorChecker.ErrorBody
+                    new QueryApiErrorBody
                     {
                         Code = "Neo.ClientError.Security.Unauthorized",
                         Message = "No authentication was supplied."
@@ -116,7 +118,7 @@ public class QueryApiErrorCheckerTests
             {
                 Errors =
                 [
-                    new QueryApiErrorChecker.ErrorBody
+                    new QueryApiErrorBody
                     {
                         Code = "Neo.ClientError.Statement.SyntaxError",
                         Message = "Invalid input 'Invalid': expected ..."
@@ -146,7 +148,7 @@ public class QueryApiErrorCheckerTests
             {
                 Errors =
                 [
-                    new QueryApiErrorChecker.ErrorBody
+                    new QueryApiErrorBody
                     {
                         Code = "Neo.ClientError.Statement.SyntaxError",
                         Message = "Invalid input"
@@ -178,9 +180,9 @@ public class QueryApiErrorCheckerTests
             {
                 Errors =
                 [
-                    new QueryApiErrorChecker.ErrorBody { Code = "Neo.ClientError.Oh.Err1", Message = "Error message 1" },
-                    new QueryApiErrorChecker.ErrorBody { Code = "Neo.ClientError.Oh.Err2", Message = "Error message 2" },
-                    new QueryApiErrorChecker.ErrorBody { Code = "Neo.ClientError.Oh.Err3", Message = "Error message 3" }
+                    new QueryApiErrorBody { Code = "Neo.ClientError.Oh.Err1", Message = "Error message 1" },
+                    new QueryApiErrorBody { Code = "Neo.ClientError.Oh.Err2", Message = "Error message 2" },
+                    new QueryApiErrorBody { Code = "Neo.ClientError.Oh.Err3", Message = "Error message 3" }
                 ]
             };
 
@@ -219,75 +221,6 @@ public class QueryApiErrorCheckerTests
                 .Invoking(x => x.EnsureSuccessAsync(response))
                 .Should().ThrowAsync<ServiceUnavailableException>()
                 .WithMessage("*500*");
-        }
-    }
-
-    public class ThrowIfErrors
-    {
-        [Fact]
-        public void ThrowsClientException_ForSyntaxError()
-        {
-            var act = () => BuildChecker().ThrowIfErrors(
-                [new QueryApiErrorBody("Neo.ClientError.Statement.SyntaxError", "Invalid input 'RETUN': expected 'RETURN'")]);
-
-            act.Should().Throw<ClientException>().WithMessage("*Invalid input*");
-        }
-
-        [Fact]
-        public void ThrowsTransientException_ForTransientDatabaseUnavailable()
-        {
-            var act = () => BuildChecker().ThrowIfErrors(
-                [new QueryApiErrorBody("Neo.TransientError.General.DatabaseUnavailable", "Database is temporarily unavailable.")]);
-
-            act.Should().Throw<TransientException>();
-        }
-
-        [Fact]
-        public void ThrownException_CarriesDefaultGqlFields()
-        {
-            Neo4jException? thrown = null;
-            try
-            {
-                BuildChecker().ThrowIfErrors(
-                    [new QueryApiErrorBody("Neo.ClientError.Statement.SyntaxError", "Invalid input")]);
-            }
-            catch (Neo4jException e)
-            {
-                thrown = e;
-            }
-
-            thrown.Should().NotBeNull();
-            thrown!.GqlStatus.Should().Be("50N42");
-            thrown.GqlStatusDescription.Should().Be("error: general processing exception - unexpected error. Invalid input");
-            thrown.GqlClassification.Should().Be("UNKNOWN");
-            thrown.GqlDiagnosticRecord.Should().Contain("OPERATION_CODE", "0");
-        }
-
-        [Fact]
-        public void ThrowsTheLastError_WhenSeveralErrorsArePresent()
-        {
-            var act = () => BuildChecker().ThrowIfErrors(
-            [
-                new QueryApiErrorBody("Neo.ClientError.Oh.Err1", "Error message 1"),
-                new QueryApiErrorBody("Neo.ClientError.Oh.Err2", "Error message 2"),
-                new QueryApiErrorBody("Neo.ClientError.Oh.Err3", "Error message 3")
-            ]);
-
-            var thrown = act.Should().Throw<Neo4jException>().Which;
-            thrown.Code.Should().Be("Neo.ClientError.Oh.Err3");
-            thrown.Message.Should().Be("Error message 3");
-        }
-
-        [Fact]
-        public void DoesNotThrow_WhenErrorsIsNull()
-        {
-            BuildChecker().Invoking(x => x.ThrowIfErrors(null)).Should().NotThrow();
-        }
-
-        [Fact]
-        public void DoesNotThrow_WhenErrorsIsEmpty()
-        {
-            BuildChecker().Invoking(x => x.ThrowIfErrors([])).Should().NotThrow();
         }
     }
 }

@@ -23,18 +23,18 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class QueryApiClient : IQueryApiClient
 {
-    private readonly IQueryApiErrorChecker _errorChecker;
+    private readonly IQueryApiFailureReader _failureReader;
     private readonly IQueryApiHttpTransport _httpTransport;
     private readonly IJsonDeserializer _jsonDeserializer;
 
     public QueryApiClient(
         IQueryApiHttpTransport httpTransport,
         IJsonDeserializer jsonDeserializer,
-        IQueryApiErrorChecker errorChecker)
+        IQueryApiFailureReader failureReader)
     {
         _httpTransport = httpTransport;
         _jsonDeserializer = jsonDeserializer;
-        _errorChecker = errorChecker;
+        _failureReader = failureReader;
     }
 
     public async Task<QueryApiResult<TBody>> ExecuteAsync<TBody>(
@@ -50,7 +50,11 @@ internal class QueryApiClient : IQueryApiClient
             .DeserializeAsync<TBody>(json, cancellationToken)
             .ConfigureAwait(false);
 
-        _errorChecker.ThrowIfErrors(body?.Errors);
+        var failure = _failureReader.Read(response, json, body?.Errors);
+        if (failure is not null)
+        {
+            throw failure;
+        }
 
         return new QueryApiResult<TBody>(body!, headers);
     }

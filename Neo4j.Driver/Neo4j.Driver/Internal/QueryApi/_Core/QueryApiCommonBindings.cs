@@ -47,6 +47,7 @@ internal static class QueryApiCommonBindings
             .Bind<IHttpRequestEnricher>(nameof(QueryApiAuthEnricher)).To<QueryApiAuthEnricher>()
             .Bind<IQueryApiClient>().To<QueryApiClient>()
             .Bind<IQueryApiErrorChecker>().To<QueryApiErrorChecker>()
+            .Bind<IQueryApiFailureReader>().To<QueryApiFailureReader>()
             .Bind<INeo4jExceptionFactory>().To<Neo4jExceptionFactory>()
             .Bind<IGqlErrorDefaults>().To<GqlErrorDefaults>()
             .Bind<IQueryApiRequestBuilder>().To<QueryApiRequestBuilder>()

@@ -19,25 +19,18 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Neo4j.Driver.Internal.ExceptionHandling;
-using Neo4j.Driver.Internal.Messaging;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class QueryApiErrorChecker : IQueryApiErrorChecker
 {
+    private readonly IQueryApiFailureReader _failureReader;
     private readonly IJsonDeserializer _jsonDeserializer;
-    private readonly INeo4jExceptionFactory _exceptionFactory;
-    private readonly ILogger _logger;
 
-    public QueryApiErrorChecker(
-        IJsonDeserializer jsonDeserializer,
-        INeo4jExceptionFactory exceptionFactory,
-        ILogger logger)
+    public QueryApiErrorChecker(IJsonDeserializer jsonDeserializer, IQueryApiFailureReader failureReader)
     {
         _jsonDeserializer = jsonDeserializer;
-        _exceptionFactory = exceptionFactory;
-        _logger = logger;
+        _failureReader = failureReader;
     }
 
     public async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken = default)
@@ -48,29 +41,12 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
         }
 
         var responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        var last = await TryParseLastErrorAsync(responseText, cancellationToken).ConfigureAwait(false);
+        var errors = await TryParseErrorsAsync(responseText, cancellationToken).ConfigureAwait(false);
 
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            throw ToServerException(
-                last?.Code ?? "Neo.ClientError.Security.Unauthorized",
-                last?.Message ?? response.ReasonPhrase ?? "Unauthorized");
-        }
-
-        if (last is not null)
-        {
-            throw ToServerException(last.Code, last.Message);
-        }
-
-        var method = response.RequestMessage?.Method;
-        var uri = response.RequestMessage?.RequestUri;
-        var message = $"HTTP {(int)response.StatusCode} {method} {uri}: {responseText}";
-
-        _logger.LogDebug("{message}", message);
-        throw new ServiceUnavailableException(message);
+        throw _failureReader.Read(response, responseText, errors)!;
     }
 
-    private async Task<ErrorBody?> TryParseLastErrorAsync(string responseText, CancellationToken cancellationToken)
+    private async Task<QueryApiErrorBody[]?> TryParseErrorsAsync(string responseText, CancellationToken cancellationToken)
     {
         try
         {
@@ -78,7 +54,7 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
                 .DeserializeAsync<ErrorResponseBody>(responseText, cancellationToken)
                 .ConfigureAwait(false);
 
-            return parsed?.Errors is { Length: > 0 } e ? e[^1] : null;
+            return parsed?.Errors;
         }
         catch
         {
@@ -86,28 +62,5 @@ internal class QueryApiErrorChecker : IQueryApiErrorChecker
         }
     }
 
-    public void ThrowIfErrors(QueryApiErrorBody[]? errors)
-    {
-        if (errors is { Length: > 0 })
-        {
-            var last = errors[^1];
-            throw ToServerException(last.Code, last.Message);
-        }
-    }
-
-    private Neo4jException ToServerException(string code, string message)
-    {
-        return _exceptionFactory.GetException(new FailureMessage(code, message));
-    }
-
-    internal class ErrorResponseBody
-    {
-        public ErrorBody[]? Errors { get; init; }
-    }
-
-    internal class ErrorBody
-    {
-        public string Code { get; init; } = string.Empty;
-        public string Message { get; init; } = string.Empty;
-    }
+    internal record ErrorResponseBody : QueryApiResponse;
 }
