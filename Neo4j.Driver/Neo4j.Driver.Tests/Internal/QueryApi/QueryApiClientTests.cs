@@ -187,4 +187,73 @@ public class QueryApiClientTests
 
         (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
     }
+
+    [Fact]
+    public async Task ExecuteQueryAsync_ReturnsTheFailureOnTheResult_WhenTheBodyCarriesAHeader()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("with header") };
+        var body = new QueryApiResultBody
+        {
+            Data = new QueryApiDataBody { Fields = ["n"] },
+            Errors = [new QueryApiErrorBody("Neo.ClientError.Statement.ArithmeticError", "/ by zero")]
+        };
+        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        SetupQueryResponse(response, "with header", body, failure);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var result = await subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        result.Body.Should().BeSameAs(body);
+        result.Failure.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ExecuteQueryAsync_ThrowsTheFailure_WhenTheBodyCarriesNoHeader()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("no header") };
+        var body = new QueryApiResultBody
+        {
+            Errors = [new QueryApiErrorBody("Neo.ClientError.Statement.ArithmeticError", "/ by zero")]
+        };
+        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        SetupQueryResponse(response, "no header", body, failure);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ExecuteQueryAsync_ReturnsNoFailure_WhenTheResponseSucceeded()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("ok") };
+        var body = new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["n"] } };
+        SetupQueryResponse(response, "ok", body, null);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var result = await subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        result.Body.Should().BeSameAs(body);
+        result.Failure.Should().BeNull();
+    }
+
+    private void SetupQueryResponse(
+        HttpResponseMessage response,
+        string json,
+        QueryApiResultBody body,
+        Neo4jException? failure)
+    {
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        _autoMocker.GetMock<IJsonDeserializer>()
+            .Setup(x => x.DeserializeAsync<QueryApiResultBody>(json, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(body);
+
+        _autoMocker.GetMock<IQueryApiFailureReader>()
+            .Setup(x => x.Read(response, json, body.Errors))
+            .Returns(failure);
+    }
 }

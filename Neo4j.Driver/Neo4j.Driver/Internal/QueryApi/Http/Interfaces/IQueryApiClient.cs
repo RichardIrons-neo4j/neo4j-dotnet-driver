@@ -29,4 +29,8 @@ internal interface IQueryApiClient
         where TBody : QueryApiResponse;
 
     Task ExecuteAsync(HttpRequestMessage request, CancellationToken cancellationToken = default);
+
+    Task<QueryApiQueryResult> ExecuteQueryAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken = default);
 }

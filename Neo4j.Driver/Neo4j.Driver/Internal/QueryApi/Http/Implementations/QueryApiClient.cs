@@ -44,35 +44,60 @@ internal class QueryApiClient : IQueryApiClient
         CancellationToken cancellationToken = default)
         where TBody : QueryApiResponse
     {
-        var (body, headers, json) = await SendAndReadAsync<TBody>(request, cancellationToken).ConfigureAwait(false);
+        var (body, headers, json, failure) =
+            await SendAndReadAsync<TBody>(request, cancellationToken).ConfigureAwait(false);
 
-        return new QueryApiResult<TBody>(
-            body ?? throw new ProtocolException($"Unable to parse the Query API response: {json}"),
-            headers);
+        if (failure is not null)
+        {
+            throw failure;
+        }
+
+        return new QueryApiResult<TBody>(body ?? throw UnparseableResponse(json), headers);
     }
 
     public async Task ExecuteAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
-        await SendAndReadAsync<ErrorsOnlyBody>(request, cancellationToken).ConfigureAwait(false);
+        var (_, _, _, failure) =
+            await SendAndReadAsync<ErrorsOnlyBody>(request, cancellationToken).ConfigureAwait(false);
+
+        if (failure is not null)
+        {
+            throw failure;
+        }
     }
 
-    private async Task<(TBody? Body, HttpResponseHeaders Headers, string Json)> SendAndReadAsync<TBody>(
+    public async Task<QueryApiQueryResult> ExecuteQueryAsync(
         HttpRequestMessage request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
+    {
+        var (body, headers, json, failure) =
+            await SendAndReadAsync<QueryApiResultBody>(request, cancellationToken).ConfigureAwait(false);
+
+        var hasHeader = body?.Data is not null;
+        if (failure is not null && !hasHeader)
+        {
+            throw failure;
+        }
+
+        return new QueryApiQueryResult(body ?? throw UnparseableResponse(json), headers, failure);
+    }
+
+    private async Task<(TBody? Body, HttpResponseHeaders Headers, string Json, Neo4jException? Failure)>
+        SendAndReadAsync<TBody>(HttpRequestMessage request, CancellationToken cancellationToken)
         where TBody : QueryApiResponse
     {
         using var response = await _httpTransport.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         var body = await TryDeserializeAsync<TBody>(json, cancellationToken).ConfigureAwait(false);
-
         var failure = _failureReader.Read(response, json, body?.Errors);
-        if (failure is not null)
-        {
-            throw failure;
-        }
 
-        return (body, response.Headers, json);
+        return (body, response.Headers, json, failure);
+    }
+
+    private ProtocolException UnparseableResponse(string json)
+    {
+        return new ProtocolException($"Unable to parse the Query API response: {json}");
     }
 
     private async Task<TBody?> TryDeserializeAsync<TBody>(string json, CancellationToken cancellationToken)
