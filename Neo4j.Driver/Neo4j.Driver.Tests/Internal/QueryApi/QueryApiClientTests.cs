@@ -17,6 +17,7 @@
 
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -115,6 +116,74 @@ public class QueryApiClientTests
 
         var subject = _autoMocker.CreateInstance<QueryApiClient>();
         var act = () => subject.ExecuteAsync<TestBody>(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ThrowsTheReadersFailure_WhenTheBodyIsNotJson()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.BadGateway) { Content = new StringContent("<html>") };
+
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        _autoMocker.GetMock<IJsonDeserializer>()
+            .Setup(x => x.DeserializeAsync<TestBody>("<html>", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new JsonException("not json"));
+
+        var failure = new ServiceUnavailableException("HTTP 502");
+        _autoMocker.GetMock<IQueryApiFailureReader>()
+            .Setup(x => x.Read(response, "<html>", null))
+            .Returns(failure);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteAsync<TestBody>(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>()).Which.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ExecuteAsyncWithoutABody_DoesNotThrow_WhenTheResponseBodyIsEmpty()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([]) };
+
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        _autoMocker.GetMock<IJsonDeserializer>()
+            .Setup(x => x.DeserializeAsync<QueryApiClient.ErrorsOnlyBody>("", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new JsonException("empty"));
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task ExecuteAsyncWithoutABody_ThrowsTheReadersFailure()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}") };
+        QueryApiErrorBody[] errors = [new QueryApiErrorBody("Neo.ClientError.Request.Invalid", "no such tx")];
+
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        _autoMocker.GetMock<IJsonDeserializer>()
+            .Setup(x => x.DeserializeAsync<QueryApiClient.ErrorsOnlyBody>("{}", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new QueryApiClient.ErrorsOnlyBody { Errors = errors });
+
+        var failure = new ClientException("Neo.ClientError.Request.Invalid", "no such tx");
+        _autoMocker.GetMock<IQueryApiFailureReader>()
+            .Setup(x => x.Read(response, "{}", errors))
+            .Returns(failure);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
 
         (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
     }

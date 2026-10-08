@@ -16,6 +16,8 @@
 #nullable enable
 
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,13 +44,27 @@ internal class QueryApiClient : IQueryApiClient
         CancellationToken cancellationToken = default)
         where TBody : QueryApiResponse
     {
+        var (body, headers, json) = await SendAndReadAsync<TBody>(request, cancellationToken).ConfigureAwait(false);
+
+        return new QueryApiResult<TBody>(
+            body ?? throw new ProtocolException($"Unable to parse the Query API response: {json}"),
+            headers);
+    }
+
+    public async Task ExecuteAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
+    {
+        await SendAndReadAsync<ErrorsOnlyBody>(request, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<(TBody? Body, HttpResponseHeaders Headers, string Json)> SendAndReadAsync<TBody>(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+        where TBody : QueryApiResponse
+    {
         using var response = await _httpTransport.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var headers = response.Headers;
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        var body = await _jsonDeserializer
-            .DeserializeAsync<TBody>(json, cancellationToken)
-            .ConfigureAwait(false);
+        var body = await TryDeserializeAsync<TBody>(json, cancellationToken).ConfigureAwait(false);
 
         var failure = _failureReader.Read(response, json, body?.Errors);
         if (failure is not null)
@@ -56,6 +72,20 @@ internal class QueryApiClient : IQueryApiClient
             throw failure;
         }
 
-        return new QueryApiResult<TBody>(body!, headers);
+        return (body, response.Headers, json);
     }
+
+    private async Task<TBody?> TryDeserializeAsync<TBody>(string json, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _jsonDeserializer.DeserializeAsync<TBody>(json, cancellationToken).ConfigureAwait(false);
+        }
+        catch (JsonException)
+        {
+            return default;
+        }
+    }
+
+    internal record ErrorsOnlyBody : QueryApiResponse;
 }

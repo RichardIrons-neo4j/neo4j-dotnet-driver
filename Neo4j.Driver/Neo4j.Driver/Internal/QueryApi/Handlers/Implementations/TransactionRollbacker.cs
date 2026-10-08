@@ -22,19 +22,19 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class TransactionRollbacker : ITransactionRollback
 {
-    private readonly IQueryApiHttpTransport _httpTransport;
+    private readonly IQueryApiClient _client;
     private readonly ILogger _logger;
     private readonly IQueryApiRequestBuilder _requestBuilder;
     private readonly IQueryApiTransactionContextTracker _txContextTracker;
 
     public TransactionRollbacker(
         IQueryApiRequestBuilder requestBuilder,
-        IQueryApiHttpTransport httpTransport,
+        IQueryApiClient client,
         IQueryApiTransactionContextTracker txContextTracker,
         ILogger logger)
     {
         _requestBuilder = requestBuilder;
-        _httpTransport = httpTransport;
+        _client = client;
         _txContextTracker = txContextTracker;
         _logger = logger;
     }
@@ -52,6 +52,6 @@ internal class TransactionRollbacker : ITransactionRollback
 
         _logger.LogDebug("Rolling back transaction {txId}", _txContextTracker.Context!.TxId);
         using var request = await _requestBuilder.DeleteAsync($"query/v2/tx/{_txContextTracker.Context!.TxId}", cancellationToken).ConfigureAwait(false);
-        using var response = await _httpTransport.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await _client.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
     }
 }

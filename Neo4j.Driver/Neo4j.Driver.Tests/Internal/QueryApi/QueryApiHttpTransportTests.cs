@@ -28,10 +28,9 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiHttpTransportTests
 {
-    private readonly Mock<IQueryApiErrorChecker> _errorChecker = new();
     private readonly Mock<ILogger> _logger = new();
 
-    private QueryApiHttpTransport CreateTransport() => new(_errorChecker.Object, _logger.Object);
+    private QueryApiHttpTransport CreateTransport() => new(_logger.Object);
 
     [Fact]
     public async Task SendAsync_AfterDispose_ThrowsObjectDisposedException()

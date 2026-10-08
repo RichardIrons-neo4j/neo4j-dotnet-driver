@@ -44,40 +44,23 @@ public class TransactionRollbackerTests
             .Returns(new QueryApiTransactionContext(TxId, null));
     }
 
-    // Sets up the minimum mock chain needed to exercise the handler without crashing:
-    // DeleteAsync("query/v2/tx/{txId}") → request → SendAsync(request) → response
-    private HttpResponseMessage SetupChain()
+    [Fact]
+    public async Task Throws_WhenTheServerRejectsTheRollback()
     {
         var request = new HttpRequestMessage();
-
-        _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
-            .SetupGet(x => x.IsFailed)
-            .Returns(false);
-
         _autoMocker.GetMock<IQueryApiRequestBuilder>()
             .Setup(x => x.DeleteAsync($"query/v2/tx/{TxId}", It.IsAny<CancellationToken>()))
             .ReturnsAsync(request);
 
-        var response = new HttpResponseMessage();
-        _autoMocker.GetMock<IQueryApiHttpTransport>()
-            .Setup(x => x.SendAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response);
-
-        return response;
-    }
-
-    [Fact]
-    public async Task Throws_WhenHttpClientThrows()
-    {
-        SetupChain();
-        _autoMocker.GetMock<IQueryApiHttpTransport>()
-            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ServiceUnavailableException("HTTP 503"));
+        var failure = new ClientException("Neo.ClientError.Transaction.TransactionNotFound", "no such tx");
+        _autoMocker.GetMock<IQueryApiClient>()
+            .Setup(x => x.ExecuteAsync(request, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
 
         var subject = _autoMocker.CreateInstance<TransactionRollbacker>();
         var act = () => subject.RollbackAsync(TestContext.Current.CancellationToken);
 
-        await act.Should().ThrowAsync<ServiceUnavailableException>();
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
     }
 
     [Fact]

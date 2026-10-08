@@ -152,4 +152,28 @@ public class ConnectivityVerifierTests
             .ThrowAsync<ServiceUnavailableException>()
             .WithMessage("*404*");
     }
+
+    [Fact]
+    public async Task Throws_WhenTheFailureReaderReportsAFailure()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("not found") };
+
+        _autoMocker.GetMock<IQueryApiUrlBuilder>()
+            .Setup(x => x.Build(string.Empty))
+            .Returns(BaseUri);
+
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        var failure = new ServiceUnavailableException("HTTP 404");
+        _autoMocker.GetMock<IQueryApiFailureReader>()
+            .Setup(x => x.Read(response, "not found", null))
+            .Returns(failure);
+
+        var subject = _autoMocker.CreateInstance<ConnectivityVerifier>();
+        var act = () => subject.VerifyAsync(TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>()).Which.Should().BeSameAs(failure);
+    }
 }
