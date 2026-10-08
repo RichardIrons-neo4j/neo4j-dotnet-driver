@@ -16,6 +16,7 @@
 #nullable enable
 
 using System.Text.Json;
+using Neo4j.Driver.Internal.MessageHandling;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
@@ -33,5 +34,5 @@ internal class QueryApiResultSet
     public string[] Fields { get; init; } = [];
     public JsonElement[][] Rows { get; init; } = [];
     public string[] Bookmarks { get; init; } = [];
-    public Neo4jException? Failure { get; init; }
+    public IResponsePipelineError? PendingError { get; init; }
 }

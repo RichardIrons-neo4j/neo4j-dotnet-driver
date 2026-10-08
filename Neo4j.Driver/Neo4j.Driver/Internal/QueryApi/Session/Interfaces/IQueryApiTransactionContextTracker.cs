@@ -14,6 +14,8 @@
 // limitations under the License.
 
 #nullable enable
+using Neo4j.Driver.Internal.MessageHandling;
+
 namespace Neo4j.Driver.Internal.QueryApi;
 
 internal interface IQueryApiTransactionContextTracker
@@ -22,4 +24,6 @@ internal interface IQueryApiTransactionContextTracker
     bool IsFailed { get; }
     void Set(QueryApiTransactionContext context);
     void MarkFailed();
+    void MarkFailed(IResponsePipelineError pendingError);
+    void EnsurePendingFailureThrown();
 }

@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Neo4j.Driver.Internal.MessageHandling;
 using Neo4j.Driver.Internal.Result;
 
 
@@ -57,14 +56,12 @@ internal class QueryApiResultCursorBuilder : IQueryApiResultCursorBuilder
                 row.Select(_jsonValueDecoder.Decode).ToArray()!))
             .ToList();
 
-        var pendingError = resultSet.Failure is null ? null : new ResponsePipelineError(resultSet.Failure);
-
         return new QueryApiResultCursor(
             records,
             resultSet.Fields,
             query,
             _summaryFactory,
             _sessionContext.Database,
-            pendingError);
+            resultSet.PendingError);
     }
 }

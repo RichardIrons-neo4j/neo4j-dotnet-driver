@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Neo4j.Driver.Internal;
+using Neo4j.Driver.Internal.MessageHandling;
 using Neo4j.Driver.Internal.QueryApi;
 using Xunit;
 
@@ -182,7 +183,7 @@ public class QueryApiResultCursorBuilderTests
         {
             Fields = ["n"],
             Rows = [.. values.Select(v => new[] { JsonSerializer.SerializeToElement(v) })],
-            Failure = Failure
+            PendingError = new ResponsePipelineError(Failure)
         };
 
         return Builder.Build(response, AnyQuery);

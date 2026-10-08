@@ -200,7 +200,7 @@ public class AutoCommitRunnerTests
 
         var expectedCursor = new Mock<IResultCursor>().Object;
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.Is<QueryApiResultSet>(rs => rs.Failure == failure), It.IsAny<Query>()))
+            .Setup(x => x.Build(It.Is<QueryApiResultSet>(rs => rs.PendingError!.Exception == failure), It.IsAny<Query>()))
             .Returns(expectedCursor);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();

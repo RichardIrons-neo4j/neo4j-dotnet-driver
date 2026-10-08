@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Neo4j.Driver.Internal.MessageHandling;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
@@ -61,7 +62,7 @@ internal class AutoCommitRunner : IAutoCommitRunner
             Fields = body.Data?.Fields ?? [],
             Rows = body.Data?.Values ?? [],
             Bookmarks = body.Bookmarks ?? [],
-            Failure = result.Failure
+            PendingError = result.Failure is null ? null : new ResponsePipelineError(result.Failure)
         };
 
         _bookmarkTracker.UpdateBookmarks(resultSet.Bookmarks);

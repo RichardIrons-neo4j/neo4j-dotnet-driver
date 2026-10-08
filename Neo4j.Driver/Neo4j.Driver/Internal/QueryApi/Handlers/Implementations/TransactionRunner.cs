@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Neo4j.Driver.Internal.MessageHandling;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
@@ -47,6 +48,8 @@ internal class TransactionRunner : ITransactionRunner
 
     public async Task<IResultCursor> RunAsync(Query query, CancellationToken cancellationToken = default)
     {
+        _txContextTracker.EnsurePendingFailureThrown();
+
         _logger.LogDebug("Running query in tx {txId}: {query}", _txContextTracker.Context!.TxId, query.Text);
 
         using var request = await BuildRequestAsync(query, cancellationToken).ConfigureAwait(false);
@@ -61,9 +64,11 @@ internal class TransactionRunner : ITransactionRunner
             throw;
         }
 
+        IResponsePipelineError? pendingError = null;
         if (result.Failure is not null)
         {
-            _txContextTracker.MarkFailed();
+            pendingError = new ResponsePipelineError(result.Failure);
+            _txContextTracker.MarkFailed(pendingError);
         }
 
         var body = result.Body;
@@ -72,7 +77,7 @@ internal class TransactionRunner : ITransactionRunner
             Fields = body.Data?.Fields ?? [],
             Rows = body.Data?.Values ?? [],
             Bookmarks = body.Bookmarks ?? [],
-            Failure = result.Failure
+            PendingError = pendingError
         };
 
         _logger.LogDebug(

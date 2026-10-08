@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Moq.AutoMock;
+using Neo4j.Driver.Internal.MessageHandling;
 using Neo4j.Driver.Internal.QueryApi;
 using Neo4j.Driver.Tests.Internal.Core;
 using Xunit;
@@ -152,7 +153,7 @@ public class TransactionRunnerTests
 
         var expectedCursor = new Mock<IResultCursor>().Object;
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.Is<QueryApiResultSet>(rs => rs.Failure == failure), It.IsAny<Query>()))
+            .Setup(x => x.Build(It.Is<QueryApiResultSet>(rs => rs.PendingError!.Exception == failure), It.IsAny<Query>()))
             .Returns(expectedCursor);
 
         var subject = _autoMocker.CreateInstance<TransactionRunner>();
@@ -162,16 +163,43 @@ public class TransactionRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_MarksTransactionFailed_WhenTheFailureIsDeferred()
+    public async Task RunAsync_SharesOnePendingFailure_BetweenTheCursorAndTheTransaction()
     {
-        var txContextTracker = _autoMocker.GetMock<IQueryApiTransactionContextTracker>();
-        SetupChain(
-            new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["n"] } },
-            new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero"));
+        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        SetupChain(new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["n"] } }, failure);
+
+        IResponsePipelineError? cursorError = null;
+        _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
+            .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
+            .Callback<QueryApiResultSet, Query>((rs, _) => cursorError = rs.PendingError)
+            .Returns(new Mock<IResultCursor>().Object);
+
+        IResponsePipelineError? transactionError = null;
+        _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
+            .Setup(x => x.MarkFailed(It.IsAny<IResponsePipelineError>()))
+            .Callback<IResponsePipelineError>(e => transactionError = e);
 
         var subject = _autoMocker.CreateInstance<TransactionRunner>();
         await subject.RunAsync(new Query("RETURN 1/0 AS n"), TestContext.Current.CancellationToken);
 
-        txContextTracker.Verify(x => x.MarkFailed(), Times.Once);
+        cursorError!.Exception.Should().BeSameAs(failure);
+        transactionError.Should().BeSameAs(cursorError);
+    }
+
+    [Fact]
+    public async Task RunAsync_ThrowsAnEarlierPendingFailure_WithoutSendingARequest()
+    {
+        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        SetupChain();
+        _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
+            .Setup(x => x.EnsurePendingFailureThrown())
+            .Throws(failure);
+
+        var subject = _autoMocker.CreateInstance<TransactionRunner>();
+        var act = () => subject.RunAsync(new Query("RETURN 1 AS n"), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
+        _autoMocker.GetMock<IQueryApiClient>()
+            .Verify(x => x.ExecuteQueryAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
