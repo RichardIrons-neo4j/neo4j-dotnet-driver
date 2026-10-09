@@ -26,5 +26,5 @@ namespace Neo4j.Driver.Internal;
 /// </summary>
 internal interface IScopedTransaction : IInternalAsyncTransaction, IAsyncNotifyingDisposable
 {
-    Task BeginAsync(CancellationToken cancellationToken = default);
+    Task BeginAsync(TransactionOptions options, CancellationToken cancellationToken = default);
 }

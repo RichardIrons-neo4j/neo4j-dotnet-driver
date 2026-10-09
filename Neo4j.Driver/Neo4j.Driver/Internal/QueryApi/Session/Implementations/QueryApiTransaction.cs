@@ -59,9 +59,9 @@ internal class QueryApiTransaction : IScopedTransaction
         return false;
     }
 
-    public async Task BeginAsync(CancellationToken cancellationToken = default)
+    public async Task BeginAsync(TransactionOptions options, CancellationToken cancellationToken = default)
     {
-        await _beginner.BeginAsync(cancellationToken).ConfigureAwait(false);
+        await _beginner.BeginAsync(options, cancellationToken).ConfigureAwait(false);
         IsOpen = true;
     }
 

@@ -39,6 +39,8 @@ public class TransactionBeginnerTests
 {
     private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<TransactionBeginner>();
     private readonly BookmarkTracker _bookmarkTracker = new(SessionConfig.Builder.Build());
+    private readonly TransactionOptions _writeOptions = new(AccessMode.Write);
+    private IQueryApiRequestBody? _capturedBody;
 
     public TransactionBeginnerTests()
     {
@@ -52,6 +54,7 @@ public class TransactionBeginnerTests
 
         _autoMocker.GetMock<IQueryApiRequestBuilder>()
             .Setup(x => x.PostAsync(It.IsAny<string>(), It.IsAny<IQueryApiRequestBody>(), It.IsAny<CancellationToken>()))
+            .Callback<string, IQueryApiRequestBody, CancellationToken>((_, body, _) => _capturedBody = body)
             .ReturnsAsync(request);
 
         _autoMocker.GetMock<IQueryApiClient>()
@@ -81,7 +84,7 @@ public class TransactionBeginnerTests
 
         var holder = UseRealContextTracker();
         var subject = _autoMocker.CreateInstance<TransactionBeginner>();
-        await subject.BeginAsync(TestContext.Current.CancellationToken);
+        await subject.BeginAsync(_writeOptions, TestContext.Current.CancellationToken);
 
         holder.Context.Should().NotBeNull();
         holder.Context!.TxId.Should().Be("tx-abc-123");
@@ -97,7 +100,7 @@ public class TransactionBeginnerTests
 
         var holder = UseRealContextTracker();
         var subject = _autoMocker.CreateInstance<TransactionBeginner>();
-        await subject.BeginAsync(TestContext.Current.CancellationToken);
+        await subject.BeginAsync(_writeOptions, TestContext.Current.CancellationToken);
 
         holder.Context!.ClusterAffinity.Should().Be("shard-99");
     }
@@ -112,7 +115,7 @@ public class TransactionBeginnerTests
 
         var holder = UseRealContextTracker();
         var subject = _autoMocker.CreateInstance<TransactionBeginner>();
-        await subject.BeginAsync(TestContext.Current.CancellationToken);
+        await subject.BeginAsync(_writeOptions, TestContext.Current.CancellationToken);
 
         holder.Context!.ClusterAffinity.Should().BeNull();
     }
@@ -138,7 +141,7 @@ public class TransactionBeginnerTests
                 new HttpResponseMessage().Headers));
 
         var subject = _autoMocker.CreateInstance<TransactionBeginner>();
-        var act = () => subject.BeginAsync(TestContext.Current.CancellationToken);
+        var act = () => subject.BeginAsync(_writeOptions, TestContext.Current.CancellationToken);
 
         await act.Should()
             .ThrowAsync<InvalidOperationException>()
@@ -170,7 +173,7 @@ public class TransactionBeginnerTests
                 new HttpResponseMessage().Headers));
 
         var subject = _autoMocker.CreateInstance<TransactionBeginner>();
-        await subject.BeginAsync(TestContext.Current.CancellationToken);
+        await subject.BeginAsync(_writeOptions, TestContext.Current.CancellationToken);
 
         var body = capturedBody.Should().BeOfType<TransactionBeginner.RequestBody>().Subject;
         body.Bookmarks.Should().Equal("session-bookmark");
@@ -203,9 +206,24 @@ public class TransactionBeginnerTests
 
         UseRealContextTracker();
         var subject = _autoMocker.CreateInstance<TransactionBeginner>();
-        await subject.BeginAsync(TestContext.Current.CancellationToken);
+        await subject.BeginAsync(_writeOptions, TestContext.Current.CancellationToken);
 
         var body = capturedBody.Should().BeOfType<TransactionBeginner.RequestBody>().Subject;
         body.ImpersonatedUser.Should().Be("banana_bob");
+    }
+
+    [Theory]
+    [InlineData(AccessMode.Read, "Read")]
+    [InlineData(AccessMode.Write, "Write")]
+    public async Task BeginAsync_RequestBody_IncludesTheTransactionsAccessMode(AccessMode accessMode, string expected)
+    {
+        SetupChain();
+        UseRealContextTracker();
+        var subject = _autoMocker.CreateInstance<TransactionBeginner>();
+
+        await subject.BeginAsync(new TransactionOptions(accessMode), TestContext.Current.CancellationToken);
+
+        var body = _capturedBody.Should().BeOfType<TransactionBeginner.RequestBody>().Subject;
+        body.AccessMode.Should().Be(expected);
     }
 }

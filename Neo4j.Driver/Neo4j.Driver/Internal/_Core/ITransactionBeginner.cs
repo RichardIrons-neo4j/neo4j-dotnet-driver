@@ -22,5 +22,5 @@ namespace Neo4j.Driver.Internal;
 
 internal interface ITransactionBeginner
 {
-    Task BeginAsync(CancellationToken cancellationToken = default);
+    Task BeginAsync(TransactionOptions options, CancellationToken cancellationToken = default);
 }

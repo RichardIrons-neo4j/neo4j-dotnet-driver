@@ -89,14 +89,31 @@ public class QueryApiSessionTests
         var tx = Mock.Of<IInternalAsyncTransaction>();
         _autoMocker.GetMock<IQueryApiTransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
-                AccessMode.Read,
-                It.IsAny<Action<TransactionConfigBuilder>>(),
+                new TransactionOptions(AccessMode.Read),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx);
 
         var sut = _autoMocker.CreateInstance<QueryApiSession>();
 
         var result = await sut.BeginTransactionAsync(AccessMode.Read);
+
+        result.Should().BeSameAs(tx);
+    }
+
+    [Fact]
+    public async Task BeginTransactionAsync_WithoutAMode_BeginsInTheSessionsDefaultAccessMode()
+    {
+        _autoMocker.Use(SessionConfig.Builder.WithDefaultAccessMode(AccessMode.Read).Build());
+        var tx = Mock.Of<IInternalAsyncTransaction>();
+        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+            .Setup(f => f.BeginTransactionAsync(
+                new TransactionOptions(AccessMode.Read),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tx);
+
+        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+
+        var result = await sut.BeginTransactionAsync();
 
         result.Should().BeSameAs(tx);
     }
@@ -112,8 +129,7 @@ public class QueryApiSessionTests
         tx.Setup(t => t.RollbackAsync()).ThrowsAsync(new ServiceUnavailableException("rollback also failed"));
         _autoMocker.GetMock<IQueryApiTransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
-                It.IsAny<AccessMode>(),
-                It.IsAny<Action<TransactionConfigBuilder>>(),
+                It.IsAny<TransactionOptions>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
@@ -132,8 +148,7 @@ public class QueryApiSessionTests
         tx.Setup(t => t.CommitAsync()).Returns(Task.CompletedTask);
         _autoMocker.GetMock<IQueryApiTransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
-                AccessMode.Read,
-                It.IsAny<Action<TransactionConfigBuilder>>(),
+                new TransactionOptions(AccessMode.Read),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 

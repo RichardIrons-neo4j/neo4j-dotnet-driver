@@ -52,12 +52,12 @@ internal class TransactionBeginner : ITransactionBeginner
         _logger = logger;
     }
 
-    public async Task BeginAsync(CancellationToken cancellationToken = default)
+    public async Task BeginAsync(TransactionOptions options, CancellationToken cancellationToken = default)
     {
         var bookmarks = _bookmarkTracker.CurrentBookmarks.Values;
         _logger.LogDebug("Beginning transaction with {bookmarkCount} bookmark(s)", bookmarks.Length);
 
-        using var request = await BuildRequestAsync(bookmarks, cancellationToken).ConfigureAwait(false);
+        using var request = await BuildRequestAsync(bookmarks, options, cancellationToken).ConfigureAwait(false);
         var result = await _client.ExecuteAsync<ResponseBody>(request, cancellationToken).ConfigureAwait(false);
 
         if (result.Body.Transaction?.Id is not {} txId)
@@ -72,14 +72,18 @@ internal class TransactionBeginner : ITransactionBeginner
 
     private async Task<HttpRequestMessage> BuildRequestAsync(
         System.Collections.Generic.IReadOnlyList<string> bookmarks,
+        TransactionOptions options,
         CancellationToken cancellationToken)
     {
-        var body = new RequestBody(bookmarks.ToArray(), _sessionContext.ImpersonatedUser);
+        var body = new RequestBody(
+            bookmarks.ToArray(),
+            _sessionContext.ImpersonatedUser,
+            options.AccessMode == AccessMode.Read ? "Read" : "Write");
         var request = await _requestBuilder.PostAsync("query/v2/tx", body, cancellationToken).ConfigureAwait(false);
         return request;
     }
 
-    internal record RequestBody(string[]? Bookmarks, string? ImpersonatedUser) : IQueryApiRequestBody
+    internal record RequestBody(string[]? Bookmarks, string? ImpersonatedUser, string AccessMode) : IQueryApiRequestBody
     {
         public IReadOnlyCollection<object?> GetParameterValues()
         {

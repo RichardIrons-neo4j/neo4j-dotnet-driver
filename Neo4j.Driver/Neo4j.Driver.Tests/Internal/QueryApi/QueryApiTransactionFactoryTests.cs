@@ -33,6 +33,7 @@ public class QueryApiTransactionFactoryTests
     private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiTransaction>();
     private readonly Mock<IQueryApiTransactionScope> _transactionScope = new();
     private readonly QueryApiTransaction _transaction;
+    private readonly TransactionOptions _options = new(AccessMode.Read);
 
     public QueryApiTransactionFactoryTests()
     {
@@ -54,23 +55,23 @@ public class QueryApiTransactionFactoryTests
     [Fact]
     public async Task BeginTransactionAsync_ReturnsTransactionFromTheTransactionScope()
     {
-        var result = await CreateFactory().BeginTransactionAsync(AccessMode.Write, null);
+        var result = await CreateFactory().BeginTransactionAsync(_options);
 
         result.Should().BeSameAs(_transaction);
     }
 
     [Fact]
-    public async Task BeginTransactionAsync_BeginsTheTransaction()
+    public async Task BeginTransactionAsync_BeginsTheTransactionWithTheGivenOptions()
     {
-        await CreateFactory().BeginTransactionAsync(AccessMode.Write, null);
+        await CreateFactory().BeginTransactionAsync(_options);
 
-        Beginner.Verify(b => b.BeginAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Beginner.Verify(b => b.BeginAsync(_options, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task DisposingTheTransaction_DisposesTheTransactionScope()
     {
-        var transaction = await CreateFactory().BeginTransactionAsync(AccessMode.Write, null);
+        var transaction = await CreateFactory().BeginTransactionAsync(_options);
 
         await transaction.DisposeAsync();
 
@@ -80,7 +81,7 @@ public class QueryApiTransactionFactoryTests
     [Fact]
     public async Task BeginTransactionAsync_DoesNotDisposeTheTransactionScope_WhileTheTransactionIsOpen()
     {
-        await CreateFactory().BeginTransactionAsync(AccessMode.Write, null);
+        await CreateFactory().BeginTransactionAsync(_options);
 
         _transactionScope.Verify(s => s.Dispose(), Times.Never);
     }
@@ -89,10 +90,10 @@ public class QueryApiTransactionFactoryTests
     public async Task BeginTransactionAsync_DisposesTheTransactionScope_WhenBeginFails()
     {
         Beginner
-            .Setup(b => b.BeginAsync(It.IsAny<CancellationToken>()))
+            .Setup(b => b.BeginAsync(It.IsAny<TransactionOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ClientException("Neo.ClientError.Statement.SyntaxError", "nope"));
 
-        var act = () => CreateFactory().BeginTransactionAsync(AccessMode.Write, null);
+        var act = () => CreateFactory().BeginTransactionAsync(_options);
 
         await act.Should().ThrowAsync<ClientException>();
         _transactionScope.Verify(s => s.Dispose(), Times.Once);

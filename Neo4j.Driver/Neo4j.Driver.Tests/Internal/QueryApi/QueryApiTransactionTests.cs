@@ -37,7 +37,7 @@ public class QueryApiTransactionTests
     private async Task<QueryApiTransaction> BegunTransactionAsync()
     {
         var transaction = _autoMocker.CreateInstance<QueryApiTransaction>();
-        await transaction.BeginAsync();
+        await transaction.BeginAsync(new TransactionOptions(AccessMode.Write));
         return transaction;
     }
 
@@ -218,7 +218,7 @@ public class QueryApiTransactionTests
         var rollbackCalled = false;
 
         _autoMocker.GetMock<ITransactionBeginner>()
-            .Setup(b => b.BeginAsync(It.IsAny<CancellationToken>()))
+            .Setup(b => b.BeginAsync(It.IsAny<TransactionOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ClientException("Neo.ClientError.Statement.SyntaxError", "nope"));
 
         _autoMocker.GetMock<ITransactionRollback>()
@@ -227,7 +227,7 @@ public class QueryApiTransactionTests
             .Returns(Task.CompletedTask);
 
         var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
-        var begin = () => subject.BeginAsync();
+        var begin = () => subject.BeginAsync(new TransactionOptions(AccessMode.Write));
         await begin.Should().ThrowAsync<ClientException>();
 
         await subject.DisposeAsync();

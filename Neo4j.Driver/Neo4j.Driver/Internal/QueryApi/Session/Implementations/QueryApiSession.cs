@@ -108,7 +108,7 @@ internal class QueryApiSession : IInternalAsyncSession
         Action<TransactionConfigBuilder> action,
         bool disposeUnconsumedSessionResult)
     {
-        return BeginTransactionAsync(AccessMode.Write, action, disposeUnconsumedSessionResult);
+        return BeginTransactionAsync(SessionConfig.DefaultAccessMode, action, disposeUnconsumedSessionResult);
     }
 
     public async Task<IAsyncTransaction> BeginTransactionAsync(
@@ -119,7 +119,7 @@ internal class QueryApiSession : IInternalAsyncSession
         EnsureNoOpenTransaction();
         _logger.LogDebug("Session beginning {mode} transaction", mode);
         var tx = await _transactionFactory
-            .BeginTransactionAsync(mode, action)
+            .BeginTransactionAsync(new TransactionOptions(mode))
             .ConfigureAwait(false);
         _openTransaction = tx;
         return tx;
@@ -245,7 +245,7 @@ internal class QueryApiSession : IInternalAsyncSession
         Action<TransactionConfigBuilder>? action)
     {
         var tx = await _transactionFactory
-            .BeginTransactionAsync(mode, action)
+            .BeginTransactionAsync(new TransactionOptions(mode))
             .ConfigureAwait(false);
 
         try

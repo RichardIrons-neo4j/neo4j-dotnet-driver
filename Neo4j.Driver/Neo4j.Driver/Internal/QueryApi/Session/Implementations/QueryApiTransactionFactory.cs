@@ -33,11 +33,10 @@ internal class QueryApiTransactionFactory : IQueryApiTransactionFactory
     }
 
     public async Task<IInternalAsyncTransaction> BeginTransactionAsync(
-        AccessMode mode,
-        Action<TransactionConfigBuilder>? action,
+        TransactionOptions options,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Opening {mode} transaction", mode);
+        _logger.LogDebug("Opening {mode} transaction", options.AccessMode);
 
         var scope = _scopeFactory();
         var transaction = scope.Transaction();
@@ -45,7 +44,7 @@ internal class QueryApiTransactionFactory : IQueryApiTransactionFactory
 
         try
         {
-            await transaction.BeginAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.BeginAsync(options, cancellationToken).ConfigureAwait(false);
         }
         catch
         {

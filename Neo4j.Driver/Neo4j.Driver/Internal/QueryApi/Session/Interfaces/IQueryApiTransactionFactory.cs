@@ -15,7 +15,6 @@
 
 #nullable enable
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,7 +23,6 @@ namespace Neo4j.Driver.Internal.QueryApi;
 internal interface IQueryApiTransactionFactory
 {
     Task<IInternalAsyncTransaction> BeginTransactionAsync(
-        AccessMode mode,
-        Action<TransactionConfigBuilder>? action,
+        TransactionOptions options,
         CancellationToken cancellationToken = default);
 }
