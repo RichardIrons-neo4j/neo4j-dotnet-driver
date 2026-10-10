@@ -55,7 +55,7 @@ internal class QueryApiAuthEnricher : IHttpRequestEnricher
     private AuthenticationHeaderValue BuildBearerHeader(AuthToken authToken)
     {
         var token = authToken.Content.GetValueOrDefault(AuthToken.CredentialsKey) as string  ?? string.Empty;
-        return new AuthenticationHeaderValue("Bearer", _encoder.Encode(token));
+        return new AuthenticationHeaderValue("Bearer", token);
     }
 
     public async ValueTask Enrich(HttpRequestMessage request, CancellationToken cancellationToken = default)

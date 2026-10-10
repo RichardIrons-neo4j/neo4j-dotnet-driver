@@ -56,7 +56,7 @@ public class QueryApiAuthEnricherTests
     }
 
     [Fact]
-    public async Task Enrich_SetsBearerAuthorizationHeader_UsingEncoder()
+    public async Task Enrich_SetsBearerAuthorizationHeader_WithTheTokenUnchanged()
     {
         var request = new HttpRequestMessage();
 
@@ -64,15 +64,11 @@ public class QueryApiAuthEnricherTests
             .Setup(m => m.GetTokenAsync(TestContext.Current.CancellationToken))
             .ReturnsAsync(AuthTokens.Bearer("my-jwt-token"));
 
-        _autoMocker.GetMock<IBase64Encoder>()
-            .Setup(e => e.Encode("my-jwt-token"))
-            .Returns("encoded");
-
         var subject = _autoMocker.CreateInstance<QueryApiAuthEnricher>();
         await subject.Enrich(request, TestContext.Current.CancellationToken);
 
         request.Headers.Authorization!.Scheme.Should().Be("Bearer");
-        request.Headers.Authorization.Parameter.Should().Be("encoded");
+        request.Headers.Authorization.Parameter.Should().Be("my-jwt-token");
     }
 
     [Fact]
