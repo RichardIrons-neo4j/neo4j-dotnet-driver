@@ -133,7 +133,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterRun()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
 
@@ -149,7 +149,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterRunAndResultConsumption()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
         var cursor = await txc.RunAsync("RETURN 1 As X");
@@ -168,7 +168,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRun()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
 
@@ -187,7 +187,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunAndResultConsumption()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
 
@@ -213,7 +213,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunNoOrder()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
 
@@ -231,7 +231,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunAndResultConsumptionNoOrder()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
 
@@ -257,7 +257,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldNotBeAbleToAccessRecordsAfterRollback()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
         var cursor = await txc.RunAsync("RETURN 1 As X");
@@ -269,7 +269,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldNotBeAbleToAccessRecordsAfterCommit()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
         var cursor = await txc.RunAsync("RETURN 1 As X");
@@ -281,7 +281,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldNotBeAbleToAccessRecordsAfterSummary()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         await using var session = driver.AsyncSession();
         var txc = await session.BeginTransactionAsync();
         var cursor = await txc.RunAsync("RETURN 1 As X");
@@ -295,7 +295,7 @@ public sealed class TransactionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldBeAbleToRunNestedQueries()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var txc1 = await session.BeginTransactionAsync();

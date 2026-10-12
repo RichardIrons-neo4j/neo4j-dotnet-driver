@@ -29,7 +29,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithSessionRuns()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var cursor1 = await session.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
@@ -54,7 +54,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithSessionAndTxRuns()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var cursor1 = await session.RunAsync("UNWIND range(1, $size) AS x RETURN x", new { size });
@@ -76,7 +76,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithSessionRunAndTxFunc()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
 
@@ -104,7 +104,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxAndSessionRuns()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var tx = await session.BeginTransactionAsync();
@@ -130,7 +130,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxRuns()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var tx = await session.BeginTransactionAsync();
@@ -153,7 +153,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxRunAndTxFunc()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var tx = await session.BeginTransactionAsync();
@@ -180,7 +180,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxFuncs()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var error = await Record.ExceptionAsync(
@@ -208,7 +208,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxFuncAndSessionRun()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var error = await Record.ExceptionAsync(
@@ -235,7 +235,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxFuncAndTxRun()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken, o => o.WithFetchSize(2));
         const int size = 1024;
         await using var session = driver.AsyncSession(o => o.WithFetchSize(5));
         var error = await Record.ExceptionAsync(

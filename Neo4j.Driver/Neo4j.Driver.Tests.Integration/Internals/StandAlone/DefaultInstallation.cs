@@ -15,6 +15,7 @@
 
 using System;
 using System.Diagnostics;
+using Neo4j.Driver.Internal;
 using Neo4j.Driver.Tests.TestUtil;
 
 namespace Neo4j.Driver.IntegrationTests.Internals;
@@ -24,6 +25,7 @@ public static class DefaultInstallation
     public const string HttpUri = "http://127.0.0.1:7474";
 
     public const string BoltHeader = "bolt://";
+    public const string QueryApiDatabase = "neo4j";
     public static readonly string User = "neo4j";
     public static readonly string Password = "neo4j";
     public static readonly string BoltHost = "127.0.0.1";
@@ -65,6 +67,14 @@ public static class DefaultInstallation
             "queryapi",
             StringComparison.OrdinalIgnoreCase);
 
+    public static IDriver CreateDriver(Uri uri, IAuthToken authToken, Action<ConfigBuilder> configAction = null)
+    {
+        var driver = GraphDatabase.Driver(uri, authToken, configAction);
+        return uri.Scheme is "http" or "https"
+            ? new DefaultDatabaseDriver((IInternalDriver)driver, QueryApiDatabase)
+            : driver;
+    }
+
     public static IDriver NewDriver(Uri uri, IAuthToken authToken)
     {
         var configuredLevelStr = Environment.GetEnvironmentVariable("NEOLOGLEVEL");
@@ -72,6 +82,6 @@ public static class DefaultInstallation
             ? new TestNeo4JLogger(Console.WriteLine, configuredLevel)
             : new TestNeo4JLogger(s => Debug.WriteLine(s), ExtendedLogLevel.Debug);
 
-        return GraphDatabase.Driver(uri, authToken, o => { o.WithLogger(logger); });
+        return CreateDriver(uri, authToken, o => { o.WithLogger(logger); });
     }
 }

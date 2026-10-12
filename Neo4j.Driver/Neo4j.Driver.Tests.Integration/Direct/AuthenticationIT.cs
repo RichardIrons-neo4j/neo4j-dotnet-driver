@@ -33,7 +33,7 @@ public sealed class AuthenticationIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task AuthenticationErrorIfWrongAuthToken()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthTokens.Basic("fake", "fake"));
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthTokens.Basic("fake", "fake"));
         await using var session = driver.AsyncSession();
         var exc = await Record.ExceptionAsync(() => session.RunAsync("Return 1"));
 
@@ -85,7 +85,7 @@ public sealed class AuthenticationIT : DirectDriverTestBase
 
     private static async Task VerifyConnectivity(Uri address, IAuthToken token)
     {
-        await using var driver = GraphDatabase.Driver(address, token);
+        await using var driver = DefaultInstallation.CreateDriver(address, token);
         await using var session = driver.AsyncSession();
 
         var cursor = await session.RunAsync("RETURN 2 as Number");

@@ -50,7 +50,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task DisallowNewSessionAfterDriverDispose()
     {
-        var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
         using (driver)
         {
             await using var session = driver.AsyncSession();
@@ -69,7 +69,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task DisallowRunInSessionAfterDriverDispose()
     {
-        var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         var session = driver.AsyncSession();
         await VerifyRunsQuery(session);
@@ -207,7 +207,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldNotThrowExceptionWhenSessionClosedAfterDriver()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         await using var session = driver.AsyncSession();
         var tx = await session.BeginTransactionAsync();
@@ -228,7 +228,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterRun()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         await using var session = driver.AsyncSession();
         var cursor = await session.RunAsync("RETURN 1 As X");
@@ -240,7 +240,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterRunAndResultConsumption()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         await using var session = driver.AsyncSession();
         var cursor = await session.RunAsync("RETURN 1 As X");
@@ -257,7 +257,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRun()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         await using var session = driver.AsyncSession();
         var cursor1 = await session.RunAsync("RETURN 1 As X");
@@ -273,7 +273,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunAndResultConsumption()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         await using var session = driver.AsyncSession();
         var cursor1 = await session.RunAsync("RETURN 1 As X");
@@ -296,7 +296,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunNoOrder()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         await using var session = driver.AsyncSession();
         var cursor1 = await session.RunAsync("RETURN 1 As X");
@@ -311,7 +311,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunAndResultConsumptionNoOrder()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         await using var session = driver.AsyncSession();
         var cursor1 = await session.RunAsync("RETURN 1 As X");
@@ -334,7 +334,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldNotBeAbleToAccessRecordsAfterSessionClose()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         IResultCursor cursor;
         await using (var session = driver.AsyncSession())
@@ -349,7 +349,7 @@ public sealed class SessionIT : DirectDriverTestBase
     [RequireServerFact]
     public async Task ShouldNotBeAbleToAccessRecordsAfterSummary()
     {
-        await using var driver = GraphDatabase.Driver(ServerEndPoint, AuthToken);
+        await using var driver = DefaultInstallation.CreateDriver(ServerEndPoint, AuthToken);
 
         await using var session = driver.AsyncSession();
         var cursor = await session.RunAsync("RETURN 1 As X");
