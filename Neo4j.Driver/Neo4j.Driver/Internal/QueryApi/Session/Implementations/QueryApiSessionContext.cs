@@ -15,6 +15,8 @@
 
 #nullable enable
 
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,6 +24,8 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class QueryApiSessionContext : ISessionContext
 {
+    private static readonly Regex AcceptedDatabaseName = new(@"\A[a-zA-Z0-9.-]{3,}\z");
+
     private readonly IAuthTokenManager _authTokenManager;
     private readonly SessionConfig _sessionConfig;
 
@@ -31,7 +35,29 @@ internal class QueryApiSessionContext : ISessionContext
         _authTokenManager = authTokenManager;
     }
 
-    public string Database => _sessionConfig.Database ?? "neo4j";
+    public string Database
+    {
+        get
+        {
+            var database = _sessionConfig.Database;
+            if (database is null)
+            {
+                throw new ClientException(
+                    "Query API: a database name is required, because the Query API has no home database to default to.");
+            }
+
+            if (!AcceptedDatabaseName.IsMatch(database))
+            {
+                var shownName = database.Any(char.IsControl) ? string.Empty : $" '{database}'";
+                throw new ClientException(
+                    $"Query API: invalid database name{shownName}. " +
+                    "A database name must be at least 3 characters long and contain only letters, digits, '.' and '-'.");
+            }
+
+            return database;
+        }
+    }
+
     public string? ImpersonatedUser => _sessionConfig.ImpersonatedUser;
     public AccessMode AccessMode => _sessionConfig.DefaultAccessMode;
 
