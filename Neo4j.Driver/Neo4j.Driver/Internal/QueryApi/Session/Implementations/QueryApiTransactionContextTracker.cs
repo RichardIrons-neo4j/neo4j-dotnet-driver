@@ -41,8 +41,6 @@ internal class QueryApiTransactionContextTracker : IQueryApiTransactionContextTr
         _loggingContext = _logContextTracker.Add("transaction", context);
     }
 
-    public void MarkFailed() => IsFailed = true;
-
     public void MarkFailed(IResponsePipelineError pendingError)
     {
         IsFailed = true;

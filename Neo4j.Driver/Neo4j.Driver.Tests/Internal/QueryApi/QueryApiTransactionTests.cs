@@ -16,6 +16,7 @@
 #nullable enable
 
 using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -33,12 +34,56 @@ public class QueryApiTransactionTests
     private const string TxId = "tx-1";
 
     private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiTransaction>();
+    private readonly ClientException _serverFailure = new("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+
+    public QueryApiTransactionTests()
+    {
+        _autoMocker.Use<ITransactionLifecycle>(new TransactionLifecycle());
+    }
 
     private async Task<QueryApiTransaction> BegunTransactionAsync()
     {
         var transaction = _autoMocker.CreateInstance<QueryApiTransaction>();
         await transaction.BeginAsync(new TransactionOptions(AccessMode.Write));
         return transaction;
+    }
+
+    private async Task<QueryApiTransaction> TransactionWhoseRunFailedAsync(Exception failure)
+    {
+        _autoMocker.GetMock<ITransactionRunner>()
+            .SetupSequence(r => r.RunAsync(It.IsAny<Query>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure)
+            .ReturnsAsync(Mock.Of<IResultCursor>());
+
+        var subject = await BegunTransactionAsync();
+        var run = () => subject.RunAsync(new Query("RETURN 1"));
+        await run.Should().ThrowAsync<Exception>();
+        return subject;
+    }
+
+    private async Task<QueryApiTransaction> TransactionWhoseCommitFailedAsync(Exception failure)
+    {
+        _autoMocker.GetMock<ITransactionCommitter>()
+            .SetupSequence(c => c.CommitAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure)
+            .Returns(Task.CompletedTask);
+
+        var subject = await BegunTransactionAsync();
+        var commit = () => subject.CommitAsync();
+        await commit.Should().ThrowAsync<Exception>();
+        return subject;
+    }
+
+    private Func<int> CountRollbackRequests(Exception? firstFailsWith = null)
+    {
+        var requests = 0;
+        _autoMocker.GetMock<ITransactionRollback>()
+            .Setup(r => r.RollbackAsync(It.IsAny<CancellationToken>()))
+            .Returns(() => ++requests == 1 && firstFailsWith is not null
+                ? Task.FromException(firstFailsWith)
+                : Task.CompletedTask);
+
+        return () => requests;
     }
 
     [Fact]
@@ -233,5 +278,170 @@ public class QueryApiTransactionTests
         await subject.DisposeAsync();
 
         rollbackCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RunAsync_ExplainsTheTransactionWasCommitted_AfterCommit()
+    {
+        var subject = await BegunTransactionAsync();
+        await subject.CommitAsync();
+
+        var act = () => subject.RunAsync(new Query("RETURN 1"));
+
+        (await act.Should().ThrowAsync<TransactionClosedException>())
+            .WithMessage("Cannot run query in this transaction, because it has already been committed.");
+    }
+
+    [Fact]
+    public async Task IsOpen_IsFalse_AfterARunFailedWithAServerError()
+    {
+        var subject = await TransactionWhoseRunFailedAsync(_serverFailure);
+
+        var isOpen = subject.IsOpen;
+
+        isOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task IsErrored_ReturnsTheOriginal_AfterARunFailedWithAServerError()
+    {
+        var subject = await TransactionWhoseRunFailedAsync(_serverFailure);
+
+        var isErrored = subject.IsErrored(out var error);
+
+        isErrored.Should().BeTrue();
+        error.Should().BeSameAs(_serverFailure);
+    }
+
+    [Fact]
+    public async Task RunAsync_ThrowsTransactionTerminated_AfterARunFailedWithAServerError()
+    {
+        var subject = await TransactionWhoseRunFailedAsync(_serverFailure);
+
+        var act = () => subject.RunAsync(new Query("RETURN 1"));
+
+        (await act.Should().ThrowAsync<TransactionTerminatedException>())
+            .Which.InnerException.Should().BeSameAs(_serverFailure);
+    }
+
+    [Fact]
+    public async Task CommitAsync_ThrowsTransactionTerminated_AfterARunFailedWithAServerError()
+    {
+        var subject = await TransactionWhoseRunFailedAsync(_serverFailure);
+
+        var act = () => subject.CommitAsync();
+
+        (await act.Should().ThrowAsync<TransactionTerminatedException>())
+            .Which.InnerException.Should().BeSameAs(_serverFailure);
+    }
+
+    [Fact]
+    public async Task RollbackAsync_SendsNothing_AfterARunFailedWithAServerError()
+    {
+        var rollbackRequests = CountRollbackRequests();
+        var subject = await TransactionWhoseRunFailedAsync(_serverFailure);
+
+        await subject.RollbackAsync();
+
+        rollbackRequests().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task DisposeAsync_SendsNoRollback_AfterARunFailedWithAServerError()
+    {
+        var rollbackRequests = CountRollbackRequests();
+        var subject = await TransactionWhoseRunFailedAsync(_serverFailure);
+
+        await subject.DisposeAsync();
+
+        rollbackRequests().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RunAsync_WithoutAServerCode_LeavesTheTransactionOpenForRollback()
+    {
+        var rollbackRequests = CountRollbackRequests();
+        var subject = await TransactionWhoseRunFailedAsync(new ServiceUnavailableException("HTTP 503"));
+        var isOpen = subject.IsOpen;
+
+        await subject.DisposeAsync();
+
+        isOpen.Should().BeTrue();
+        rollbackRequests().Should().Be(1);
+    }
+
+    [Fact]
+    public async Task IsOpen_IsFalse_AfterACommitFailedWithAServerError()
+    {
+        var subject = await TransactionWhoseCommitFailedAsync(_serverFailure);
+
+        var isOpen = subject.IsOpen;
+
+        isOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DisposeAsync_SendsNoRollback_AfterACommitFailedWithAServerError()
+    {
+        var rollbackRequests = CountRollbackRequests();
+        var subject = await TransactionWhoseCommitFailedAsync(_serverFailure);
+
+        await subject.DisposeAsync();
+
+        rollbackRequests().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CommitAsync_ThrowsTransactionTerminated_AfterACommitFailedWithAServerError()
+    {
+        var subject = await TransactionWhoseCommitFailedAsync(_serverFailure);
+
+        var act = () => subject.CommitAsync();
+
+        (await act.Should().ThrowAsync<TransactionTerminatedException>())
+            .Which.InnerException.Should().BeSameAs(_serverFailure);
+    }
+
+    [Fact]
+    public async Task CommitAsync_WithoutAServerCode_EndsTheTransaction()
+    {
+        var rollbackRequests = CountRollbackRequests();
+        var subject = await TransactionWhoseCommitFailedAsync(new HttpRequestException("response ended prematurely"));
+        var isOpen = subject.IsOpen;
+
+        await subject.DisposeAsync();
+
+        isOpen.Should().BeFalse();
+        rollbackRequests().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RollbackAsync_WithAServerError_EndsTheTransaction()
+    {
+        var rollbackRequests = CountRollbackRequests(firstFailsWith: _serverFailure);
+        var subject = await BegunTransactionAsync();
+        var rollback = () => subject.RollbackAsync();
+        await rollback.Should().ThrowAsync<ClientException>();
+        var isOpen = subject.IsOpen;
+
+        await subject.DisposeAsync();
+
+        isOpen.Should().BeFalse();
+        rollbackRequests().Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RollbackAsync_WithoutAServerCode_EndsTheTransaction()
+    {
+        var rollbackRequests = CountRollbackRequests(firstFailsWith: new HttpRequestException("connection reset"));
+        var subject = await BegunTransactionAsync();
+        var rollback = () => subject.RollbackAsync();
+        await rollback.Should().ThrowAsync<HttpRequestException>();
+        var isOpen = subject.IsOpen;
+
+        await subject.DisposeAsync();
+
+        isOpen.Should().BeFalse();
+        rollbackRequests().Should().Be(1);
     }
 }

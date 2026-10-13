@@ -102,50 +102,6 @@ public class TransactionRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_MarksTransactionFailed_WhenServerReturnsClientError()
-    {
-        var request = new HttpRequestMessage();
-        var txContextTracker = _autoMocker.GetMock<IQueryApiTransactionContextTracker>();
-
-        _autoMocker.GetMock<IQueryApiRequestBuilder>()
-            .Setup(x => x.PostAsync($"query/v2/tx/{TxId}", It.IsAny<IQueryApiRequestBody>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(request);
-
-        _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ClientException("Neo.ClientError.Statement.SyntaxError", "Invalid input"));
-
-        var subject = _autoMocker.CreateInstance<TransactionRunner>();
-        var act = () => subject.RunAsync(new Query("Invalid Cypher"), TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ClientException>();
-
-        txContextTracker.Verify(x => x.MarkFailed(), Times.Once);
-    }
-
-    [Fact]
-    public async Task RunAsync_DoesNotMarkTransactionFailed_WhenServiceUnavailable()
-    {
-        var request = new HttpRequestMessage();
-        var txContextTracker = _autoMocker.GetMock<IQueryApiTransactionContextTracker>();
-
-        _autoMocker.GetMock<IQueryApiRequestBuilder>()
-            .Setup(x => x.PostAsync($"query/v2/tx/{TxId}", It.IsAny<IQueryApiRequestBody>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(request);
-
-        _autoMocker.GetMock<IQueryApiClient>()
-            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ServiceUnavailableException("HTTP 503"));
-
-        var subject = _autoMocker.CreateInstance<TransactionRunner>();
-        var act = () => subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ServiceUnavailableException>();
-
-        txContextTracker.Verify(x => x.MarkFailed(), Times.Never);
-    }
-
-    [Fact]
     public async Task RunAsync_PassesADeferredFailure_ToTheCursor()
     {
         var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");

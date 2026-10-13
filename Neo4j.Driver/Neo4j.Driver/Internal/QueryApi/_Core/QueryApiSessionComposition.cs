@@ -55,6 +55,7 @@ internal partial class QueryApiSessionComposition : IQueryApiTransactionScope
             .Root<IInternalAsyncSession>("Session", kind: RootKinds.Public | RootKinds.Method)
 
             .Bind<IQueryApiTransactionContextTracker>().As(Scoped).To<QueryApiTransactionContextTracker>()
+            .Bind<ITransactionLifecycle>().As(Scoped).To<TransactionLifecycle>()
             .Bind<IHttpRequestEnricher>(nameof(QueryApiClusterAffinityEnricher))
             .To<QueryApiClusterAffinityEnricher>()
 

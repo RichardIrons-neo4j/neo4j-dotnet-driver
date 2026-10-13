@@ -23,7 +23,6 @@ internal interface IQueryApiTransactionContextTracker
     QueryApiTransactionContext? Context { get; }
     bool IsFailed { get; }
     void Set(QueryApiTransactionContext context);
-    void MarkFailed();
     void MarkFailed(IResponsePipelineError pendingError);
     void EnsurePendingFailureThrown();
 }
