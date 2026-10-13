@@ -27,6 +27,7 @@ internal class TransactionRunner : ITransactionRunner
 {
     private readonly IQueryApiClient _client;
     private readonly IQueryApiResultCursorBuilder _cursorBuilder;
+    private readonly ITransactionLifecycle _lifecycle;
     private readonly ILogger _logger;
     private readonly IQueryApiRequestBuilder _requestBuilder;
     private readonly IQueryApiTransactionContextTracker _txContextTracker;
@@ -36,19 +37,19 @@ internal class TransactionRunner : ITransactionRunner
         IQueryApiClient client,
         IQueryApiResultCursorBuilder cursorBuilder,
         IQueryApiTransactionContextTracker txContextTracker,
+        ITransactionLifecycle lifecycle,
         ILogger logger)
     {
         _requestBuilder = requestBuilder;
         _client = client;
         _cursorBuilder = cursorBuilder;
         _txContextTracker = txContextTracker;
+        _lifecycle = lifecycle;
         _logger = logger;
     }
 
     public async Task<IResultCursor> RunAsync(Query query, CancellationToken cancellationToken = default)
     {
-        _txContextTracker.EnsurePendingFailureThrown();
-
         _logger.LogDebug("Running query in tx {txId}: {query}", _txContextTracker.Context!.TxId, query.Text);
 
         using var request = await BuildRequestAsync(query, cancellationToken).ConfigureAwait(false);
@@ -58,7 +59,7 @@ internal class TransactionRunner : ITransactionRunner
         if (result.Failure is not null)
         {
             pendingError = new ResponsePipelineError(result.Failure);
-            _txContextTracker.MarkFailed(pendingError);
+            _lifecycle.FailDeferred(pendingError);
         }
 
         var body = result.Body;

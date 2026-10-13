@@ -52,36 +52,4 @@ public class QueryApiTransactionContextTrackerTests
 
         _loggingContextTracker.Contexts.Should().BeEmpty();
     }
-
-    [Fact]
-    public void MarkFailed_WithAPendingFailure_MarksTheTransactionFailed()
-    {
-        var subject = CreateTracker();
-
-        subject.MarkFailed(new ResponsePipelineError(new ClientException("Neo.ClientError.X", "x")));
-
-        subject.IsFailed.Should().BeTrue();
-    }
-
-    [Fact]
-    public void EnsurePendingFailureThrown_ThrowsThePendingFailure()
-    {
-        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
-        var subject = CreateTracker();
-        subject.MarkFailed(new ResponsePipelineError(failure));
-
-        var act = () => subject.EnsurePendingFailureThrown();
-
-        act.Should().Throw<ClientException>().Which.Should().BeSameAs(failure);
-    }
-
-    [Fact]
-    public void EnsurePendingFailureThrown_DoesNotThrow_WithoutAPendingFailure()
-    {
-        var subject = CreateTracker();
-
-        var act = () => subject.EnsurePendingFailureThrown();
-
-        act.Should().NotThrow();
-    }
 }

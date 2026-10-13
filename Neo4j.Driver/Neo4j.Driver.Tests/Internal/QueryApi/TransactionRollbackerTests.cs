@@ -62,20 +62,4 @@ public class TransactionRollbackerTests
 
         (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
     }
-
-    [Fact]
-    public async Task DoesNotSendRequest_WhenTransactionAlreadyFailed()
-    {
-        var requestBuilder = _autoMocker.GetMock<IQueryApiRequestBuilder>();
-        _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
-            .SetupGet(x => x.IsFailed)
-            .Returns(true);
-
-        var subject = _autoMocker.CreateInstance<TransactionRollbacker>();
-        var act = () => subject.RollbackAsync(TestContext.Current.CancellationToken);
-
-        await act.Should().NotThrowAsync();
-
-        requestBuilder.Verify(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
 }

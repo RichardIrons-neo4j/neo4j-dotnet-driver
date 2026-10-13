@@ -16,7 +16,6 @@
 #nullable enable
 
 using System;
-using Neo4j.Driver.Internal.MessageHandling;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
@@ -25,7 +24,6 @@ internal class QueryApiTransactionContextTracker : IQueryApiTransactionContextTr
     private readonly ILoggingContextTracker _logContextTracker;
 
     private IDisposable? _loggingContext;
-    private IResponsePipelineError? _pendingError;
 
     public QueryApiTransactionContextTracker(ILoggingContextTracker logContextTracker)
     {
@@ -33,23 +31,11 @@ internal class QueryApiTransactionContextTracker : IQueryApiTransactionContextTr
     }
 
     public QueryApiTransactionContext? Context { get; private set; }
-    public bool IsFailed { get; private set; }
 
     public void Set(QueryApiTransactionContext context)
     {
         Context = context;
         _loggingContext = _logContextTracker.Add("transaction", context);
-    }
-
-    public void MarkFailed(IResponsePipelineError pendingError)
-    {
-        IsFailed = true;
-        _pendingError = pendingError;
-    }
-
-    public void EnsurePendingFailureThrown()
-    {
-        _pendingError?.EnsureThrown();
     }
 
     public void Dispose()
