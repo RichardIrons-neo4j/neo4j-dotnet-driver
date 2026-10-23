@@ -37,7 +37,7 @@ public class QueryApiTransactionContextTrackerTests
     {
         var subject = CreateTracker();
 
-        subject.Set(new QueryApiTransactionContext("tx-1", null));
+        subject.Set(new QueryApiTransactionContext("tx-1", null, AuthTokens.None));
 
         _loggingContextTracker.Contexts.Should().ContainSingle(c => c.Key == "transaction");
     }
@@ -46,7 +46,7 @@ public class QueryApiTransactionContextTrackerTests
     public void Dispose_ReleasesTheTransactionLoggingContext()
     {
         var subject = CreateTracker();
-        subject.Set(new QueryApiTransactionContext("tx-1", null));
+        subject.Set(new QueryApiTransactionContext("tx-1", null, AuthTokens.None));
 
         subject.Dispose();
 

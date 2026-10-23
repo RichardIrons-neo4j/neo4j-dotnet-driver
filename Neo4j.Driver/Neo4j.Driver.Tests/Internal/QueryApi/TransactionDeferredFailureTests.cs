@@ -45,7 +45,7 @@ public class TransactionDeferredFailureTests
 
         _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
             .SetupGet(x => x.Context)
-            .Returns(new QueryApiTransactionContext(TxId, null));
+            .Returns(new QueryApiTransactionContext(TxId, null, AuthTokens.None));
 
         _autoMocker.GetMock<IQueryApiRequestBuilder>()
             .Setup(x => x.PostAsync(It.IsAny<string>(), It.IsAny<IQueryApiRequestBody>(), It.IsAny<CancellationToken>()))

@@ -42,7 +42,7 @@ public class TransactionCommitterTests
     {
         _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
             .SetupGet(x => x.Context)
-            .Returns(new QueryApiTransactionContext(TxId, null));
+            .Returns(new QueryApiTransactionContext(TxId, null, AuthTokens.None));
     }
 
     private void SetupChain(TransactionCommitter.ResponseBody? body = null)

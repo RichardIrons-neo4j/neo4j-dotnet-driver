@@ -141,4 +141,42 @@ public class QueryApiAuthEnricherTests
         recorded.Should().BeTrue();
         recordedToken.Should().BeSameAs(token);
     }
+
+    private void InTransactionPinnedTo(IAuthToken pinned, IAuthToken freshFromTheContext)
+    {
+        _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
+            .SetupGet(t => t.Context)
+            .Returns(new QueryApiTransactionContext("tx-1", null, pinned));
+
+        _autoMocker.GetMock<ISessionContext>()
+            .Setup(c => c.GetAuthTokenAsync(TestContext.Current.CancellationToken))
+            .ReturnsAsync(freshFromTheContext);
+    }
+
+    [Fact]
+    public async Task Enrich_SendsTheTransactionsPinnedToken_InsteadOfAskingTheSessionContext()
+    {
+        var request = new HttpRequestMessage();
+        InTransactionPinnedTo(AuthTokens.Bearer("pinned-token"), AuthTokens.Bearer("fresh-token"));
+
+        var subject = _autoMocker.CreateInstance<QueryApiAuthEnricher>();
+        await subject.Enrich(request, TestContext.Current.CancellationToken);
+
+        request.Headers.Authorization!.Parameter.Should().Be("pinned-token");
+    }
+
+    [Fact]
+    public async Task Enrich_RecordsThePinnedToken_AsTheTokenItUsed()
+    {
+        var request = new HttpRequestMessage();
+        var pinned = AuthTokens.Bearer("pinned-token");
+        InTransactionPinnedTo(pinned, AuthTokens.Bearer("fresh-token"));
+
+        var subject = _autoMocker.CreateInstance<QueryApiAuthEnricher>();
+        await subject.Enrich(request, TestContext.Current.CancellationToken);
+
+        request.Options.TryGetValue(QueryApiAuthEnricher.AuthTokenKey, out var recorded);
+
+        recorded.Should().BeSameAs(pinned);
+    }
 }

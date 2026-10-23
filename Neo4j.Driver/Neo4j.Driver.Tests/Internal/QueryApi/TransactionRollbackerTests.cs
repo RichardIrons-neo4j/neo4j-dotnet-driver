@@ -41,7 +41,7 @@ public class TransactionRollbackerTests
     {
         _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
             .SetupGet(x => x.Context)
-            .Returns(new QueryApiTransactionContext(TxId, null));
+            .Returns(new QueryApiTransactionContext(TxId, null, AuthTokens.None));
     }
 
     [Fact]

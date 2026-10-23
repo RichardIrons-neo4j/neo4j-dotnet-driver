@@ -40,6 +40,7 @@ public class TransactionBeginnerTests
     private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<TransactionBeginner>();
     private readonly BookmarkTracker _bookmarkTracker = new(SessionConfig.Builder.Build());
     private readonly TransactionOptions _writeOptions = new(AccessMode.Write);
+    private readonly IAuthToken _beginToken = AuthTokens.Bearer("begin-token");
     private IQueryApiRequestBody? _capturedBody;
 
     public TransactionBeginnerTests()
@@ -50,7 +51,7 @@ public class TransactionBeginnerTests
     private void SetupChain(string txId = "tx-1", HttpResponseHeaders? headers = null)
     {
         headers ??= new HttpResponseMessage().Headers;
-        var request = new HttpRequestMessage();
+        var request = RequestUsing(_beginToken);
 
         _autoMocker.GetMock<IQueryApiRequestBuilder>()
             .Setup(x => x.PostAsync(It.IsAny<string>(), It.IsAny<IQueryApiRequestBody>(), It.IsAny<CancellationToken>()))
@@ -67,6 +68,13 @@ public class TransactionBeginnerTests
                     Transaction = new TransactionBeginner.TransactionInfo { Id = txId }
                 },
                 headers));
+    }
+
+    private static HttpRequestMessage RequestUsing(IAuthToken token)
+    {
+        var request = new HttpRequestMessage();
+        request.Options.Set(QueryApiAuthEnricher.AuthTokenKey, token);
+        return request;
     }
 
     private QueryApiTransactionContextTracker UseRealContextTracker()
@@ -88,6 +96,18 @@ public class TransactionBeginnerTests
 
         holder.Context.Should().NotBeNull();
         holder.Context!.TxId.Should().Be("tx-abc-123");
+    }
+
+    [Fact]
+    public async Task BeginAsync_PinsTheTokenTheBeginRequestUsed_OnTheContext()
+    {
+        SetupChain();
+
+        var holder = UseRealContextTracker();
+        var subject = _autoMocker.CreateInstance<TransactionBeginner>();
+        await subject.BeginAsync(_writeOptions, TestContext.Current.CancellationToken);
+
+        holder.Context!.AuthToken.Should().BeSameAs(_beginToken);
     }
 
     [Fact]
@@ -156,7 +176,7 @@ public class TransactionBeginnerTests
         UseRealContextTracker();
 
         object? capturedBody = null;
-        var request = new HttpRequestMessage();
+        var request = RequestUsing(_beginToken);
 
         _autoMocker.GetMock<IQueryApiRequestBuilder>()
             .Setup(x => x.PostAsync(It.IsAny<string>(), It.IsAny<IQueryApiRequestBody>(), It.IsAny<CancellationToken>()))
@@ -185,7 +205,7 @@ public class TransactionBeginnerTests
         _autoMocker.GetMock<ISessionContext>()
             .Setup(x => x.ImpersonatedUser).Returns("banana_bob");
 
-        var request = new HttpRequestMessage();
+        var request = RequestUsing(_beginToken);
         object? capturedBody = null;
 
         _autoMocker.GetMock<IQueryApiRequestBuilder>()

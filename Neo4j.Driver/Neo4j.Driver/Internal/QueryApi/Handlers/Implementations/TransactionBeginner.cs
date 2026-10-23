@@ -65,7 +65,12 @@ internal class TransactionBeginner : ITransactionBeginner
             throw new InvalidOperationException("Server did not return a transaction ID.");
         }
 
-        var context = new QueryApiTransactionContext(txId, _affinityExtractor.Extract(result.ResponseHeaders));
+        if (!request.Options.TryGetValue(QueryApiAuthEnricher.AuthTokenKey, out var authToken))
+        {
+            throw new InvalidOperationException("The begin request did not record the auth token it used.");
+        }
+
+        var context = new QueryApiTransactionContext(txId, _affinityExtractor.Extract(result.ResponseHeaders), authToken);
         _contextTracker.Set(context);
         _logger.LogDebug("Transaction begun");
     }

@@ -28,12 +28,17 @@ internal class QueryApiAuthEnricher : IHttpRequestEnricher
 {
     internal static readonly HttpRequestOptionsKey<IAuthToken> AuthTokenKey = new("neo4j.auth-token");
 
+    private readonly IQueryApiTransactionContextTracker _contextTracker;
     private readonly IBase64Encoder _encoder;
     private readonly ISessionContext _sessionContext;
 
-    public QueryApiAuthEnricher(ISessionContext sessionContext, IBase64Encoder encoder)
+    public QueryApiAuthEnricher(
+        ISessionContext sessionContext,
+        IQueryApiTransactionContextTracker contextTracker,
+        IBase64Encoder encoder)
     {
         _sessionContext = sessionContext;
+        _contextTracker = contextTracker;
         _encoder = encoder;
     }
 
@@ -62,7 +67,9 @@ internal class QueryApiAuthEnricher : IHttpRequestEnricher
 
     public async ValueTask Enrich(HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
-        var returnedToken = await _sessionContext.GetAuthTokenAsync(cancellationToken).ConfigureAwait(false);
+        var returnedToken = _contextTracker.Context?.AuthToken
+            ?? await _sessionContext.GetAuthTokenAsync(cancellationToken).ConfigureAwait(false);
+
         request.Options.Set(AuthTokenKey, returnedToken);
         if (returnedToken is not AuthToken authToken)
         {

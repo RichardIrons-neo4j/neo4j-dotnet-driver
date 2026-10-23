@@ -44,7 +44,7 @@ public class TransactionRunnerTests
     {
         _autoMocker.GetMock<IQueryApiTransactionContextTracker>()
             .SetupGet(x => x.Context)
-            .Returns(new QueryApiTransactionContext(TxId, null));
+            .Returns(new QueryApiTransactionContext(TxId, null, AuthTokens.None));
     }
 
     private void SetupChain(QueryApiResultBody? body = null, Neo4jException? failure = null)

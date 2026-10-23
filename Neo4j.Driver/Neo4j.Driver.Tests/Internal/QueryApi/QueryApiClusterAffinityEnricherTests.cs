@@ -30,7 +30,7 @@ public class QueryApiClusterAffinityEnricherTests
     private static IQueryApiTransactionContextTracker TrackerWith(string txId, string? affinity)
     {
         var tracker = new QueryApiTransactionContextTracker(new LoggingContextTracker());
-        tracker.Set(new QueryApiTransactionContext(txId, affinity));
+        tracker.Set(new QueryApiTransactionContext(txId, affinity, AuthTokens.None));
         return tracker;
     }
 
