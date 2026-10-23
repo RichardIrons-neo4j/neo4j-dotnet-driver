@@ -17,7 +17,10 @@
 #nullable enable
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Moq;
 using Moq.AutoMock;
 using Neo4j.Driver.Internal.QueryApi;
 using Neo4j.Driver.Tests.Internal.Core;
@@ -39,6 +42,18 @@ public class QueryApiSessionContextTests
         if (database is not null)
         {
             builder.WithDatabase(database);
+        }
+
+        _autoMocker.Use(builder.Build());
+        return _autoMocker.CreateInstance<QueryApiSessionContext>();
+    }
+
+    private QueryApiSessionContext SessionContextWith(IAuthToken? sessionToken)
+    {
+        var builder = SessionConfig.Builder;
+        if (sessionToken is not null)
+        {
+            builder.WithAuthToken(sessionToken);
         }
 
         _autoMocker.Use(builder.Build());
@@ -120,5 +135,72 @@ public class QueryApiSessionContextTests
         var thrown = act.Should().Throw<ClientException>().Which;
         thrown.Message.Should().Contain("Query API");
         thrown.Message.Should().Contain("database name");
+    }
+
+    [Fact]
+    public async Task GetAuthTokenAsync_ReturnsTheSessionToken_WhenTheSessionHasOne()
+    {
+        var sessionToken = AuthTokens.Basic("session", "pass");
+        _autoMocker.GetMock<IAuthTokenManager>()
+            .Setup(m => m.GetTokenAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(AuthTokens.Basic("manager", "pass"));
+        var subject = SessionContextWith(sessionToken);
+
+        var token = await subject.GetAuthTokenAsync(TestContext.Current.CancellationToken);
+
+        token.Should().BeSameAs(sessionToken);
+    }
+
+    [Fact]
+    public async Task GetAuthTokenAsync_ReturnsTheManagersToken_WhenTheSessionHasNone()
+    {
+        var managerToken = AuthTokens.Basic("manager", "pass");
+        _autoMocker.GetMock<IAuthTokenManager>()
+            .Setup(m => m.GetTokenAsync(TestContext.Current.CancellationToken))
+            .ReturnsAsync(managerToken);
+        var subject = SessionContextWith(null);
+
+        var token = await subject.GetAuthTokenAsync(TestContext.Current.CancellationToken);
+
+        token.Should().BeSameAs(managerToken);
+    }
+
+    [Fact]
+    public async Task HandleSecurityExceptionAsync_ReturnsFalse_ForASessionToken()
+    {
+        var sessionToken = AuthTokens.Basic("session", "pass");
+        var failure = new SecurityException("Neo.ClientError.Security.Unauthorized", "no");
+        _autoMocker.GetMock<IAuthTokenManager>()
+            .Setup(m => m.HandleSecurityExceptionAsync(
+                It.IsAny<IAuthToken>(),
+                It.IsAny<SecurityException>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var subject = SessionContextWith(sessionToken);
+
+        var handled = await subject.HandleSecurityExceptionAsync(
+            sessionToken,
+            failure,
+            TestContext.Current.CancellationToken);
+
+        handled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task HandleSecurityExceptionAsync_ReturnsWhatTheManagerSays_ForTheManagersToken()
+    {
+        var managerToken = AuthTokens.Basic("manager", "pass");
+        var failure = new SecurityException("Neo.ClientError.Security.TokenExpired", "old");
+        _autoMocker.GetMock<IAuthTokenManager>()
+            .Setup(m => m.HandleSecurityExceptionAsync(managerToken, failure, TestContext.Current.CancellationToken))
+            .ReturnsAsync(true);
+        var subject = SessionContextWith(null);
+
+        var handled = await subject.HandleSecurityExceptionAsync(
+            managerToken,
+            failure,
+            TestContext.Current.CancellationToken);
+
+        handled.Should().BeTrue();
     }
 }

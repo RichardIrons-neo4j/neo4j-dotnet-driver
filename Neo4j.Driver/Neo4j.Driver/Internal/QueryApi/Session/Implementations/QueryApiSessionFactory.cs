@@ -50,16 +50,12 @@ internal class QueryApiSessionFactory : IQueryApiSessionFactory
         var sessionId = _sessionIdGenerator.Generate();
         _logger.LogDebug("Building session scope {sessionId}", sessionId);
 
-        var authTokenManager = config.AuthToken is {}
-            ? AuthTokenManagers.Static(config.AuthToken)
-            : config.DriverContext.AuthTokenManager;
-
         var sessionTracker = _driverTracker.CreateChild();
         sessionTracker.Add("session", sessionId);
 
         var composition = new QueryApiSessionComposition(
             config,
-            authTokenManager,
+            config.DriverContext.AuthTokenManager,
             sessionTracker,
             _loggerFactory,
             _httpTransport,

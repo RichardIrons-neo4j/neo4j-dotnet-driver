@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Moq.AutoMock;
+using Neo4j.Driver.Internal;
 using Neo4j.Driver.Internal.QueryApi;
 using Xunit;
 
@@ -40,8 +41,8 @@ public class QueryApiAuthEnricherTests
     {
         var request = new HttpRequestMessage();
 
-        _autoMocker.GetMock<IAuthTokenManager>()
-            .Setup(m => m.GetTokenAsync(TestContext.Current.CancellationToken))
+        _autoMocker.GetMock<ISessionContext>()
+            .Setup(c => c.GetAuthTokenAsync(TestContext.Current.CancellationToken))
             .ReturnsAsync(AuthTokens.Basic("alice", "s3cret"));
 
         _autoMocker.GetMock<IBase64Encoder>()
@@ -60,8 +61,8 @@ public class QueryApiAuthEnricherTests
     {
         var request = new HttpRequestMessage();
 
-        _autoMocker.GetMock<IAuthTokenManager>()
-            .Setup(m => m.GetTokenAsync(TestContext.Current.CancellationToken))
+        _autoMocker.GetMock<ISessionContext>()
+            .Setup(c => c.GetAuthTokenAsync(TestContext.Current.CancellationToken))
             .ReturnsAsync(AuthTokens.Bearer("my-jwt-token"));
 
         var subject = _autoMocker.CreateInstance<QueryApiAuthEnricher>();
@@ -76,8 +77,8 @@ public class QueryApiAuthEnricherTests
     {
         var request = new HttpRequestMessage();
 
-        _autoMocker.GetMock<IAuthTokenManager>()
-            .Setup(m => m.GetTokenAsync(TestContext.Current.CancellationToken))
+        _autoMocker.GetMock<ISessionContext>()
+            .Setup(c => c.GetAuthTokenAsync(TestContext.Current.CancellationToken))
             .ReturnsAsync(AuthTokens.None);
 
         var subject = _autoMocker.CreateInstance<QueryApiAuthEnricher>();
@@ -92,8 +93,8 @@ public class QueryApiAuthEnricherTests
     {
         var request = new HttpRequestMessage();
 
-        _autoMocker.GetMock<IAuthTokenManager>()
-            .Setup(m => m.GetTokenAsync(TestContext.Current.CancellationToken))
+        _autoMocker.GetMock<ISessionContext>()
+            .Setup(c => c.GetAuthTokenAsync(TestContext.Current.CancellationToken))
             .ReturnsAsync(AuthTokens.Kerberos("ticket"));
 
         var subject = _autoMocker.CreateInstance<QueryApiAuthEnricher>();
@@ -101,5 +102,24 @@ public class QueryApiAuthEnricherTests
         var act = async () => await subject.Enrich(request, TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<NotSupportedException>();
+    }
+
+    [Fact]
+    public async Task Enrich_UsesTheTokenFromTheSessionContext_NotTheManagers()
+    {
+        var request = new HttpRequestMessage();
+
+        _autoMocker.GetMock<ISessionContext>()
+            .Setup(c => c.GetAuthTokenAsync(TestContext.Current.CancellationToken))
+            .ReturnsAsync(AuthTokens.Bearer("from-the-context"));
+
+        _autoMocker.GetMock<IAuthTokenManager>()
+            .Setup(m => m.GetTokenAsync(TestContext.Current.CancellationToken))
+            .ReturnsAsync(AuthTokens.Bearer("from-the-manager"));
+
+        var subject = _autoMocker.CreateInstance<QueryApiAuthEnricher>();
+        await subject.Enrich(request, TestContext.Current.CancellationToken);
+
+        request.Headers.Authorization!.Parameter.Should().Be("from-the-context");
     }
 }
