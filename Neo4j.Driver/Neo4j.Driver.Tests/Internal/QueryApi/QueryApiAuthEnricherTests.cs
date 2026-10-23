@@ -122,4 +122,23 @@ public class QueryApiAuthEnricherTests
 
         request.Headers.Authorization!.Parameter.Should().Be("from-the-context");
     }
+
+    [Fact]
+    public async Task Enrich_RecordsTheTokenItUsed_OnTheRequest()
+    {
+        var request = new HttpRequestMessage();
+        var token = AuthTokens.Bearer("my-jwt-token");
+
+        _autoMocker.GetMock<ISessionContext>()
+            .Setup(c => c.GetAuthTokenAsync(TestContext.Current.CancellationToken))
+            .ReturnsAsync(token);
+
+        var subject = _autoMocker.CreateInstance<QueryApiAuthEnricher>();
+        await subject.Enrich(request, TestContext.Current.CancellationToken);
+
+        var recorded = request.Options.TryGetValue(QueryApiAuthEnricher.AuthTokenKey, out var recordedToken);
+
+        recorded.Should().BeTrue();
+        recordedToken.Should().BeSameAs(token);
+    }
 }

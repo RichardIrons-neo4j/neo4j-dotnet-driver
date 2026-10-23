@@ -28,15 +28,18 @@ internal class QueryApiClient : IQueryApiClient
     private readonly IQueryApiFailureReader _failureReader;
     private readonly IQueryApiHttpTransport _httpTransport;
     private readonly IJsonDeserializer _jsonDeserializer;
+    private readonly ISecurityExceptionNotifier _securityExceptionNotifier;
 
     public QueryApiClient(
         IQueryApiHttpTransport httpTransport,
         IJsonDeserializer jsonDeserializer,
-        IQueryApiFailureReader failureReader)
+        IQueryApiFailureReader failureReader,
+        ISecurityExceptionNotifier securityExceptionNotifier)
     {
         _httpTransport = httpTransport;
         _jsonDeserializer = jsonDeserializer;
         _failureReader = failureReader;
+        _securityExceptionNotifier = securityExceptionNotifier;
     }
 
     public async Task<QueryApiResult<TBody>> ExecuteAsync<TBody>(
@@ -91,6 +94,10 @@ internal class QueryApiClient : IQueryApiClient
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         var body = await TryDeserializeAsync<TBody>(json, cancellationToken).ConfigureAwait(false);
         var failure = _failureReader.Read(response, json, body?.Errors);
+        if (failure is SecurityException security && request.Options.TryGetValue(QueryApiAuthEnricher.AuthTokenKey, out var token))
+        {
+            await _securityExceptionNotifier.NotifyAsync(token, security, cancellationToken).ConfigureAwait(false);
+        }
 
         return (body, response.Headers, json, failure);
     }

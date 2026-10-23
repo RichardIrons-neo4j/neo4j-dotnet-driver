@@ -26,6 +26,8 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class QueryApiAuthEnricher : IHttpRequestEnricher
 {
+    internal static readonly HttpRequestOptionsKey<IAuthToken> AuthTokenKey = new("neo4j.auth-token");
+
     private readonly IBase64Encoder _encoder;
     private readonly ISessionContext _sessionContext;
 
@@ -61,6 +63,7 @@ internal class QueryApiAuthEnricher : IHttpRequestEnricher
     public async ValueTask Enrich(HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
         var returnedToken = await _sessionContext.GetAuthTokenAsync(cancellationToken).ConfigureAwait(false);
+        request.Options.Set(AuthTokenKey, returnedToken);
         if (returnedToken is not AuthToken authToken)
         {
             throw new InvalidOperationException("Unsupported auth token: " + returnedToken.GetType().Name);

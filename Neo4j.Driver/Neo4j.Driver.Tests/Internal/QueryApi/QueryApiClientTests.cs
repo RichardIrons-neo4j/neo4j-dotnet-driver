@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
@@ -23,6 +24,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Moq.AutoMock;
+using Neo4j.Driver.Internal;
 using Neo4j.Driver.Internal.QueryApi;
 using Neo4j.Driver.Tests.Internal.Core;
 using Xunit;
@@ -273,5 +275,118 @@ public class QueryApiClientTests
         _autoMocker.GetMock<IQueryApiFailureReader>()
             .Setup(x => x.Read(response, json, body.Errors))
             .Returns(failure);
+    }
+
+    private static HttpRequestMessage RequestUsing(IAuthToken token)
+    {
+        var request = new HttpRequestMessage();
+        request.Options.Set(QueryApiAuthEnricher.AuthTokenKey, token);
+        return request;
+    }
+
+    private (Func<IAuthToken?> Token, Func<SecurityException?> Failure) CaptureNotification(bool handled = false)
+    {
+        IAuthToken? notifiedToken = null;
+        SecurityException? notifiedFailure = null;
+        _autoMocker.GetMock<ISecurityExceptionNotifier>()
+            .Setup(n => n.NotifyAsync(It.IsAny<IAuthToken>(), It.IsAny<SecurityException>(), It.IsAny<CancellationToken>()))
+            .Callback<IAuthToken, SecurityException, CancellationToken>(
+                (token, failure, _) =>
+                {
+                    notifiedToken = token;
+                    notifiedFailure = failure;
+                    failure.Retriable = handled;
+                })
+            .Returns(ValueTask.CompletedTask);
+
+        return (() => notifiedToken, () => notifiedFailure);
+    }
+
+    private void SetupThrownFailure(Neo4jException failure)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new ByteArrayContent([]) };
+        QueryApiErrorBody[] errors = [new QueryApiErrorBody(failure.Code, failure.Message)];
+
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        _autoMocker.GetMock<IJsonDeserializer>()
+            .Setup(x => x.DeserializeAsync<TestBody>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TestBody { Errors = errors });
+
+        _autoMocker.GetMock<IQueryApiFailureReader>()
+            .Setup(x => x.Read(response, "", errors))
+            .Returns(failure);
+    }
+
+    [Fact]
+    public async Task NotifiesASecurityFailure_WithTheTokenTheRequestUsed()
+    {
+        var token = AuthTokens.Basic("alice", "pass");
+        var failure = new SecurityException("Neo.ClientError.Security.TokenExpired", "expired");
+        SetupThrownFailure(failure);
+        var notified = CaptureNotification();
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteAsync<TestBody>(RequestUsing(token), TestContext.Current.CancellationToken);
+        await act.Should().ThrowAsync<SecurityException>();
+
+        notified.Token().Should().BeSameAs(token);
+        notified.Failure().Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ThrowsASecurityFailureThatAlreadyReflectsTheNotification()
+    {
+        var failure = new SecurityException("Neo.ClientError.Security.TokenExpired", "expired");
+        SetupThrownFailure(failure);
+        CaptureNotification(handled: true);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteAsync<TestBody>(
+            RequestUsing(AuthTokens.Basic("alice", "pass")),
+            TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<SecurityException>()).Which.IsRetriable.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ExecuteQueryAsync_NotifiesASecurityFailure_ThatRidesOnTheResult()
+    {
+        var token = AuthTokens.Basic("alice", "pass");
+        var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("with header") };
+        var body = new QueryApiResultBody
+        {
+            Data = new QueryApiDataBody { Fields = ["n"] },
+            Errors = [new QueryApiErrorBody("Neo.ClientError.Security.TokenExpired", "expired")]
+        };
+        var failure = new SecurityException("Neo.ClientError.Security.TokenExpired", "expired");
+        SetupQueryResponse(response, "with header", body, failure);
+        var notified = CaptureNotification();
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var result = await subject.ExecuteQueryAsync(RequestUsing(token), TestContext.Current.CancellationToken);
+
+        result.Failure.Should().BeSameAs(failure);
+        notified.Token().Should().BeSameAs(token);
+        notified.Failure().Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task DoesNotNotify_AFailureThatIsNotASecurityException()
+    {
+        SetupThrownFailure(new ClientException("Neo.ClientError.Statement.SyntaxError", "bad"));
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteAsync<TestBody>(
+            RequestUsing(AuthTokens.Basic("alice", "pass")),
+            TestContext.Current.CancellationToken);
+        await act.Should().ThrowAsync<ClientException>();
+
+        _autoMocker.GetMock<ISecurityExceptionNotifier>()
+            .Verify(
+                n => n.NotifyAsync(It.IsAny<IAuthToken>(), It.IsAny<SecurityException>(), It.IsAny<CancellationToken>()),
+                Times.Never);
     }
 }
