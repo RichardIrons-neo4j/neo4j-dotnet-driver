@@ -19,22 +19,35 @@ using System.Text.Json;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
-/// <summary>Appears in error arrays on both auto-commit and explicit-transaction responses.</summary>
 internal record QueryApiErrorBody(string Code = "", string Message = "");
 
-/// <summary>The data envelope returned by auto-commit and run-in-transaction responses.</summary>
 internal record QueryApiDataBody
 {
     public string[]? Fields { get; init; }
     public JsonElement[][]? Values { get; init; }
 }
 
-/// <summary>
-/// The full response body shape shared by auto-commit and run-in-transaction endpoints:
-/// <c>data.fields</c>, <c>data.values</c>, <c>bookmarks</c>, and an optional <c>errors</c> array.
-/// </summary>
+internal record QueryApiCountersBody
+{
+    public bool ContainsUpdates { get; init; }
+    public int NodesCreated { get; init; }
+    public int NodesDeleted { get; init; }
+    public int PropertiesSet { get; init; }
+    public int RelationshipsCreated { get; init; }
+    public int RelationshipsDeleted { get; init; }
+    public int LabelsAdded { get; init; }
+    public int LabelsRemoved { get; init; }
+    public int IndexesAdded { get; init; }
+    public int IndexesRemoved { get; init; }
+    public int ConstraintsAdded { get; init; }
+    public int ConstraintsRemoved { get; init; }
+    public bool ContainsSystemUpdates { get; init; }
+    public int SystemUpdates { get; init; }
+}
+
 internal record QueryApiResultBody : QueryApiResponse
 {
     public QueryApiDataBody? Data { get; init; }
     public string[]? Bookmarks { get; init; }
+    public QueryApiCountersBody? Counters { get; init; }
 }

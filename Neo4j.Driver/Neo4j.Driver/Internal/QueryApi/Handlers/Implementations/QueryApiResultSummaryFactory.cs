@@ -32,11 +32,36 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
         var builder = new SummaryBuilder(query, _serverInfo)
         {
             Database = new DatabaseInfo(database),
+            Counters = ToCounters(body.Counters),
             StatusAndNotifications = new GqlStatusObjectsAndNotifications(null, null, false)
         };
 
         var hadRecords = body.Data?.Values?.Length > 0;
         var hadKeys = body.Data?.Fields?.Length > 0;
         return builder.Build(new CursorMetadata(hadRecords, hadKeys));
+    }
+
+    private ICounters ToCounters(QueryApiCountersBody counters)
+    {
+        if (counters is null)
+        {
+            return null;
+        }
+
+        return new Counters(
+            counters.NodesCreated,
+            counters.NodesDeleted,
+            counters.RelationshipsCreated,
+            counters.RelationshipsDeleted,
+            counters.PropertiesSet,
+            counters.LabelsAdded,
+            counters.LabelsRemoved,
+            counters.IndexesAdded,
+            counters.IndexesRemoved,
+            counters.ConstraintsAdded,
+            counters.ConstraintsRemoved,
+            counters.SystemUpdates,
+            counters.ContainsSystemUpdates,
+            counters.ContainsUpdates);
     }
 }

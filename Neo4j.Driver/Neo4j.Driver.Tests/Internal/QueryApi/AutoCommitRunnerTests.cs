@@ -193,6 +193,36 @@ public class AutoCommitRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_RequestBody_AsksForCounters()
+    {
+        var request = new HttpRequestMessage();
+        object? capturedBody = null;
+
+        _autoMocker.GetMock<IQueryApiRequestBuilder>()
+            .Setup(x => x.PostAsync(
+                It.IsAny<string>(),
+                It.IsAny<IQueryApiRequestBody>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, IQueryApiRequestBody, CancellationToken>((_, body, _) => capturedBody = body)
+            .ReturnsAsync(request);
+
+        _autoMocker.GetMock<IQueryApiClient>()
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new QueryApiQueryResult(new QueryApiResultBody(), new HttpResponseMessage().Headers, null));
+
+        _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), It.IsAny<IResponsePipelineError?>(), It.IsAny<Query>()))
+            .Returns(new Mock<IResultCursor>().Object);
+
+        var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
+        await subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
+
+        var body = capturedBody.Should().BeOfType<AutoCommitRunner.RequestBody>().Subject;
+        body.IncludeCounters.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task RunAsync_PassesADeferredFailure_ToTheCursor()
     {
         var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");

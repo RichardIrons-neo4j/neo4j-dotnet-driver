@@ -93,6 +93,7 @@ internal class AutoCommitRunner : IAutoCommitRunner
         public string[]? Bookmarks { get; init; }
         public string? ImpersonatedUser { get; init; }
         public string? AccessMode { get; init; }
+        public bool IncludeCounters { get; } = true;
 
         public IReadOnlyCollection<object?> GetParameterValues()
         {

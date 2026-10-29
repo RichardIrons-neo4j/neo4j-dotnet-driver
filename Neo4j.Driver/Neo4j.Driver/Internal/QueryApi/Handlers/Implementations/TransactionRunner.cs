@@ -90,6 +90,7 @@ internal class TransactionRunner : ITransactionRunner
     {
         public string? Statement { get; init; }
         public QueryApiParameterDictionary? Parameters { get; init; }
+        public bool IncludeCounters { get; } = true;
 
         public IReadOnlyCollection<object?> GetParameterValues()
         {

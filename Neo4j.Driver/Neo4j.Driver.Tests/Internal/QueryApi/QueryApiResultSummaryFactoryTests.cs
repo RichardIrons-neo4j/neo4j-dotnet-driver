@@ -70,6 +70,52 @@ public class QueryApiResultSummaryFactoryTests
         summary.HasProfile.Should().BeFalse();
     }
 
+    [Fact]
+    public void Create_TakesTheCountsFromTheBody()
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody
+        {
+            Counters = new QueryApiCountersBody
+            {
+                NodesCreated = 1007,
+                NodesDeleted = 1008,
+                RelationshipsCreated = 1010,
+                RelationshipsDeleted = 1011,
+                PropertiesSet = 1009,
+                LabelsAdded = 1005,
+                LabelsRemoved = 1006,
+                IndexesAdded = 1003,
+                IndexesRemoved = 1004,
+                ConstraintsAdded = 1001,
+                ConstraintsRemoved = 1002,
+                SystemUpdates = 1012,
+                ContainsUpdates = true,
+                ContainsSystemUpdates = true
+            }
+        };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+        summary.Counters.Should().BeEquivalentTo(
+            new Counters(1007, 1008, 1010, 1011, 1009, 1005, 1006, 1003, 1004, 1001, 1002, 1012, true, true));
+    }
+
+    [Fact]
+    public void Create_TakesTheUpdateFlagsFromTheBody_RatherThanFromTheCounts()
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody
+        {
+            Counters = new QueryApiCountersBody { ContainsUpdates = true, ContainsSystemUpdates = true }
+        };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+        summary.Counters.ContainsUpdates.Should().BeTrue();
+        summary.Counters.ContainsSystemUpdates.Should().BeTrue();
+    }
+
     [Theory]
     [InlineData(new[] { "n" }, 1, "00000")]
     [InlineData(new[] { "n" }, 0, "02000")]
