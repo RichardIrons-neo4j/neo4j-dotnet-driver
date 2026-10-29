@@ -93,17 +93,18 @@ public class QueryApiResultCursorBuilderTests
     }
 
     [Fact]
-    public async Task Build_GivesTheCursorTheSummaryTheFactoryBuilt()
+    public async Task Build_GivesTheCursorTheSummaryTheFactoryBuiltFromTheBody()
     {
+        var body = new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["n"], Values = [] } };
         var summary = Mock.Of<IResultSummary>();
         var factory = new Mock<IResultSummaryFactory>();
-        factory.Setup(x => x.Create(AnyQuery, "neo4j")).Returns(summary);
+        factory.Setup(x => x.Create(AnyQuery, "neo4j", body)).Returns(summary);
         var builder = new QueryApiResultCursorBuilder(
             factory.Object,
             new JsonValueDecoder([]),
             Mock.Of<ISessionContext>(ctx => ctx.Database == "neo4j"));
 
-        var cursor = builder.Build(new QueryApiResultBody(), null, AnyQuery);
+        var cursor = builder.Build(body, null, AnyQuery);
         var consumed = await cursor.ConsumeAsync();
 
         consumed.Should().BeSameAs(summary);

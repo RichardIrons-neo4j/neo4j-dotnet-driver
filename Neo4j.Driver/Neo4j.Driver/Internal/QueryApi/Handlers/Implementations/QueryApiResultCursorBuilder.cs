@@ -59,7 +59,7 @@ internal class QueryApiResultCursorBuilder : IQueryApiResultCursorBuilder
                 row.Select(_jsonValueDecoder.Decode).ToArray()!))
             .ToList();
 
-        var summary = _summaryFactory.Create(query, _sessionContext.Database);
+        var summary = _summaryFactory.Create(query, _sessionContext.Database, body);
         return new QueryApiResultCursor(records, fields, summary, pendingError);
     }
 }

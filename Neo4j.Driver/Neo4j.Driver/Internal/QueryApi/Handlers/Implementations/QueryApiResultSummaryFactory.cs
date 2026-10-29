@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Neo4j.Driver.Internal.MessageHandling.Metadata;
+using Neo4j.Driver.Internal.Result;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
@@ -25,8 +27,16 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
         _serverInfo = serverInfo;
     }
 
-    public IResultSummary Create(Query query, string database)
+    public IResultSummary Create(Query query, string database, QueryApiResultBody body)
     {
-        return new QueryApiResultSummary(query, _serverInfo, database);
+        var builder = new SummaryBuilder(query, _serverInfo)
+        {
+            Database = new DatabaseInfo(database),
+            StatusAndNotifications = new GqlStatusObjectsAndNotifications(null, null, false)
+        };
+
+        var hadRecords = body.Data?.Values?.Length > 0;
+        var hadKeys = body.Data?.Fields?.Length > 0;
+        return builder.Build(new CursorMetadata(hadRecords, hadKeys));
     }
 }

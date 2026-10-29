@@ -17,5 +17,5 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal interface IResultSummaryFactory
 {
-    IResultSummary Create(Query query, string database);
+    IResultSummary Create(Query query, string database, QueryApiResultBody body);
 }
