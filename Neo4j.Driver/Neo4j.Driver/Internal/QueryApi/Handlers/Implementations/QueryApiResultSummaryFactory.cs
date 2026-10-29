@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#nullable enable
+
 using Neo4j.Driver.Internal.MessageHandling.Metadata;
 using Neo4j.Driver.Internal.Result;
 
@@ -41,7 +43,7 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
         return builder.Build(new CursorMetadata(hadRecords, hadKeys));
     }
 
-    private ICounters ToCounters(QueryApiCountersBody counters)
+    private ICounters? ToCounters(QueryApiCountersBody? counters)
     {
         if (counters is null)
         {
