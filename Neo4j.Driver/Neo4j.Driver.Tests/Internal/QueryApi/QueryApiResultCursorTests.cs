@@ -29,10 +29,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiResultCursorTests
 {
-    private static readonly Query AnyQuery = new("RETURN 1");
-
-    private static readonly IResultSummaryFactory AnyFactory =
-        new QueryApiResultSummaryFactory(new Mock<IServerInfo>().Object);
+    private static readonly IResultSummary AnySummary = Mock.Of<IResultSummary>();
 
     // --- Helpers ---
 
@@ -40,12 +37,7 @@ public class QueryApiResultCursorTests
     /// Builds a cursor from plain CLR values. Each inner array is one row; its elements map positionally to
     /// <paramref name="keys"/>.
     /// </summary>
-    private static IResultCursor MakeCursor(
-        string[] keys,
-        object?[][] rows,
-        Query? query = null,
-        IResultSummaryFactory? summaryFactory = null,
-        string database = "neo4j")
+    private static IResultCursor MakeCursor(string[] keys, object?[][] rows, IResultSummary? summary = null)
     {
         var lookup = keys
             .Select((k, i) => (k, i))
@@ -59,7 +51,7 @@ public class QueryApiResultCursorTests
             .Select(row => (IRecord)new DriverRecord(lookup, invariantLookup, row!))
             .ToList();
 
-        return new QueryApiResultCursor(records, keys, query ?? AnyQuery, summaryFactory ?? AnyFactory, database, null);
+        return new QueryApiResultCursor(records, keys, summary ?? AnySummary, null);
     }
 
     // --- Iteration ---
@@ -202,30 +194,16 @@ public class QueryApiResultCursorTests
     // --- Summary ---
 
     [Fact]
-    public async Task ConsumeAsync_SummaryContainsQuery()
+    public async Task ConsumeAsync_ReturnsTheSummaryItWasGiven_EveryTime()
     {
-        var query = new Query("RETURN 42");
-        var cursor = MakeCursor([], [], query);
-        var summary = await cursor.ConsumeAsync();
-        summary.Query.Should().Be(query);
-    }
+        var summary = Mock.Of<IResultSummary>();
+        var cursor = MakeCursor([], [], summary);
 
-    [Fact]
-    public async Task ConsumeAsync_SummaryContainsDatabase()
-    {
-        var cursor = MakeCursor([], [], database: "mydb");
-        var summary = await cursor.ConsumeAsync();
-        summary.Database.Name.Should().Be("mydb");
-    }
+        var first = await cursor.ConsumeAsync();
+        var second = await cursor.ConsumeAsync();
 
-    [Fact]
-    public async Task ConsumeAsync_SummaryContainsServerInfo()
-    {
-        var serverInfo = new Mock<IServerInfo>().Object;
-        var factory = new QueryApiResultSummaryFactory(serverInfo);
-        var cursor = MakeCursor([], [], summaryFactory: factory);
-        var summary = await cursor.ConsumeAsync();
-        summary.Server.Should().BeSameAs(serverInfo);
+        first.Should().BeSameAs(summary);
+        second.Should().BeSameAs(summary);
     }
 
     // --- Async enumerable ---
