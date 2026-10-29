@@ -282,10 +282,10 @@ public class TcpSocketClientTests
 
                 await client.WriterStream.WriteAsync(new byte[] { 1 });
                 await client.WriterStream.FlushAsync();
-                await server.ReadAsync(new byte[1]);
+                _ = await server.ReadAsync(new byte[1]);
                 await server.WriteAsync(new byte[] { 2 });
                 await server.FlushAsync();
-                await client.ReaderStream.ReadAsync(new byte[1]);
+                _ = await client.ReaderStream.ReadAsync(new byte[1]);
 
                 var reportedDead = client.SystemReportsDead();
 

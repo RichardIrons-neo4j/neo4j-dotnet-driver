@@ -116,6 +116,33 @@ public class QueryApiResultSummaryFactoryTests
         summary.Counters.ContainsSystemUpdates.Should().BeTrue();
     }
 
+    [Fact]
+    public void Create_TakesTheTimersFromTheBody()
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody { ResultAvailableAfter = 1337, ResultConsumedAfter = 42 };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+        summary.ResultAvailableAfter.Should().Be(TimeSpan.FromMilliseconds(1337));
+        summary.ResultConsumedAfter.Should().Be(TimeSpan.FromMilliseconds(42));
+    }
+
+    [Theory]
+    [InlineData("r", QueryType.ReadOnly)]
+    [InlineData("rw", QueryType.ReadWrite)]
+    [InlineData("w", QueryType.WriteOnly)]
+    [InlineData("s", QueryType.SchemaWrite)]
+    public void Create_TakesTheQueryTypeFromTheBody(string wireQueryType, QueryType expected)
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody { QueryType = wireQueryType };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+        summary.QueryType.Should().Be(expected);
+    }
+
     [Theory]
     [InlineData(new[] { "n" }, 1, "00000")]
     [InlineData(new[] { "n" }, 0, "02000")]

@@ -35,6 +35,9 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
         {
             Database = new DatabaseInfo(database),
             Counters = ToCounters(body.Counters),
+            QueryType = ToQueryType(body.QueryType),
+            ResultAvailableAfter = body.ResultAvailableAfter ?? -1,
+            ResultConsumedAfter = body.ResultConsumedAfter ?? -1,
             StatusAndNotifications = new GqlStatusObjectsAndNotifications(null, null, false)
         };
 
@@ -65,5 +68,18 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
             counters.SystemUpdates,
             counters.ContainsSystemUpdates,
             counters.ContainsUpdates);
+    }
+
+    private QueryType ToQueryType(string? queryType)
+    {
+        return queryType switch
+        {
+            null => QueryType.Unknown,
+            "r" => QueryType.ReadOnly,
+            "rw" => QueryType.ReadWrite,
+            "w" => QueryType.WriteOnly,
+            "s" => QueryType.SchemaWrite,
+            _ => throw new ProtocolException($"The server sent an unknown query type '{queryType}'.")
+        };
     }
 }

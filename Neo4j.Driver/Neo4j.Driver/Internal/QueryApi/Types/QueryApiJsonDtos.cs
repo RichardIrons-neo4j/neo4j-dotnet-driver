@@ -50,4 +50,7 @@ internal record QueryApiResultBody : QueryApiResponse
     public QueryApiDataBody? Data { get; init; }
     public string[]? Bookmarks { get; init; }
     public QueryApiCountersBody? Counters { get; init; }
+    public long? ResultAvailableAfter { get; init; }
+    public long? ResultConsumedAfter { get; init; }
+    public string? QueryType { get; init; }
 }
