@@ -62,23 +62,23 @@ public class TransactionRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_ReturnsCursor_BuiltFromResultSet()
+    public async Task RunAsync_ReturnsCursor_BuiltFromTheResponseBody()
     {
         // Spec: successful response contains data.fields, data.values; these are built into an IResultCursor
-        SetupChain(new QueryApiResultBody
+        var responseBody = new QueryApiResultBody
         {
             Data = new QueryApiDataBody { Fields = ["x"] }
-        });
+        };
+        SetupChain(responseBody);
 
+        var query = new Query("RETURN 42 AS x");
         var expectedCursor = new Mock<IResultCursor>().Object;
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
+            .Setup(x => x.Build(responseBody, null, query))
             .Returns(expectedCursor);
 
         var subject = _autoMocker.CreateInstance<TransactionRunner>();
-        var cursor = await subject.RunAsync(
-            new Query("RETURN 42 AS x"),
-            TestContext.Current.CancellationToken);
+        var cursor = await subject.RunAsync(query, TestContext.Current.CancellationToken);
 
         cursor.Should().BeSameAs(expectedCursor);
     }
@@ -110,7 +110,10 @@ public class TransactionRunnerTests
 
         var expectedCursor = new Mock<IResultCursor>().Object;
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.Is<QueryApiResultSet>(rs => rs.PendingError!.Exception == failure), It.IsAny<Query>()))
+            .Setup(x => x.Build(
+                It.IsAny<QueryApiResultBody>(),
+                It.Is<IResponsePipelineError>(e => e.Exception == failure),
+                It.IsAny<Query>()))
             .Returns(expectedCursor);
 
         var subject = _autoMocker.CreateInstance<TransactionRunner>();
@@ -127,8 +130,8 @@ public class TransactionRunnerTests
 
         IResponsePipelineError? cursorError = null;
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
-            .Callback<QueryApiResultSet, Query>((rs, _) => cursorError = rs.PendingError)
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), It.IsAny<IResponsePipelineError?>(), It.IsAny<Query>()))
+            .Callback<QueryApiResultBody, IResponsePipelineError?, Query>((_, error, _) => cursorError = error)
             .Returns(new Mock<IResultCursor>().Object);
 
         IResponsePipelineError? lifecycleError = null;

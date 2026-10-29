@@ -41,13 +41,12 @@ public class QueryApiResultCursorBuilderTests
     private static async Task<IRecord> FetchSingle(object? value)
     {
         var element = JsonSerializer.SerializeToElement(value);
-        var response = new QueryApiResultSet
+        var body = new QueryApiResultBody
         {
-            Fields = ["v"],
-            Rows = [[element]]
+            Data = new QueryApiDataBody { Fields = ["v"], Values = [[element]] }
         };
 
-        var cursor = Builder.Build(response, AnyQuery);
+        var cursor = Builder.Build(body, null, AnyQuery);
         await cursor.FetchAsync();
         return cursor.Current;
     }
@@ -57,13 +56,16 @@ public class QueryApiResultCursorBuilderTests
     [Fact]
     public async Task Build_MapsFieldsToCorrectColumns()
     {
-        var response = new QueryApiResultSet
+        var body = new QueryApiResultBody
         {
-            Fields = ["name", "age"],
-            Rows = [[JsonSerializer.SerializeToElement("Alice"), JsonSerializer.SerializeToElement(30)]]
+            Data = new QueryApiDataBody
+            {
+                Fields = ["name", "age"],
+                Values = [[JsonSerializer.SerializeToElement("Alice"), JsonSerializer.SerializeToElement(30)]]
+            }
         };
 
-        var cursor = Builder.Build(response, AnyQuery);
+        var cursor = Builder.Build(body, null, AnyQuery);
         await cursor.FetchAsync();
 
         cursor.Current["name"].Should().Be("Alice");
@@ -73,16 +75,28 @@ public class QueryApiResultCursorBuilderTests
     [Fact]
     public async Task Build_EmptyResponse_ProducesNoCursor()
     {
-        var response = new QueryApiResultSet { Fields = ["x"], Rows = [] };
-        var cursor = Builder.Build(response, AnyQuery);
+        var body = new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["x"], Values = [] } };
+        var cursor = Builder.Build(body, null, AnyQuery);
         (await cursor.FetchAsync()).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Build_BodyWithoutData_HasNoKeysAndNoRecords()
+    {
+        var cursor = Builder.Build(new QueryApiResultBody(), null, AnyQuery);
+
+        var keys = await cursor.KeysAsync();
+        var fetched = await cursor.FetchAsync();
+
+        keys.Should().BeEmpty();
+        fetched.Should().BeFalse();
     }
 
     [Fact]
     public async Task KeysAsync_ReturnsResponseFields()
     {
-        var response = new QueryApiResultSet { Fields = ["a", "b", "c"], Rows = [] };
-        var cursor = Builder.Build(response, AnyQuery);
+        var body = new QueryApiResultBody { Data = new QueryApiDataBody { Fields = ["a", "b", "c"], Values = [] } };
+        var cursor = Builder.Build(body, null, AnyQuery);
         (await cursor.KeysAsync()).Should().Equal("a", "b", "c");
     }
 
@@ -179,14 +193,16 @@ public class QueryApiResultCursorBuilderTests
 
     private static IResultCursor BuildWithFailure(params object?[] values)
     {
-        var response = new QueryApiResultSet
+        var body = new QueryApiResultBody
         {
-            Fields = ["n"],
-            Rows = [.. values.Select(v => new[] { JsonSerializer.SerializeToElement(v) })],
-            PendingError = new ResponsePipelineError(Failure)
+            Data = new QueryApiDataBody
+            {
+                Fields = ["n"],
+                Values = [.. values.Select(v => new[] { JsonSerializer.SerializeToElement(v) })]
+            }
         };
 
-        return Builder.Build(response, AnyQuery);
+        return Builder.Build(body, new ResponsePipelineError(Failure), AnyQuery);
     }
 
     [Fact]

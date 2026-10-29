@@ -63,20 +63,12 @@ internal class TransactionRunner : ITransactionRunner
         }
 
         var body = result.Body;
-        var resultSet = new QueryApiResultSet
-        {
-            Fields = body.Data?.Fields ?? [],
-            Rows = body.Data?.Values ?? [],
-            Bookmarks = body.Bookmarks ?? [],
-            PendingError = pendingError
-        };
-
         _logger.LogDebug(
             "Run complete: {fieldCount} field(s), {rowCount} row(s)",
-            resultSet.Fields.Length,
-            resultSet.Rows.Length);
+            body.Data?.Fields?.Length ?? 0,
+            body.Data?.Values?.Length ?? 0);
 
-        return _cursorBuilder.Build(resultSet, query);
+        return _cursorBuilder.Build(body, pendingError, query);
     }
 
     private async Task<HttpRequestMessage> BuildRequestAsync(Query query, CancellationToken cancellationToken)

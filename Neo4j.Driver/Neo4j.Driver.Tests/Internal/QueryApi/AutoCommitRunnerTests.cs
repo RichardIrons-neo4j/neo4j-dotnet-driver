@@ -23,6 +23,7 @@ using FluentAssertions;
 using Moq;
 using Moq.AutoMock;
 using Neo4j.Driver.Internal;
+using Neo4j.Driver.Internal.MessageHandling;
 using Neo4j.Driver.Internal.QueryApi;
 using Neo4j.Driver.Tests.Internal.Core;
 using Xunit;
@@ -57,7 +58,7 @@ public class AutoCommitRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_ReturnsCursor_BuiltFromResultSet()
+    public async Task RunAsync_ReturnsCursor_BuiltFromTheResponseBody()
     {
         var responseBody = new QueryApiResultBody
         {
@@ -71,15 +72,14 @@ public class AutoCommitRunnerTests
 
         SetupChain(responseBody);
 
+        var query = new Query("MATCH (n) RETURN n.name, n.age");
         var expectedCursor = new Mock<IResultCursor>().Object;
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
+            .Setup(x => x.Build(responseBody, null, query))
             .Returns(expectedCursor);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
-        var cursor = await subject.RunAsync(
-            new Query("MATCH (n) RETURN n.name, n.age"),
-            TestContext.Current.CancellationToken);
+        var cursor = await subject.RunAsync(query, TestContext.Current.CancellationToken);
 
         cursor.Should().BeSameAs(expectedCursor);
     }
@@ -90,7 +90,7 @@ public class AutoCommitRunnerTests
         // Spec: auto-commit response bookmarks must be applied to the session's tracker for causal chaining
         SetupChain(new QueryApiResultBody { Bookmarks = ["neo4j:bookmark:v1:tx55"] });
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), It.IsAny<IResponsePipelineError?>(), It.IsAny<Query>()))
             .Returns(new Mock<IResultCursor>().Object);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
@@ -121,7 +121,7 @@ public class AutoCommitRunnerTests
                 new QueryApiQueryResult(new QueryApiResultBody(), new HttpResponseMessage().Headers, null));
 
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), It.IsAny<IResponsePipelineError?>(), It.IsAny<Query>()))
             .Returns(new Mock<IResultCursor>().Object);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
@@ -181,7 +181,7 @@ public class AutoCommitRunnerTests
                 new QueryApiQueryResult(new QueryApiResultBody(), new HttpResponseMessage().Headers, null));
 
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), It.IsAny<IResponsePipelineError?>(), It.IsAny<Query>()))
             .Returns(new Mock<IResultCursor>().Object);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
@@ -200,7 +200,10 @@ public class AutoCommitRunnerTests
 
         var expectedCursor = new Mock<IResultCursor>().Object;
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.Is<QueryApiResultSet>(rs => rs.PendingError!.Exception == failure), It.IsAny<Query>()))
+            .Setup(x => x.Build(
+                It.IsAny<QueryApiResultBody>(),
+                It.Is<IResponsePipelineError>(e => e.Exception == failure),
+                It.IsAny<Query>()))
             .Returns(expectedCursor);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();

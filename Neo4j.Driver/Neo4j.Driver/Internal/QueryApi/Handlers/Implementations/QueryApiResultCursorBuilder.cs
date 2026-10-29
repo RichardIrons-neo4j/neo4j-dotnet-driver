@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Neo4j.Driver.Internal.MessageHandling;
 using Neo4j.Driver.Internal.Result;
 
 
@@ -39,17 +40,19 @@ internal class QueryApiResultCursorBuilder : IQueryApiResultCursorBuilder
         _sessionContext = sessionContext;
     }
 
-    public IResultCursor Build(QueryApiResultSet resultSet, Query query)
+    public IResultCursor Build(QueryApiResultBody body, IResponsePipelineError? pendingError, Query query)
     {
-        var lookup = new Dictionary<string, int>(resultSet.Fields.Length, StringComparer.Ordinal);
-        var invariantLookup = new Dictionary<string, int>(resultSet.Fields.Length, StringComparer.OrdinalIgnoreCase);
-        for (var i = 0; i < resultSet.Fields.Length; i++)
+        var fields = body.Data?.Fields ?? [];
+        var lookup = new Dictionary<string, int>(fields.Length, StringComparer.Ordinal);
+        var invariantLookup = new Dictionary<string, int>(fields.Length, StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < fields.Length; i++)
         {
-            lookup[resultSet.Fields[i]] = i;
-            invariantLookup[resultSet.Fields[i]] = i;
+            lookup[fields[i]] = i;
+            invariantLookup[fields[i]] = i;
         }
 
-        var records = resultSet.Rows
+        var rows = body.Data?.Values ?? [];
+        var records = rows
             .Select(IRecord (row) => new Record(
                 lookup,
                 invariantLookup,
@@ -58,10 +61,10 @@ internal class QueryApiResultCursorBuilder : IQueryApiResultCursorBuilder
 
         return new QueryApiResultCursor(
             records,
-            resultSet.Fields,
+            fields,
             query,
             _summaryFactory,
             _sessionContext.Database,
-            resultSet.PendingError);
+            pendingError);
     }
 }

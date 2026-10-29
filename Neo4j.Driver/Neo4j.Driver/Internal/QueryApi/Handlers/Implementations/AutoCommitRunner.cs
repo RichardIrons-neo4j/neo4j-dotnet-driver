@@ -57,22 +57,15 @@ internal class AutoCommitRunner : IAutoCommitRunner
         var result = await _client.ExecuteQueryAsync(request, cancellationToken).ConfigureAwait(false);
 
         var body = result.Body;
-        var resultSet = new QueryApiResultSet
-        {
-            Fields = body.Data?.Fields ?? [],
-            Rows = body.Data?.Values ?? [],
-            Bookmarks = body.Bookmarks ?? [],
-            PendingError = result.Failure is null ? null : new ResponsePipelineError(result.Failure)
-        };
-
-        _bookmarkTracker.UpdateBookmarks(resultSet.Bookmarks);
+        _bookmarkTracker.UpdateBookmarks(body.Bookmarks ?? []);
 
         _logger.LogDebug(
             "Auto-commit complete: {fieldCount} field(s), {rowCount} row(s)",
-            resultSet.Fields.Length,
-            resultSet.Rows.Length);
+            body.Data?.Fields?.Length ?? 0,
+            body.Data?.Values?.Length ?? 0);
 
-        return _cursorBuilder.Build(resultSet, query);
+        var pendingError = result.Failure is null ? null : new ResponsePipelineError(result.Failure);
+        return _cursorBuilder.Build(body, pendingError, query);
     }
 
     private async Task<HttpRequestMessage> BuildRequestAsync(

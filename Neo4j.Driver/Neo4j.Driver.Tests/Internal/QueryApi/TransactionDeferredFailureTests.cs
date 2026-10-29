@@ -22,6 +22,7 @@ using FluentAssertions;
 using Moq;
 using Moq.AutoMock;
 using Neo4j.Driver.Internal;
+using Neo4j.Driver.Internal.MessageHandling;
 using Neo4j.Driver.Internal.QueryApi;
 using Neo4j.Driver.Tests.Internal.Core;
 using Xunit;
@@ -57,7 +58,7 @@ public class TransactionDeferredFailureTests
             .ReturnsAsync(new QueryApiQueryResult(body, new HttpResponseMessage().Headers, _failure));
 
         _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
-            .Setup(x => x.Build(It.IsAny<QueryApiResultSet>(), It.IsAny<Query>()))
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), It.IsAny<IResponsePipelineError?>(), It.IsAny<Query>()))
             .Returns(Mock.Of<IResultCursor>());
     }
 

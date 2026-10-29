@@ -28,7 +28,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 /// <summary>
 /// Tests for the concern-A plain (de)serializer. Concern-A owns HTTP-message serialization:
-/// plain STJ round-trips of DTOs like RequestBody and QueryApiResultSet, with no knowledge of
+/// plain STJ round-trips of DTOs like RequestBody, with no knowledge of
 /// Neo4j typed envelopes.
 /// </summary>
 public class QueryApiJsonSerializerTests
