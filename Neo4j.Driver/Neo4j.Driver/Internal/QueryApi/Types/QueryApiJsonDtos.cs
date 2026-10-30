@@ -52,6 +52,12 @@ internal record QueryApiPlanBody
     public Dictionary<string, JsonElement>? Arguments { get; init; }
     public string[]? Identifiers { get; init; }
     public QueryApiPlanBody[]? Children { get; init; }
+    public long? DbHits { get; init; }
+    public long? Records { get; init; }
+    public long? PageCacheHits { get; init; }
+    public long? PageCacheMisses { get; init; }
+    public double? PageCacheHitRatio { get; init; }
+    public long? Time { get; init; }
 }
 
 internal record QueryApiResultBody : QueryApiResponse
@@ -63,4 +69,5 @@ internal record QueryApiResultBody : QueryApiResponse
     public long? ResultConsumedAfter { get; init; }
     public string? QueryType { get; init; }
     public QueryApiPlanBody? QueryPlan { get; init; }
+    public QueryApiPlanBody? ProfiledQueryPlan { get; init; }
 }

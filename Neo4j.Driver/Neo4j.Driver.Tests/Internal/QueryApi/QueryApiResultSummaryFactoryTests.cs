@@ -198,6 +198,121 @@ public class QueryApiResultSummaryFactoryTests
         });
     }
 
+    [Fact]
+    public void Create_TakesTheProfileFromTheBody_KeepingAbsentStatsAsNull()
+    {
+        _autoMocker.GetMock<IJsonValueDecoder>()
+            .Setup(x => x.Decode(It.IsAny<JsonElement>()))
+            .Returns<JsonElement>(element => $"decoded {element.GetString()}");
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody
+        {
+            ProfiledQueryPlan = new QueryApiPlanBody
+            {
+                OperatorType = "ProduceResults@neo4j",
+                Arguments = new Dictionary<string, JsonElement>
+                {
+                    ["planner"] = JsonSerializer.SerializeToElement("COST")
+                },
+                Identifiers = ["n"],
+                DbHits = 1,
+                Records = 2,
+                PageCacheHits = 3,
+                PageCacheMisses = 4,
+                PageCacheHitRatio = 0.5,
+                Time = 6,
+                Children = [new QueryApiPlanBody { OperatorType = "Create@neo4j", Identifiers = ["n"] }]
+            }
+        };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+        summary.QueryProfile.Should().BeEquivalentTo(new
+        {
+            OperatorType = "ProduceResults@neo4j",
+            Arguments = new Dictionary<string, object> { ["planner"] = "decoded COST" },
+            Identifiers = new[] { "n" },
+            DbHits = 1L,
+            Rows = 2L,
+            PageCacheHits = 3L,
+            PageCacheMisses = 4L,
+            PageCacheHitRatio = 0.5,
+            Time = 6L,
+            Children = new[]
+            {
+                new
+                {
+                    OperatorType = "Create@neo4j",
+                    Arguments = new Dictionary<string, object>(),
+                    Identifiers = new[] { "n" },
+                    DbHits = (long?)null,
+                    Rows = (long?)null,
+                    PageCacheHits = (long?)null,
+                    PageCacheMisses = (long?)null,
+                    PageCacheHitRatio = (double?)null,
+                    Time = (long?)null,
+                    Children = Array.Empty<object>()
+                }
+            }
+        });
+    }
+
+    [Fact]
+    public void Create_TakesTheObsoleteProfileFromTheBody_ZeroingAbsentStats_AndReportingPageCacheStatsWhenPresent()
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody
+        {
+            ProfiledQueryPlan = new QueryApiPlanBody
+            {
+                OperatorType = "ProduceResults@neo4j",
+                Identifiers = ["n"],
+                DbHits = 1,
+                Records = 2,
+                PageCacheHits = 0,
+                PageCacheMisses = 0,
+                PageCacheHitRatio = 0.0,
+                Time = 6,
+                Children = [new QueryApiPlanBody { OperatorType = "Create@neo4j", Identifiers = ["n"] }]
+            }
+        };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+#pragma warning disable CS0618
+        summary.Profile.Should().BeEquivalentTo(new
+        {
+            OperatorType = "ProduceResults@neo4j",
+            Arguments = new Dictionary<string, object>(),
+            Identifiers = new[] { "n" },
+            DbHits = 1L,
+            Records = 2L,
+            HasPageCacheStats = true,
+            PageCacheHits = 0L,
+            PageCacheMisses = 0L,
+            PageCacheHitRatio = 0.0,
+            Time = 6L,
+            Children = new[]
+            {
+                new
+                {
+                    OperatorType = "Create@neo4j",
+                    Arguments = new Dictionary<string, object>(),
+                    Identifiers = new[] { "n" },
+                    DbHits = 0L,
+                    Records = 0L,
+                    HasPageCacheStats = false,
+                    PageCacheHits = 0L,
+                    PageCacheMisses = 0L,
+                    PageCacheHitRatio = 0.0,
+                    Time = 0L,
+                    Children = Array.Empty<object>()
+                }
+            }
+        });
+#pragma warning restore CS0618
+    }
+
     [Theory]
     [InlineData(new[] { "n" }, 1, "00000")]
     [InlineData(new[] { "n" }, 0, "02000")]

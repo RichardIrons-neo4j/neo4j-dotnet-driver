@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using System.Linq;
 using Neo4j.Driver.Internal.MessageHandling.Metadata;
 using Neo4j.Driver.Internal.Result;
@@ -42,6 +43,8 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
             ResultAvailableAfter = body.ResultAvailableAfter ?? -1,
             ResultConsumedAfter = body.ResultConsumedAfter ?? -1,
             Plan = body.QueryPlan is null ? null : ToPlan(body.QueryPlan),
+            Profile = body.ProfiledQueryPlan is null ? null : ToProfiledPlan(body.ProfiledQueryPlan),
+            QueryProfile = body.ProfiledQueryPlan is null ? null : ToQueryProfile(body.ProfiledQueryPlan),
             StatusAndNotifications = new GqlStatusObjectsAndNotifications(null, null, false)
         };
 
@@ -76,11 +79,52 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
 
     private IPlan ToPlan(QueryApiPlanBody plan)
     {
-        var arguments = (plan.Arguments ?? [])
-            .ToDictionary(argument => argument.Key, argument => _jsonValueDecoder.Decode(argument.Value));
-
         var children = (plan.Children ?? []).Select(ToPlan).ToList();
-        return new Plan(plan.OperatorType, arguments, plan.Identifiers ?? [], children);
+        return new Plan(plan.OperatorType, ToArguments(plan), plan.Identifiers ?? [], children);
+    }
+
+    private IQueryProfile ToQueryProfile(QueryApiPlanBody plan)
+    {
+        var children = (plan.Children ?? []).Select(ToQueryProfile).ToList();
+        return new QueryProfile(
+            plan.OperatorType,
+            ToArguments(plan),
+            plan.Identifiers ?? [],
+            children,
+            plan.DbHits,
+            plan.Records,
+            plan.PageCacheHits,
+            plan.PageCacheMisses,
+            plan.PageCacheHitRatio,
+            plan.Time);
+    }
+
+#pragma warning disable CS0618
+    private IProfiledPlan ToProfiledPlan(QueryApiPlanBody plan)
+    {
+        var children = (plan.Children ?? []).Select(ToProfiledPlan).ToList();
+        var hasPageCacheStats =
+            plan.PageCacheHits.HasValue || plan.PageCacheMisses.HasValue || plan.PageCacheHitRatio.HasValue;
+
+        return new ProfiledPlan(
+            plan.OperatorType,
+            ToArguments(plan),
+            plan.Identifiers ?? [],
+            children,
+            plan.DbHits ?? 0,
+            plan.Records ?? 0,
+            plan.PageCacheHits ?? 0,
+            plan.PageCacheMisses ?? 0,
+            plan.PageCacheHitRatio ?? 0,
+            plan.Time ?? 0,
+            hasPageCacheStats);
+    }
+#pragma warning restore CS0618
+
+    private Dictionary<string, object?> ToArguments(QueryApiPlanBody plan)
+    {
+        return (plan.Arguments ?? [])
+            .ToDictionary(argument => argument.Key, argument => _jsonValueDecoder.Decode(argument.Value));
     }
 
     private QueryType ToQueryType(string? queryType)
