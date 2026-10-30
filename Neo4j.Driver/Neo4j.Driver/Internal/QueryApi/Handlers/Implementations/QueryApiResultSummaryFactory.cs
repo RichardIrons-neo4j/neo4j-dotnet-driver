@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System.Linq;
 using Neo4j.Driver.Internal.MessageHandling.Metadata;
 using Neo4j.Driver.Internal.Result;
 
@@ -22,11 +23,13 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class QueryApiResultSummaryFactory : IResultSummaryFactory
 {
+    private readonly IJsonValueDecoder _jsonValueDecoder;
     private readonly IServerInfo _serverInfo;
 
-    public QueryApiResultSummaryFactory(IServerInfo serverInfo)
+    public QueryApiResultSummaryFactory(IServerInfo serverInfo, IJsonValueDecoder jsonValueDecoder)
     {
         _serverInfo = serverInfo;
+        _jsonValueDecoder = jsonValueDecoder;
     }
 
     public IResultSummary Create(Query query, string database, QueryApiResultBody body)
@@ -38,6 +41,7 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
             QueryType = ToQueryType(body.QueryType),
             ResultAvailableAfter = body.ResultAvailableAfter ?? -1,
             ResultConsumedAfter = body.ResultConsumedAfter ?? -1,
+            Plan = body.QueryPlan is null ? null : ToPlan(body.QueryPlan),
             StatusAndNotifications = new GqlStatusObjectsAndNotifications(null, null, false)
         };
 
@@ -68,6 +72,15 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
             counters.SystemUpdates,
             counters.ContainsSystemUpdates,
             counters.ContainsUpdates);
+    }
+
+    private IPlan ToPlan(QueryApiPlanBody plan)
+    {
+        var arguments = (plan.Arguments ?? [])
+            .ToDictionary(argument => argument.Key, argument => _jsonValueDecoder.Decode(argument.Value));
+
+        var children = (plan.Children ?? []).Select(ToPlan).ToList();
+        return new Plan(plan.OperatorType, arguments, plan.Identifiers ?? [], children);
     }
 
     private QueryType ToQueryType(string? queryType)

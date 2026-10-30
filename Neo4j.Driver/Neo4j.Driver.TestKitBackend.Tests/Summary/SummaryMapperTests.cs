@@ -264,12 +264,36 @@ public class SummaryMapperTests
         var result = _mapper.Map(summary.Object);
 
         result.Plan.Should().BeEquivalentTo(
-            new SummaryPlanResponse(
-                new Dictionary<string, object> { ["planner"] = "COST" },
-                "ProduceResults",
-                [new SummaryPlanResponse(new Dictionary<string, object>(), "NodeByLabelScan", [], ["n"])],
-                ["n"]),
+            new SummaryPlanResponse
+            {
+                Args = new Dictionary<string, object> { ["planner"] = "COST" },
+                OperatorType = "ProduceResults",
+                Children =
+                [
+                    new SummaryPlanResponse
+                    {
+                        Args = new Dictionary<string, object>(),
+                        OperatorType = "NodeByLabelScan",
+                        Children = null,
+                        Identifiers = ["n"]
+                    }
+                ],
+                Identifiers = ["n"]
+            },
             opts => opts.ComparingByMembers<SummaryPlanResponse>());
+    }
+
+    [Fact]
+    public void A_plan_without_children_omits_them_from_the_wire()
+    {
+        var summary = CreateSummaryMock();
+        summary.Setup(s => s.HasPlan).Returns(true);
+        summary.Setup(s => s.Plan).Returns(new Plan("NodeByLabelScan", new Dictionary<string, object>(), ["n"], []));
+
+        var result = _mapper.Map(summary.Object);
+        var json = JsonSerializer.Serialize(result.Plan, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        json.Should().NotContain("children");
     }
 
     [Fact]
@@ -294,18 +318,45 @@ public class SummaryMapperTests
         var result = _mapper.Map(summary.Object);
 
         result.Profile.Should().BeEquivalentTo(
-            new SummaryProfileResponse(
-                new Dictionary<string, object>(),
-                "ProduceResults",
-                [],
-                [],
-                9L,
-                0.5,
-                3L,
-                2L,
-                1L,
-                42L),
+            new SummaryProfileResponse
+            {
+                Args = new Dictionary<string, object>(),
+                OperatorType = "ProduceResults",
+                Children = null,
+                Identifiers = [],
+                Time = 9L,
+                PageCacheHitRatio = 0.5,
+                PageCacheMisses = 3L,
+                PageCacheHits = 2L,
+                Rows = 1L,
+                DbHits = 42L
+            },
             opts => opts.ComparingByMembers<SummaryProfileResponse>());
+    }
+
+    [Fact]
+    public void A_profile_without_children_omits_them_from_the_wire()
+    {
+        var profile = new QueryProfile(
+            "ProduceResults",
+            new Dictionary<string, object>(),
+            [],
+            [],
+            dbHits: 42L,
+            rows: 1L,
+            pageCacheHits: 2L,
+            pageCacheMisses: 3L,
+            pageCacheHitRatio: 0.5,
+            time: 9L);
+
+        var summary = CreateSummaryMock();
+        summary.Setup(s => s.HasProfile).Returns(true);
+        summary.Setup(s => s.QueryProfile).Returns(profile);
+
+        var result = _mapper.Map(summary.Object);
+        var json = JsonSerializer.Serialize(result.Profile, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        json.Should().NotContain("children");
     }
 
     [Fact]

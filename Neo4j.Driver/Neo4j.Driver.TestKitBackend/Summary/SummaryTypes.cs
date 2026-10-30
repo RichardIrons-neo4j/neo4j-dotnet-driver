@@ -60,23 +60,31 @@ internal record SummaryNotificationResponse
     public required SummaryPositionResponse? Position { get; init; }
 }
 
-internal record SummaryPlanResponse(
-    IDictionary<string, object> Args,
-    string OperatorType,
-    IReadOnlyList<SummaryPlanResponse> Children,
-    IReadOnlyList<string> Identifiers);
+internal record SummaryPlanResponse
+{
+    public required IDictionary<string, object> Args { get; init; }
+    public required string OperatorType { get; init; }
 
-internal record SummaryProfileResponse(
-    IDictionary<string, object> Args,
-    string OperatorType,
-    IReadOnlyList<SummaryProfileResponse> Children,
-    IReadOnlyList<string> Identifiers,
-    long? Time,
-    double? PageCacheHitRatio,
-    long? PageCacheMisses,
-    long? PageCacheHits,
-    long? Rows,
-    long? DbHits);
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public required IReadOnlyList<SummaryPlanResponse>? Children { get; init; }
+    public required IReadOnlyList<string> Identifiers { get; init; }
+}
+
+internal record SummaryProfileResponse
+{
+    public required IDictionary<string, object> Args { get; init; }
+    public required string OperatorType { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public required IReadOnlyList<SummaryProfileResponse>? Children { get; init; }
+    public required IReadOnlyList<string> Identifiers { get; init; }
+    public required long? Time { get; init; }
+    public required double? PageCacheHitRatio { get; init; }
+    public required long? PageCacheMisses { get; init; }
+    public required long? PageCacheHits { get; init; }
+    public required long? Rows { get; init; }
+    public required long? DbHits { get; init; }
+}
 
 internal record SummaryGqlStatusObjectResponse(
     string GqlStatus,

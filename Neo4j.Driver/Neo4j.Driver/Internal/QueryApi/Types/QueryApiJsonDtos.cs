@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace Neo4j.Driver.Internal.QueryApi;
@@ -45,6 +46,14 @@ internal record QueryApiCountersBody
     public int SystemUpdates { get; init; }
 }
 
+internal record QueryApiPlanBody
+{
+    public string? OperatorType { get; init; }
+    public Dictionary<string, JsonElement>? Arguments { get; init; }
+    public string[]? Identifiers { get; init; }
+    public QueryApiPlanBody[]? Children { get; init; }
+}
+
 internal record QueryApiResultBody : QueryApiResponse
 {
     public QueryApiDataBody? Data { get; init; }
@@ -53,4 +62,5 @@ internal record QueryApiResultBody : QueryApiResponse
     public long? ResultAvailableAfter { get; init; }
     public long? ResultConsumedAfter { get; init; }
     public string? QueryType { get; init; }
+    public QueryApiPlanBody? QueryPlan { get; init; }
 }

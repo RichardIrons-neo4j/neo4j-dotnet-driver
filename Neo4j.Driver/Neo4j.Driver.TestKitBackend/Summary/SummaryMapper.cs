@@ -129,26 +129,30 @@ internal class SummaryMapper : ISummaryMapper
 
     private SummaryPlanResponse MapPlan(IPlan plan)
     {
-        return new SummaryPlanResponse(
-            plan.Arguments,
-            plan.OperatorType,
-            plan.Children.Select(MapPlan).ToList(),
-            plan.Identifiers.ToList());
+        return new SummaryPlanResponse
+        {
+            Args = plan.Arguments,
+            OperatorType = plan.OperatorType,
+            Children = plan.Children.Count == 0 ? null : plan.Children.Select(MapPlan).ToList(),
+            Identifiers = plan.Identifiers.ToList()
+        };
     }
 
     private SummaryProfileResponse MapProfile(IQueryProfile profile)
     {
-        return new SummaryProfileResponse(
-            profile.Arguments,
-            profile.OperatorType,
-            profile.Children.Select(MapProfile).ToList(),
-            profile.Identifiers.ToList(),
-            profile.Time,
-            profile.PageCacheHitRatio,
-            profile.PageCacheMisses,
-            profile.PageCacheHits,
-            profile.Rows,
-            profile.DbHits);
+        return new SummaryProfileResponse
+        {
+            Args = profile.Arguments,
+            OperatorType = profile.OperatorType,
+            Children = profile.Children.Count == 0 ? null : profile.Children.Select(MapProfile).ToList(),
+            Identifiers = profile.Identifiers.ToList(),
+            Time = profile.Time,
+            PageCacheHitRatio = profile.PageCacheHitRatio,
+            PageCacheMisses = profile.PageCacheMisses,
+            PageCacheHits = profile.PageCacheHits,
+            Rows = profile.Rows,
+            DbHits = profile.DbHits
+        };
     }
 
     private SummaryGqlStatusObjectResponse MapGqlStatusObject(GqlStatusObject gqlStatusObject)

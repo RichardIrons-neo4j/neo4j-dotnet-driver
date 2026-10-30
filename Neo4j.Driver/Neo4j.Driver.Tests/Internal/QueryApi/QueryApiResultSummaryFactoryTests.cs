@@ -16,9 +16,11 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using FluentAssertions;
+using Moq;
 using Moq.AutoMock;
 using Neo4j.Driver.Internal.QueryApi;
 using Neo4j.Driver.Internal.Result;
@@ -141,6 +143,59 @@ public class QueryApiResultSummaryFactoryTests
         var summary = subject.Create(AnyQuery, "neo4j", body);
 
         summary.QueryType.Should().Be(expected);
+    }
+
+    [Fact]
+    public void Create_TakesThePlanFromTheBody_DecodingEachArgument()
+    {
+        _autoMocker.GetMock<IJsonValueDecoder>()
+            .Setup(x => x.Decode(It.IsAny<JsonElement>()))
+            .Returns<JsonElement>(element => $"decoded {element.GetString()}");
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody
+        {
+            QueryPlan = new QueryApiPlanBody
+            {
+                OperatorType = "ProduceResults@neo4j",
+                Arguments = new Dictionary<string, JsonElement>
+                {
+                    ["planner"] = JsonSerializer.SerializeToElement("COST")
+                },
+                Identifiers = ["n"],
+                Children =
+                [
+                    new QueryApiPlanBody
+                    {
+                        OperatorType = "Create@neo4j",
+                        Arguments = new Dictionary<string, JsonElement>
+                        {
+                            ["Details"] = JsonSerializer.SerializeToElement("(n)")
+                        },
+                        Identifiers = ["n"],
+                        Children = []
+                    }
+                ]
+            }
+        };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+        summary.Plan.Should().BeEquivalentTo(new
+        {
+            OperatorType = "ProduceResults@neo4j",
+            Arguments = new Dictionary<string, object> { ["planner"] = "decoded COST" },
+            Identifiers = new[] { "n" },
+            Children = new[]
+            {
+                new
+                {
+                    OperatorType = "Create@neo4j",
+                    Arguments = new Dictionary<string, object> { ["Details"] = "decoded (n)" },
+                    Identifiers = new[] { "n" },
+                    Children = Array.Empty<object>()
+                }
+            }
+        });
     }
 
     [Theory]
