@@ -60,6 +60,23 @@ internal record QueryApiPlanBody
     public long? Time { get; init; }
 }
 
+internal record QueryApiPositionBody
+{
+    public int Offset { get; init; }
+    public int Line { get; init; }
+    public int Column { get; init; }
+}
+
+internal record QueryApiNotificationBody
+{
+    public string? Code { get; init; }
+    public string? Title { get; init; }
+    public string? Description { get; init; }
+    public string? Severity { get; init; }
+    public string? Category { get; init; }
+    public QueryApiPositionBody? Position { get; init; }
+}
+
 internal record QueryApiResultBody : QueryApiResponse
 {
     public QueryApiDataBody? Data { get; init; }
@@ -70,4 +87,5 @@ internal record QueryApiResultBody : QueryApiResponse
     public string? QueryType { get; init; }
     public QueryApiPlanBody? QueryPlan { get; init; }
     public QueryApiPlanBody? ProfiledQueryPlan { get; init; }
+    public QueryApiNotificationBody[]? Notifications { get; init; }
 }

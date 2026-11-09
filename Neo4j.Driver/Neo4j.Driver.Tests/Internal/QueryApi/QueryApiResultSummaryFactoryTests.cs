@@ -33,6 +33,25 @@ public class QueryApiResultSummaryFactoryTests
 {
     private static readonly Query AnyQuery = new("RETURN 1");
 
+    private static readonly QueryApiNotificationBody InformationWithPosition = new()
+    {
+        Code = "Neo.ClientNotification.Statement.UnboundedVariableLengthPattern",
+        Title = "The provided pattern is unbounded.",
+        Description = "Using shortest path with an unbounded pattern will likely be slow.",
+        Severity = "INFORMATION",
+        Category = "PERFORMANCE",
+        Position = new QueryApiPositionBody { Offset = 21, Line = 1, Column = 22 }
+    };
+
+    private static readonly QueryApiNotificationBody WarningWithoutPosition = new()
+    {
+        Code = "Neo.ClientNotification.Statement.JoinHintUnfulfillableWarning",
+        Title = "The database was unable to plan a hinted join.",
+        Description = "The hinted join was not planned.",
+        Severity = "WARNING",
+        Category = "HINT"
+    };
+
     private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiResultSummaryFactory>();
 
     private static QueryApiResultBody BodyWith(string[] fields, int rowCount)
@@ -311,6 +330,128 @@ public class QueryApiResultSummaryFactoryTests
             }
         });
 #pragma warning restore CS0618
+    }
+
+    [Fact]
+    public void Create_TakesTheNotificationsFromTheBody()
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody { Notifications = [InformationWithPosition, WarningWithoutPosition] };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+#pragma warning disable CS0618
+        summary.Notifications.Should().BeEquivalentTo(
+            new[]
+            {
+                new
+                {
+                    Code = "Neo.ClientNotification.Statement.UnboundedVariableLengthPattern",
+                    Title = "The provided pattern is unbounded.",
+                    Description = "Using shortest path with an unbounded pattern will likely be slow.",
+                    RawSeverityLevel = "INFORMATION",
+                    RawCategory = "PERFORMANCE",
+                    Position = (InputPosition?)new InputPosition(21, 1, 22)
+                },
+                new
+                {
+                    Code = "Neo.ClientNotification.Statement.JoinHintUnfulfillableWarning",
+                    Title = "The database was unable to plan a hinted join.",
+                    Description = "The hinted join was not planned.",
+                    RawSeverityLevel = "WARNING",
+                    RawCategory = "HINT",
+                    Position = (InputPosition?)null
+                }
+            },
+            options => options.WithStrictOrdering());
+#pragma warning restore CS0618
+    }
+
+    [Fact]
+    public void Create_FillsAbsentNotificationTextWithEmptyStrings()
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = new QueryApiResultBody
+        {
+            Notifications = [new QueryApiNotificationBody { Code = "Neo.ClientNotification.Foo.Bar" }]
+        };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+#pragma warning disable CS0618
+        summary.Notifications.Should().ContainSingle().Which.Should().BeEquivalentTo(new
+        {
+            Code = "Neo.ClientNotification.Foo.Bar",
+            Title = "",
+            Description = "",
+            RawSeverityLevel = "",
+            RawCategory = (string?)null,
+            Position = (InputPosition?)null
+        });
+#pragma warning restore CS0618
+    }
+
+    [Fact]
+    public void Create_ReportsEachNotificationAsAGqlStatus_InPrecedenceOrderAroundTheResultStatus()
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var body = BodyWith(["n"], 1) with { Notifications = [InformationWithPosition, WarningWithoutPosition] };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+        summary.GqlStatusObjects.Select(status => status.GqlStatus).Should().Equal("01N42", "00000", "03N42");
+        summary.GqlStatusObjects[0].Should().BeEquivalentTo(new
+        {
+            StatusDescription = "The hinted join was not planned.",
+            Position = (InputPosition?)null,
+            RawClassification = "HINT",
+            RawSeverity = "WARNING",
+            DiagnosticRecord = new Dictionary<string, object>
+            {
+                ["CURRENT_SCHEMA"] = "/",
+                ["OPERATION"] = "",
+                ["OPERATION_CODE"] = "0",
+                ["_severity"] = "WARNING",
+                ["_classification"] = "HINT"
+            },
+            Title = "The database was unable to plan a hinted join.",
+            IsNotification = true
+        });
+        summary.GqlStatusObjects[2].Should().BeEquivalentTo(new
+        {
+            StatusDescription = "Using shortest path with an unbounded pattern will likely be slow.",
+            Position = (InputPosition?)new InputPosition(21, 1, 22),
+            RawClassification = "PERFORMANCE",
+            RawSeverity = "INFORMATION",
+            DiagnosticRecord = new Dictionary<string, object>
+            {
+                ["CURRENT_SCHEMA"] = "/",
+                ["OPERATION"] = "",
+                ["OPERATION_CODE"] = "0",
+                ["_severity"] = "INFORMATION",
+                ["_classification"] = "PERFORMANCE",
+                ["_position"] = new Dictionary<string, object> { ["offset"] = 21L, ["line"] = 1L, ["column"] = 22L }
+            },
+            Title = "The provided pattern is unbounded.",
+            IsNotification = true
+        });
+    }
+
+    [Theory]
+    [InlineData("WARNING", "warn: unknown warning")]
+    [InlineData("INFORMATION", "info: unknown notification")]
+    public void Create_GivesANotificationsStatusTheDefaultDescription_WhenTheNotificationHasNone(
+        string severity,
+        string expectedDescription)
+    {
+        var subject = _autoMocker.CreateInstance<QueryApiResultSummaryFactory>();
+        var notification = new QueryApiNotificationBody { Code = "Neo.ClientNotification.Foo.Bar", Severity = severity };
+        var body = new QueryApiResultBody { Notifications = [notification] };
+
+        var summary = subject.Create(AnyQuery, "neo4j", body);
+
+        summary.GqlStatusObjects.OfType<GqlStatusObject>().Should().ContainSingle(status => status.IsNotification)
+            .Which.StatusDescription.Should().Be(expectedDescription);
     }
 
     [Theory]

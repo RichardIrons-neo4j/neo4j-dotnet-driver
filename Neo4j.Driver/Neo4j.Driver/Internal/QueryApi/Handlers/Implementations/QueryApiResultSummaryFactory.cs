@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Neo4j.Driver.Internal.MessageHandling.Metadata;
@@ -45,7 +46,7 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
             Plan = body.QueryPlan is null ? null : ToPlan(body.QueryPlan),
             Profile = body.ProfiledQueryPlan is null ? null : ToProfiledPlan(body.ProfiledQueryPlan),
             QueryProfile = body.ProfiledQueryPlan is null ? null : ToQueryProfile(body.ProfiledQueryPlan),
-            StatusAndNotifications = new GqlStatusObjectsAndNotifications(null, null, false)
+            StatusAndNotifications = ToStatusesAndNotifications(body.Notifications)
         };
 
         var hadRecords = body.Data?.Values?.Length > 0;
@@ -138,5 +139,76 @@ internal class QueryApiResultSummaryFactory : IResultSummaryFactory
             "s" => QueryType.SchemaWrite,
             _ => throw new ProtocolException($"The server sent an unknown query type '{queryType}'.")
         };
+    }
+
+    private GqlStatusObjectsAndNotifications ToStatusesAndNotifications(QueryApiNotificationBody[]? notifications)
+    {
+        var mappedNotifications = notifications?.Select(ToNotification).ToList();
+        var statuses = notifications?.Select(ToGqlStatus).ToList();
+        return new GqlStatusObjectsAndNotifications(mappedNotifications, statuses, false);
+    }
+
+    private Notification ToNotification(QueryApiNotificationBody notification)
+    {
+        return new Notification(
+            notification.Code ?? "",
+            notification.Title ?? "",
+            notification.Description ?? "",
+            ToInputPosition(notification.Position),
+            notification.Severity ?? "",
+            notification.Category);
+    }
+
+    private IGqlStatusObject ToGqlStatus(QueryApiNotificationBody notification)
+    {
+        var isWarning = string.Equals(notification.Severity, "WARNING", StringComparison.OrdinalIgnoreCase);
+        var defaultDescription = isWarning ? "warn: unknown warning" : "info: unknown notification";
+
+        return new GqlStatusObject(
+            isWarning ? "01N42" : "03N42",
+            notification.Description ?? defaultDescription,
+            ToInputPosition(notification.Position),
+            notification.Category,
+            notification.Severity,
+            ToDiagnosticRecord(notification),
+            notification.Title,
+            !string.IsNullOrEmpty(notification.Code));
+    }
+
+    private Dictionary<string, object> ToDiagnosticRecord(QueryApiNotificationBody notification)
+    {
+        var diagnosticRecord = new Dictionary<string, object>
+        {
+            ["CURRENT_SCHEMA"] = "/",
+            ["OPERATION"] = "",
+            ["OPERATION_CODE"] = "0"
+        };
+
+        if (notification.Position is not null)
+        {
+            diagnosticRecord["_position"] = new Dictionary<string, object>
+            {
+                ["offset"] = (long)notification.Position.Offset,
+                ["line"] = (long)notification.Position.Line,
+                ["column"] = (long)notification.Position.Column
+            };
+        }
+
+        if (notification.Severity is not null)
+        {
+            diagnosticRecord["_severity"] = notification.Severity;
+        }
+
+        if (notification.Category is not null)
+        {
+            diagnosticRecord["_classification"] = notification.Category;
+        }
+
+        return diagnosticRecord;
+    }
+
+    private InputPosition? ToInputPosition(QueryApiPositionBody? position)
+    {
+        return position is null ? null : new InputPosition(position.Offset, position.Line, position.Column);
     }
 }
