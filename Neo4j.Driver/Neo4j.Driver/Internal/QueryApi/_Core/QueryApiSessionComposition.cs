@@ -37,14 +37,11 @@ internal partial class QueryApiSessionComposition : IQueryApiTransactionScope
             .Hint(Hint.Resolve, "Off")
             .DependsOn(QueryApiCommonBindings.Name)
             .Arg<SessionConfig>("sessionConfig")
-            .Arg<IAuthTokenManager>("authTokenManager")
             .Arg<ILoggingContextTracker>("sessionTracker")
-            .Arg<ILoggerFactory>("loggerFactory")
-            .Arg<IQueryApiHttpTransport>("httpTransport")
-            .Arg<IServerInfo>("serverInfo")
-            .Arg<IServerDiscovery>("serverDiscovery")
+            .Arg<IQueryApiSharedDriverServices>("driver")
 
             .Bind<DriverContext>().To((SessionConfig c) => c.DriverContext)
+            .Bind<IAuthTokenManager>().To((DriverContext c) => c.AuthTokenManager)
             .Bind<ISessionContext>().As(Singleton).To<QueryApiSessionContext>()
             .Bind<IBookmarkTracker>().As(Singleton).To<BookmarkTracker>()
 

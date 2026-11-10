@@ -22,29 +22,20 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class QueryApiSessionFactory : IQueryApiSessionFactory
 {
+    private readonly IQueryApiSharedDriverServices _driver;
     private readonly ILoggingContextTracker _driverTracker;
-    private readonly IQueryApiHttpTransport _httpTransport;
     private readonly ILogger _logger;
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly IServerDiscovery _serverDiscovery;
-    private readonly IServerInfo _serverInfo;
     private readonly ISessionIdGenerator _sessionIdGenerator;
 
     public QueryApiSessionFactory(
         ISessionIdGenerator sessionIdGenerator,
         ILoggingContextTracker driverTracker,
-        ILoggerFactory loggerFactory,
-        IQueryApiHttpTransport httpTransport,
-        IServerInfo serverInfo,
-        IServerDiscovery serverDiscovery,
+        IQueryApiSharedDriverServices driver,
         ILogger logger)
     {
         _sessionIdGenerator = sessionIdGenerator;
         _driverTracker = driverTracker;
-        _loggerFactory = loggerFactory;
-        _httpTransport = httpTransport;
-        _serverInfo = serverInfo;
-        _serverDiscovery = serverDiscovery;
+        _driver = driver;
         _logger = logger;
     }
 
@@ -56,14 +47,7 @@ internal class QueryApiSessionFactory : IQueryApiSessionFactory
         var sessionTracker = _driverTracker.CreateChild();
         sessionTracker.Add("session", sessionId);
 
-        var composition = new QueryApiSessionComposition(
-            config,
-            config.DriverContext.AuthTokenManager,
-            sessionTracker,
-            _loggerFactory,
-            _httpTransport,
-            _serverInfo,
-            _serverDiscovery);
+        var composition = new QueryApiSessionComposition(config, sessionTracker, _driver);
 
         var session = composition.Session();
         session.Disposed += GetSessionDisposedHandler(composition);

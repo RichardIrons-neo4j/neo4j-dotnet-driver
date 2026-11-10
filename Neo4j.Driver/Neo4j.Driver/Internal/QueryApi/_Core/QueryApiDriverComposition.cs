@@ -24,7 +24,15 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal interface IQueryApiDriverComposition : IAsyncDisposable;
 
-internal partial class QueryApiDriverComposition : IQueryApiDriverComposition
+internal interface IQueryApiSharedDriverServices
+{
+    [Export] ILoggerFactory LoggerFactory();
+    [Export] IQueryApiHttpTransport HttpTransport();
+    [Export] IServerInfo ServerInfo();
+    [Export] IServerDiscovery ServerDiscovery();
+}
+
+internal partial class QueryApiDriverComposition : IQueryApiDriverComposition, IQueryApiSharedDriverServices
 {
     [SuppressMessage("ReSharper", "UnusedMember.Local", Justification = "Used to setup DI")]
     private static void Setup()
@@ -35,6 +43,7 @@ internal partial class QueryApiDriverComposition : IQueryApiDriverComposition
             .Arg<DriverContext>("driverContext")
 
             .Bind<IQueryApiDriverComposition>().To((QueryApiDriverComposition c) => c)
+            .Bind<IQueryApiSharedDriverServices>().To((QueryApiDriverComposition c) => c)
 
             .Bind<ILoggerFactory>().As(Singleton).To((DriverContext c) => new LoggerFactory(c.Neo4JLogger))
 
@@ -49,6 +58,10 @@ internal partial class QueryApiDriverComposition : IQueryApiDriverComposition
             .Bind<ISessionIdGenerator>().To<SessionIdGenerator>()
 
             .Bind<IQueryApiProtocolAdapter>().To<QueryApiProtocolAdapter>()
-            .Root<IQueryApiProtocolAdapter>("ProtocolAdapter", kind: RootKinds.Public | RootKinds.Method);
+            .Root<IQueryApiProtocolAdapter>("ProtocolAdapter", kind: RootKinds.Public | RootKinds.Method)
+            .Root<ILoggerFactory>("LoggerFactory", kind: RootKinds.Public | RootKinds.Method)
+            .Root<IQueryApiHttpTransport>("HttpTransport", kind: RootKinds.Public | RootKinds.Method)
+            .Root<IServerInfo>("ServerInfo", kind: RootKinds.Public | RootKinds.Method)
+            .Root<IServerDiscovery>("ServerDiscovery", kind: RootKinds.Public | RootKinds.Method);
     }
 }

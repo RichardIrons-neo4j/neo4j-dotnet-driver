@@ -41,9 +41,14 @@ public class QueryApiSessionFactoryTests
             .Setup(g => g.Generate())
             .Returns("session-1");
 
-        _autoMocker.GetMock<ILoggerFactory>()
+        var loggerFactory = new Mock<ILoggerFactory>();
+        loggerFactory
             .Setup(f => f.GetLoggerForType(It.IsAny<Type>(), It.IsAny<ILoggingContextTracker>()))
             .Returns(new TestLogger(typeof(QueryApiSession)));
+
+        _autoMocker.GetMock<IQueryApiSharedDriverServices>()
+            .Setup(d => d.LoggerFactory())
+            .Returns(loggerFactory.Object);
     }
 
     private static SessionConfig SessionConfig()
