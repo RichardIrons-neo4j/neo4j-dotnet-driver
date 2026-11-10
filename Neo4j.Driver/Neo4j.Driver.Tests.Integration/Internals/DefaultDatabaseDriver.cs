@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Neo4j.Driver.Internal;
 using Neo4j.Driver.Internal.Routing;
+using Neo4j.Driver.Preview.Encryption;
 
 namespace Neo4j.Driver.IntegrationTests.Internals;
 
@@ -46,6 +47,8 @@ internal class DefaultDatabaseDriver : IInternalDriver
     {
         return _driver.AsyncSession(WithDefaultDatabase(action));
     }
+
+    public IPropertyEncryption PropertyEncryption() => _driver.PropertyEncryption();
 
     public IInternalAsyncSession Session(Action<SessionConfigBuilder> action, bool reactive)
     {

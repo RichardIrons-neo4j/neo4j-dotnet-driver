@@ -263,7 +263,8 @@ public static class GraphDatabase
     private static Internal.Driver GetQueryApiDriver(DriverContext driverContext)
     {
         var adapter = new QueryApiDriverComposition(driverContext).ProtocolAdapter();
-        return new Internal.Driver(driverContext.InitialUri, adapter, driverContext);
+        var composition = new DriverComposition(driverContext);
+        return new Internal.Driver(driverContext.InitialUri, adapter, driverContext, composition);
     }
 
     private static Internal.Driver GetBoltDriver(DriverContext driverContext)
@@ -271,7 +272,8 @@ public static class GraphDatabase
         Neo4jUri.EnsureNoRoutingContextOnBolt(driverContext.InitialUri);
         var parsedUri = Neo4jUri.ParseBoltUri(driverContext.InitialUri, Neo4jUri.DefaultBoltPort);
         var adapter =  new BoltProtocolAdapter(parsedUri, driverContext);
-        return new Internal.Driver(parsedUri, adapter, driverContext);
+        var composition = new DriverComposition(driverContext);
+        return new Internal.Driver(parsedUri, adapter, driverContext, composition);
     }
     
 }

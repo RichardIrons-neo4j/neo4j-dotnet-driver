@@ -22,13 +22,13 @@ internal class GqlErrorDefaults : IGqlErrorDefaults
 {
     private const string UnknownNeo4JCode = "Neo.DatabaseError.General.UnknownError";
     private const string UnknownMessage = "An unknown error occurred";
-    private const string UnknownGqlStatus = "50N42";
-    private const string UnknownGqlStatusDescription = "error: general processing exception - unexpected error.";
+    public const string UnknownGqlStatus = "50N42";
+    public const string UnknownGqlStatusDescription = "error: general processing exception - unexpected error.";
 
     private const string ClientError = "CLIENT_ERROR";
     private const string DatabaseError = "DATABASE_ERROR";
     private const string TransientError = "TRANSIENT_ERROR";
-    private const string UnknownError = "UNKNOWN";
+    public const string UnknownError = "UNKNOWN";
 
     public void Fill(FailureMessage message)
     {
@@ -61,7 +61,7 @@ internal class GqlErrorDefaults : IGqlErrorDefaults
         }
     }
 
-    private static Dictionary<string, object> NewDefaultDiagnosticRecord()
+    public static Dictionary<string, object> NewDefaultDiagnosticRecord()
     {
         return new Dictionary<string, object>
         {

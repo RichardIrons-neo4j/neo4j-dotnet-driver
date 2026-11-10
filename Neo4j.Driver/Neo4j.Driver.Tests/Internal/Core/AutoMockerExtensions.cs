@@ -22,10 +22,13 @@ namespace Neo4j.Driver.Tests.Internal.Core;
 
 internal static class AutoMockerExtensions
 {
-    public static AutoMocker ForTesting<T>()
+    extension(AutoMocker)
     {
-        var autoMocker = new AutoMocker();
-        autoMocker.Use<ILogger>(new TestLogger(typeof(T)));
-        return autoMocker;
+        public static AutoMocker ForTesting<TSubject>()
+        {
+            var autoMocker = new AutoMocker();
+            autoMocker.Use<ILogger>(new TestLogger(typeof(TSubject)));
+            return autoMocker;
+        }
     }
 }
