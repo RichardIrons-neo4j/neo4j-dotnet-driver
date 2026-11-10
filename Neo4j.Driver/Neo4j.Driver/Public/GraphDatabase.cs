@@ -262,7 +262,7 @@ public static class GraphDatabase
 
     private static Internal.Driver GetQueryApiDriver(DriverContext driverContext)
     {
-        var adapter = new QueryApiDriverComposition(driverContext).ProtocolAdapter();
+        var adapter = new QueryApiDriverComposition(driverContext);
         var composition = new DriverComposition(driverContext);
         return new Internal.Driver(driverContext.InitialUri, adapter, driverContext, composition);
     }

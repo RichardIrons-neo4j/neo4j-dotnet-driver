@@ -15,14 +15,12 @@
 
 #nullable enable
 
-using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using Pure.DI;
 using static Pure.DI.Lifetime;
 
 namespace Neo4j.Driver.Internal.QueryApi;
-
-internal interface IQueryApiDriverComposition : IAsyncDisposable;
 
 internal interface IQueryApiSharedDriverServices
 {
@@ -32,8 +30,23 @@ internal interface IQueryApiSharedDriverServices
     [Export] IServerDiscovery ServerDiscovery();
 }
 
-internal partial class QueryApiDriverComposition : IQueryApiDriverComposition, IQueryApiSharedDriverServices
+internal partial class QueryApiDriverComposition : IProtocolAdapter, IQueryApiSharedDriverServices
 {
+    public IInternalAsyncSession CreateSession(SessionConfig config, bool reactive, bool telemetryEnabled)
+    {
+        return ProtocolAdapter().CreateSession(config, reactive, telemetryEnabled);
+    }
+
+    public Task<bool> SupportsMultiDbAsync()
+    {
+        return ProtocolAdapter().SupportsMultiDbAsync();
+    }
+
+    public Task<IServerInfo> VerifyConnectivityAndGetInfoAsync()
+    {
+        return ProtocolAdapter().VerifyConnectivityAndGetInfoAsync();
+    }
+
     [SuppressMessage("ReSharper", "UnusedMember.Local", Justification = "Used to setup DI")]
     private static void Setup()
     {
@@ -42,7 +55,6 @@ internal partial class QueryApiDriverComposition : IQueryApiDriverComposition, I
             .DependsOn(QueryApiCommonBindings.Name)
             .Arg<DriverContext>("driverContext")
 
-            .Bind<IQueryApiDriverComposition>().To((QueryApiDriverComposition c) => c)
             .Bind<IQueryApiSharedDriverServices>().To((QueryApiDriverComposition c) => c)
 
             .Bind<ILoggerFactory>().As(Singleton).To((DriverContext c) => new LoggerFactory(c.Neo4JLogger))
@@ -57,8 +69,8 @@ internal partial class QueryApiDriverComposition : IQueryApiDriverComposition, I
             .Bind<IQueryApiSessionFactory>().To<QueryApiSessionFactory>()
             .Bind<ISessionIdGenerator>().To<SessionIdGenerator>()
 
-            .Bind<IQueryApiProtocolAdapter>().To<QueryApiProtocolAdapter>()
-            .Root<IQueryApiProtocolAdapter>("ProtocolAdapter", kind: RootKinds.Public | RootKinds.Method)
+            .Bind<IQueryApiProtocolAdapter>().As(Singleton).To<QueryApiProtocolAdapter>()
+            .Root<IQueryApiProtocolAdapter>("ProtocolAdapter", kind: RootKinds.Private | RootKinds.Method)
             .Root<ILoggerFactory>("LoggerFactory", kind: RootKinds.Public | RootKinds.Method)
             .Root<IQueryApiHttpTransport>("HttpTransport", kind: RootKinds.Public | RootKinds.Method)
             .Root<IServerInfo>("ServerInfo", kind: RootKinds.Public | RootKinds.Method)

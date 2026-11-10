@@ -22,23 +22,18 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class QueryApiProtocolAdapter : IQueryApiProtocolAdapter
 {
-    private readonly IQueryApiDriverComposition _composition;
     private readonly IConnectivityVerifier _connectivityVerifier;
     private readonly IQueryApiSessionFactory _sessionFactory;
 
     public QueryApiProtocolAdapter(
         IConnectivityVerifier connectivityVerifier,
-        IQueryApiSessionFactory sessionFactory,
-        IQueryApiDriverComposition composition)
+        IQueryApiSessionFactory sessionFactory)
     {
         _connectivityVerifier = connectivityVerifier ??
             throw new ArgumentNullException(nameof(connectivityVerifier));
 
         _sessionFactory = sessionFactory ??
             throw new ArgumentNullException(nameof(sessionFactory));
-
-        _composition = composition ??
-            throw new ArgumentNullException(nameof(composition));
     }
 
     public IInternalAsyncSession CreateSession(SessionConfig config, bool reactive, bool telemetryEnabled)
@@ -53,10 +48,5 @@ internal class QueryApiProtocolAdapter : IQueryApiProtocolAdapter
     public Task<IServerInfo> VerifyConnectivityAndGetInfoAsync()
     {
         return _connectivityVerifier.VerifyAsync();
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        return _composition.DisposeAsync();
     }
 }

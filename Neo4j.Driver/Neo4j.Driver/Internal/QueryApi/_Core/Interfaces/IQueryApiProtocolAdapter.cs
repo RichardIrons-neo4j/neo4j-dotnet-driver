@@ -13,9 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Threading.Tasks;
+
 namespace Neo4j.Driver.Internal.QueryApi;
 
-internal interface IQueryApiProtocolAdapter : IProtocolAdapter
+internal interface IQueryApiProtocolAdapter
 {
-    
+    IInternalAsyncSession CreateSession(SessionConfig config, bool reactive, bool telemetryEnabled);
+
+    Task<bool> SupportsMultiDbAsync();
+
+    Task<IServerInfo> VerifyConnectivityAndGetInfoAsync();
 }

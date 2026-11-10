@@ -28,39 +28,23 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 public class QueryApiProtocolAdapterTests
 {
     private readonly Mock<IConnectivityVerifier> _connectivityVerifier = new();
-    private readonly Mock<IQueryApiDriverComposition> _composition = new();
     private readonly Mock<IQueryApiSessionFactory> _sessionFactory = new();
 
     private QueryApiProtocolAdapter CreateAdapter() =>
-        new(_connectivityVerifier.Object, _sessionFactory.Object, _composition.Object);
+        new(_connectivityVerifier.Object, _sessionFactory.Object);
 
     [Fact]
     public void Constructor_NullConnectivityVerifier_Throws()
     {
-        var act = () => new QueryApiProtocolAdapter(null!, _sessionFactory.Object, _composition.Object);
+        var act = () => new QueryApiProtocolAdapter(null!, _sessionFactory.Object);
         act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("connectivityVerifier");
     }
 
     [Fact]
     public void Constructor_NullSessionFactory_Throws()
     {
-        var act = () => new QueryApiProtocolAdapter(_connectivityVerifier.Object, null!, _composition.Object);
+        var act = () => new QueryApiProtocolAdapter(_connectivityVerifier.Object, null!);
         act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("sessionFactory");
-    }
-
-    [Fact]
-    public void Constructor_NullComposition_Throws()
-    {
-        var act = () => new QueryApiProtocolAdapter(_connectivityVerifier.Object, _sessionFactory.Object, null!);
-        act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("composition");
-    }
-
-    [Fact]
-    public async Task DisposeAsync_DisposesComposition()
-    {
-        await CreateAdapter().DisposeAsync();
-
-        _composition.Verify(c => c.DisposeAsync(), Times.Once);
     }
 
     [Fact]
