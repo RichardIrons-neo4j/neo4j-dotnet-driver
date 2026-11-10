@@ -28,7 +28,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiSessionFactoryTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiSessionFactory>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiSessionFactory>();
     private readonly LoggingContextTracker _sessionTracker = new();
 
     public QueryApiSessionFactoryTests()

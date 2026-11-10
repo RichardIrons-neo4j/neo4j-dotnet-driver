@@ -30,7 +30,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiSessionTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiSession>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiSession>();
 
     public QueryApiSessionTests()
     {

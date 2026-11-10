@@ -36,7 +36,7 @@ public class TransactionCommitterTests
 {
     private const string TxId = "tx-1";
 
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<TransactionCommitter>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<TransactionCommitter>();
 
     public TransactionCommitterTests()
     {

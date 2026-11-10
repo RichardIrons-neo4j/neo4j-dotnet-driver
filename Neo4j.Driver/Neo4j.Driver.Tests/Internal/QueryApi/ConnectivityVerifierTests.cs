@@ -40,7 +40,7 @@ public class ConnectivityVerifierTests
 {
     private static readonly Uri BaseUri = new("https://neo4j.example.com:7474/");
 
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<ConnectivityVerifier>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<ConnectivityVerifier>();
 
     public ConnectivityVerifierTests()
     {

@@ -34,7 +34,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 /// </summary>
 public class QueryApiSessionContextTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiSessionContext>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiSessionContext>();
 
     private QueryApiSessionContext SessionContextFor(string? database)
     {

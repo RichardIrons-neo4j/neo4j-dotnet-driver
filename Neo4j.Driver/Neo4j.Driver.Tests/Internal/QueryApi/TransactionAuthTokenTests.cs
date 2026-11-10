@@ -34,7 +34,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 /// </summary>
 public class TransactionAuthTokenTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<TransactionBeginner>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<TransactionBeginner>();
 
     public TransactionAuthTokenTests()
     {

@@ -32,7 +32,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class AutoCommitRunnerTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<AutoCommitRunner>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<AutoCommitRunner>();
     private readonly BookmarkTracker _bookmarkTracker = new(SessionConfig.Builder.Build());
 
     public AutoCommitRunnerTests()

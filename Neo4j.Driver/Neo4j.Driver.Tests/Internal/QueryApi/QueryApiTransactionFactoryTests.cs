@@ -30,7 +30,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiTransactionFactoryTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiTransaction>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiTransaction>();
     private readonly Mock<IQueryApiTransactionScope> _transactionScope = new();
     private readonly QueryApiTransaction _transaction;
     private readonly TransactionOptions _options = new(AccessMode.Read);

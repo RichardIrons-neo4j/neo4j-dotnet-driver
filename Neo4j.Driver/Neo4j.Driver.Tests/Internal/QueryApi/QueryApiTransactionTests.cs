@@ -33,7 +33,7 @@ public class QueryApiTransactionTests
 {
     private const string TxId = "tx-1";
 
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiTransaction>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiTransaction>();
     private readonly ClientException _serverFailure = new("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
 
     public QueryApiTransactionTests()

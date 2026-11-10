@@ -29,7 +29,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiPrimitiveCodecTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiPrimitiveCodec>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiPrimitiveCodec>();
 
     private QueryApiPrimitiveCodec Subject() => _autoMocker.CreateInstance<QueryApiPrimitiveCodec>();
 

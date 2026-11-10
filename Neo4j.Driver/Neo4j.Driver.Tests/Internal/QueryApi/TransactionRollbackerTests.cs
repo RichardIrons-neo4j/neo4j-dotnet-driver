@@ -35,7 +35,7 @@ public class TransactionRollbackerTests
 {
     private const string TxId = "tx-1";
 
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<TransactionRollbacker>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<TransactionRollbacker>();
 
     public TransactionRollbackerTests()
     {

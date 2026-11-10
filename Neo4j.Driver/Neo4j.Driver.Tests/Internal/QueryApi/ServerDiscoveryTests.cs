@@ -30,7 +30,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class ServerDiscoveryTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<ServerDiscovery>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<ServerDiscovery>();
 
     private Mock<IConnectivityVerifier> Verifier => _autoMocker.GetMock<IConnectivityVerifier>();
 

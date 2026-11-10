@@ -29,7 +29,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiFailureReaderTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiFailureReader>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiFailureReader>();
 
     public QueryApiFailureReaderTests()
     {

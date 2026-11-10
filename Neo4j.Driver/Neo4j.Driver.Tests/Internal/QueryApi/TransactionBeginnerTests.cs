@@ -37,7 +37,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 /// </summary>
 public class TransactionBeginnerTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<TransactionBeginner>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<TransactionBeginner>();
     private readonly BookmarkTracker _bookmarkTracker = new(SessionConfig.Builder.Build());
     private readonly TransactionOptions _writeOptions = new(AccessMode.Write);
     private readonly IAuthToken _beginToken = AuthTokens.Bearer("begin-token");

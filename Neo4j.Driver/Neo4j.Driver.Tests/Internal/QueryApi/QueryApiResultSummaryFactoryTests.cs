@@ -52,7 +52,7 @@ public class QueryApiResultSummaryFactoryTests
         Category = "HINT"
     };
 
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<QueryApiResultSummaryFactory>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiResultSummaryFactory>();
 
     private static QueryApiResultBody BodyWith(string[] fields, int rowCount)
     {

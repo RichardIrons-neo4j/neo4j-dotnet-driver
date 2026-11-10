@@ -26,7 +26,7 @@ namespace Neo4j.Driver.Tests.Internal.Core;
 
 public class SecurityExceptionNotifierTests
 {
-    private readonly AutoMocker _autoMocker = AutoMockerExtensions.ForTesting<SecurityExceptionNotifier>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<SecurityExceptionNotifier>();
     private readonly IAuthToken _token = AuthTokens.Basic("alice", "pass");
     private readonly SecurityException _failure = new("Neo.ClientError.Security.TokenExpired", "expired");
 
