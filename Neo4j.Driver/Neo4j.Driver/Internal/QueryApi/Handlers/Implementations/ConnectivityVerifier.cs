@@ -16,6 +16,7 @@
 #nullable enable
 
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,6 +61,7 @@ internal class ConnectivityVerifier : IConnectivityVerifier
     {
         _logger.LogDebug("Verifying connectivity via discovery endpoint at {address}", _serverInfo.Address);
         using var request = new HttpRequestMessage(HttpMethod.Get, _urlBuilder.Build(string.Empty));
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         using var response = await _httpTransport.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         var failure = _failureReader.Read(response, responseText, null);
@@ -85,7 +87,7 @@ internal class ConnectivityVerifier : IConnectivityVerifier
             throw new ServiceUnavailableException("The discovery endpoint did not include a server version.");
         }
 
-        _agentWriter.UpdateAgent(body.Neo4jVersion);
+        _agentWriter.UpdateAgent($"Neo4j/{body.Neo4jVersion}");
         _logger.LogDebug("Connectivity verified; server version {version}", body.Neo4jVersion);
         return _serverInfo;
     }

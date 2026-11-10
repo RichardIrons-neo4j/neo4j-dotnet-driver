@@ -40,6 +40,54 @@ public class QueryApiClientTests
         public string? Value { get; init; }
     }
 
+    private ServiceUnavailableException SetupDiscoveryFailure()
+    {
+        var failure = new ServiceUnavailableException("discovery failed");
+        _autoMocker.GetMock<IServerDiscovery>()
+            .Setup(x => x.EnsureDiscoveredAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+
+        var sent = new InvalidOperationException("the request was sent");
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(sent);
+
+        return failure;
+    }
+
+    [Fact]
+    public async Task ThrowsTheDiscoveryFailure_BeforeSendingTheRequest()
+    {
+        var failure = SetupDiscoveryFailure();
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteAsync<TestBody>(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>()).Which.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ExecuteAsyncWithoutABody_ThrowsTheDiscoveryFailure_BeforeSendingTheRequest()
+    {
+        var failure = SetupDiscoveryFailure();
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>()).Which.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ExecuteQueryAsync_ThrowsTheDiscoveryFailure_BeforeSendingTheRequest()
+    {
+        var failure = SetupDiscoveryFailure();
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>()).Which.Should().BeSameAs(failure);
+    }
+
     [Fact]
     public async Task ReturnsDeserializedBody_InResult()
     {

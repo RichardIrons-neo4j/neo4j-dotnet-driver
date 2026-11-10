@@ -100,7 +100,23 @@ public class ConnectivityVerifierTests
         var serverInfo = await subject.VerifyAsync(TestContext.Current.CancellationToken);
 
         serverInfo.Address.Should().Be("neo4j.example.com:7474");
-        serverInfo.Agent.Should().Be("5.22.0");
+        serverInfo.Agent.Should().Be("Neo4j/5.22.0");
+    }
+
+    [Fact]
+    public async Task AsksForJson()
+    {
+        SetupChain();
+        string? accept = null;
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .Callback<HttpRequestMessage, CancellationToken>((request, _) => accept = request.Headers.Accept.ToString())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([]) });
+
+        var subject = _autoMocker.CreateInstance<ConnectivityVerifier>();
+        await subject.VerifyAsync(TestContext.Current.CancellationToken);
+
+        accept.Should().Be("application/json");
     }
 
     [Fact]

@@ -26,6 +26,7 @@ internal class QueryApiSessionFactory : IQueryApiSessionFactory
     private readonly IQueryApiHttpTransport _httpTransport;
     private readonly ILogger _logger;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IServerDiscovery _serverDiscovery;
     private readonly IServerInfo _serverInfo;
     private readonly ISessionIdGenerator _sessionIdGenerator;
 
@@ -35,6 +36,7 @@ internal class QueryApiSessionFactory : IQueryApiSessionFactory
         ILoggerFactory loggerFactory,
         IQueryApiHttpTransport httpTransport,
         IServerInfo serverInfo,
+        IServerDiscovery serverDiscovery,
         ILogger logger)
     {
         _sessionIdGenerator = sessionIdGenerator;
@@ -42,6 +44,7 @@ internal class QueryApiSessionFactory : IQueryApiSessionFactory
         _loggerFactory = loggerFactory;
         _httpTransport = httpTransport;
         _serverInfo = serverInfo;
+        _serverDiscovery = serverDiscovery;
         _logger = logger;
     }
 
@@ -59,7 +62,8 @@ internal class QueryApiSessionFactory : IQueryApiSessionFactory
             sessionTracker,
             _loggerFactory,
             _httpTransport,
-            _serverInfo);
+            _serverInfo,
+            _serverDiscovery);
 
         var session = composition.Session();
         session.Disposed += GetSessionDisposedHandler(composition);

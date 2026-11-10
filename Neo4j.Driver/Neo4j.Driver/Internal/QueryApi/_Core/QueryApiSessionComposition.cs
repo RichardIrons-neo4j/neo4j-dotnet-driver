@@ -42,6 +42,7 @@ internal partial class QueryApiSessionComposition : IQueryApiTransactionScope
             .Arg<ILoggerFactory>("loggerFactory")
             .Arg<IQueryApiHttpTransport>("httpTransport")
             .Arg<IServerInfo>("serverInfo")
+            .Arg<IServerDiscovery>("serverDiscovery")
 
             .Bind<DriverContext>().To((SessionConfig c) => c.DriverContext)
             .Bind<ISessionContext>().As(Singleton).To<QueryApiSessionContext>()

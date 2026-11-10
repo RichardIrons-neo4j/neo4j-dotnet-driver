@@ -29,13 +29,16 @@ internal class QueryApiClient : IQueryApiClient
     private readonly IQueryApiHttpTransport _httpTransport;
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly ISecurityExceptionNotifier _securityExceptionNotifier;
+    private readonly IServerDiscovery _serverDiscovery;
 
     public QueryApiClient(
+        IServerDiscovery serverDiscovery,
         IQueryApiHttpTransport httpTransport,
         IJsonDeserializer jsonDeserializer,
         IQueryApiFailureReader failureReader,
         ISecurityExceptionNotifier securityExceptionNotifier)
     {
+        _serverDiscovery = serverDiscovery;
         _httpTransport = httpTransport;
         _jsonDeserializer = jsonDeserializer;
         _failureReader = failureReader;
@@ -89,6 +92,7 @@ internal class QueryApiClient : IQueryApiClient
         SendAndReadAsync<TBody>(HttpRequestMessage request, CancellationToken cancellationToken)
         where TBody : QueryApiResponse
     {
+        await _serverDiscovery.EnsureDiscoveredAsync(cancellationToken).ConfigureAwait(false);
         using var response = await _httpTransport.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);

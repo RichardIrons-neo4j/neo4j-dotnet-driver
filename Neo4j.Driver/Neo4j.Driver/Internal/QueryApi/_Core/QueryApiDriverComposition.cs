@@ -43,6 +43,7 @@ internal partial class QueryApiDriverComposition : IQueryApiDriverComposition
             .Bind<IServerInfo>().Bind<IServerAgentWriter>().As(Singleton).To<QueryApiServerInfo>()
 
             .Bind<IConnectivityVerifier>().To<ConnectivityVerifier>()
+            .Bind<IServerDiscovery>().As(Singleton).To<ServerDiscovery>()
             .Bind<IQueryApiHttpTransport>().As(Singleton).To<QueryApiHttpTransport>()
             .Bind<IQueryApiSessionFactory>().To<QueryApiSessionFactory>()
             .Bind<ISessionIdGenerator>().To<SessionIdGenerator>()

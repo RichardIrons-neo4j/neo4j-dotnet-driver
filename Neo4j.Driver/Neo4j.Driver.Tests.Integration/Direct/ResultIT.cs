@@ -56,8 +56,8 @@ public sealed class ResultIT : DirectDriverTestBase
 
             var serverInfo = summary.Server;
 
-            var boltAddress = DefaultInstallation.BoltUri.Replace("bolt://", string.Empty);
-            serverInfo.Address.Should().Be(boltAddress);
+            serverInfo.Address.Should().Be(ServerEndPoint.Authority);
+            serverInfo.Agent.Should().StartWith("Neo4j/");
             summary.ResultAvailableAfter.Should().BeGreaterOrEqualTo(TimeSpan.Zero);
             summary.ResultConsumedAfter.Should().BeGreaterOrEqualTo(TimeSpan.Zero);
         }
@@ -266,13 +266,9 @@ public sealed class ResultIT : DirectDriverTestBase
 
             var summary = await cursor.ConsumeAsync();
 
-            var boltAddress = DefaultInstallation.BoltUri.Replace(
-                DefaultInstallation.BoltHeader,
-                string.Empty);
-
             summary.Should().NotBeNull();
             summary.Counters.NodesCreated.Should().Be(0);
-            summary.Server.Address.Should().Contain(boltAddress);
+            summary.Server.Address.Should().Contain(ServerEndPoint.Authority);
         }
         finally
         {
@@ -289,13 +285,9 @@ public sealed class ResultIT : DirectDriverTestBase
             var cursor = await session.RunAsync("unwind range(1,3) as n return n");
             var summary = await cursor.ConsumeAsync();
 
-            var boltAddress = DefaultInstallation.BoltUri.Replace(
-                DefaultInstallation.BoltHeader,
-                string.Empty);
-
             summary.Should().NotBeNull();
             summary.Counters.NodesCreated.Should().Be(0);
-            summary.Server.Address.Should().Contain(boltAddress);
+            summary.Server.Address.Should().Contain(ServerEndPoint.Authority);
 
             await AssertCannotAccessRecords(cursor);
             await CanAccessSummary(cursor);

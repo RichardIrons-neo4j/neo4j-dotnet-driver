@@ -19,8 +19,7 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 /// <summary>
 /// Driver-scoped <see cref="IServerInfo"/> for the Query API. Address and protocol version are fixed at
-/// construction; <see cref="Agent"/> is populated when <see cref="IDriver.VerifyConnectivityAsync"/> is called
-/// and returns an empty string before that.
+/// construction; <see cref="Agent"/> is populated by discovery, before the driver's first request.
 /// </summary>
 internal class QueryApiServerInfo : IServerInfo, IServerAgentWriter
 {
