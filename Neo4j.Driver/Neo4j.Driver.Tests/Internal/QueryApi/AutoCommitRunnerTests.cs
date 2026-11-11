@@ -79,7 +79,7 @@ public class AutoCommitRunnerTests
             .Returns(expectedCursor);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
-        var cursor = await subject.RunAsync(query, TestContext.Current.CancellationToken);
+        var cursor = await subject.RunAsync(query, TransactionConfig.Default, TestContext.Current.CancellationToken);
 
         cursor.Should().BeSameAs(expectedCursor);
     }
@@ -94,7 +94,7 @@ public class AutoCommitRunnerTests
             .Returns(new Mock<IResultCursor>().Object);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
-        await subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
+        await subject.RunAsync(new Query("RETURN 1"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
         _bookmarkTracker.CurrentBookmarks.Values.Should().Equal("neo4j:bookmark:v1:tx55");
     }
@@ -125,7 +125,7 @@ public class AutoCommitRunnerTests
             .Returns(new Mock<IResultCursor>().Object);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
-        await subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
+        await subject.RunAsync(new Query("RETURN 1"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
         var body = capturedBody.Should().BeOfType<AutoCommitRunner.RequestBody>().Subject;
         body.Bookmarks.Should().Equal("existing-bookmark");
@@ -148,7 +148,7 @@ public class AutoCommitRunnerTests
             .ThrowsAsync(new ServiceUnavailableException("HTTP 503"));
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
-        var act = () => subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
+        var act = () => subject.RunAsync(new Query("RETURN 1"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<ServiceUnavailableException>();
     }
@@ -185,7 +185,7 @@ public class AutoCommitRunnerTests
             .Returns(new Mock<IResultCursor>().Object);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
-        await subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
+        await subject.RunAsync(new Query("RETURN 1"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
         var body = capturedBody.Should().BeOfType<AutoCommitRunner.RequestBody>().Subject;
         body.ImpersonatedUser.Should().Be("banana_bob");
@@ -216,7 +216,7 @@ public class AutoCommitRunnerTests
             .Returns(new Mock<IResultCursor>().Object);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
-        await subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
+        await subject.RunAsync(new Query("RETURN 1"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
         var body = capturedBody.Should().BeOfType<AutoCommitRunner.RequestBody>().Subject;
         body.IncludeCounters.Should().BeTrue();
@@ -237,7 +237,7 @@ public class AutoCommitRunnerTests
             .Returns(expectedCursor);
 
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
-        var cursor = await subject.RunAsync(new Query("RETURN 1/0 AS n"), TestContext.Current.CancellationToken);
+        var cursor = await subject.RunAsync(new Query("RETURN 1/0 AS n"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
         cursor.Should().BeSameAs(expectedCursor);
     }

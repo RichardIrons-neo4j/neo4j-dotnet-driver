@@ -39,7 +39,7 @@ public class TransactionBeginnerTests
 {
     private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<TransactionBeginner>();
     private readonly BookmarkTracker _bookmarkTracker = new(SessionConfig.Builder.Build());
-    private readonly TransactionOptions _writeOptions = new(AccessMode.Write);
+    private readonly TransactionOptions _writeOptions = new(AccessMode.Write, TransactionConfig.Default);
     private readonly IAuthToken _beginToken = AuthTokens.Bearer("begin-token");
     private IQueryApiRequestBody? _capturedBody;
 
@@ -241,7 +241,7 @@ public class TransactionBeginnerTests
         UseRealContextTracker();
         var subject = _autoMocker.CreateInstance<TransactionBeginner>();
 
-        await subject.BeginAsync(new TransactionOptions(accessMode), TestContext.Current.CancellationToken);
+        await subject.BeginAsync(new TransactionOptions(accessMode, TransactionConfig.Default), TestContext.Current.CancellationToken);
 
         var body = _capturedBody.Should().BeOfType<TransactionBeginner.RequestBody>().Subject;
         body.AccessMode.Should().Be(expected);

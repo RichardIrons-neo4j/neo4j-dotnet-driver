@@ -48,7 +48,10 @@ internal class AutoCommitRunner : IAutoCommitRunner
         _logger = logger;
     }
 
-    public async Task<IResultCursor> RunAsync(Query query, CancellationToken cancellationToken = default)
+    public async Task<IResultCursor> RunAsync(
+        Query query,
+        TransactionConfig config,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Auto-commit: {query}", query.Text);
 

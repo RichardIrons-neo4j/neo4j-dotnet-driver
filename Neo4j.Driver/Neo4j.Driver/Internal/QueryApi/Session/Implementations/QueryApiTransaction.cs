@@ -51,7 +51,7 @@ internal class QueryApiTransaction : IScopedTransaction
 
     public event AsyncEventHandler? Disposed;
 
-    public TransactionConfig TransactionConfig => TransactionConfig.Default;
+    public TransactionConfig TransactionConfig { get; private set; } = TransactionConfig.Default;
 
     public bool IsOpen
     {
@@ -68,6 +68,7 @@ internal class QueryApiTransaction : IScopedTransaction
     public async Task BeginAsync(TransactionOptions options, CancellationToken cancellationToken = default)
     {
         await _beginner.BeginAsync(options, cancellationToken).ConfigureAwait(false);
+        TransactionConfig = options.TransactionConfig;
         _lifecycle.Activate();
     }
 

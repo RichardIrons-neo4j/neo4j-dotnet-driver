@@ -22,5 +22,8 @@ namespace Neo4j.Driver.Internal;
 
 internal interface IAutoCommitRunner
 {
-    Task<IResultCursor> RunAsync(Query query, CancellationToken cancellationToken = default);
+    Task<IResultCursor> RunAsync(
+        Query query,
+        TransactionConfig config,
+        CancellationToken cancellationToken = default);
 }

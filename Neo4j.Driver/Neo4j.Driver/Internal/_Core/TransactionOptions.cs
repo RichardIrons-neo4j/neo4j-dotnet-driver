@@ -17,4 +17,4 @@
 
 namespace Neo4j.Driver.Internal;
 
-internal record TransactionOptions(AccessMode AccessMode);
+internal record TransactionOptions(AccessMode AccessMode, TransactionConfig TransactionConfig);

@@ -16,6 +16,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -30,12 +31,27 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiSessionTests
 {
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
+    private static readonly Dictionary<string, object> Metadata = new() { ["app"] = "tests" };
+
     private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiSession>();
 
     public QueryApiSessionTests()
     {
         _autoMocker.Use(SessionConfig.Builder.Build());
         _autoMocker.Use<IBookmarkTracker>(new BookmarkTracker(SessionConfig.Builder.Build()));
+        _autoMocker.Use<Func<TransactionConfigBuilder>>(
+            () => new TransactionConfigBuilder(Mock.Of<INeo4jLogger>(), new TransactionConfig()));
+    }
+
+    private static void ConfigureTransaction(TransactionConfigBuilder builder)
+    {
+        builder.WithTimeout(Timeout).WithMetadata(Metadata);
+    }
+
+    private static bool IsConfigured(TransactionConfig config)
+    {
+        return config.Timeout == Timeout && ReferenceEquals(config.Metadata, Metadata);
     }
 
     private void UsePassThroughRetryLogic()
@@ -56,7 +72,7 @@ public class QueryApiSessionTests
         var expectedCursor = Mock.Of<IResultCursor>();
 
         _autoMocker.GetMock<IAutoCommitRunner>()
-            .Setup(r => r.RunAsync(query, It.IsAny<CancellationToken>()))
+            .Setup(r => r.RunAsync(query, TransactionConfig.Default, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedCursor);
 
         var sut = _autoMocker.CreateInstance<QueryApiSession>();
@@ -66,13 +82,88 @@ public class QueryApiSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_RunsWithTheConfigBuiltFromItsAction()
+    {
+        var query = new Query("RETURN 1");
+        var expectedCursor = Mock.Of<IResultCursor>();
+        _autoMocker.GetMock<IAutoCommitRunner>()
+            .Setup(r => r.RunAsync(query, It.Is<TransactionConfig>(c => IsConfigured(c)), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedCursor);
+
+        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+
+        var result = await sut.RunAsync(query, ConfigureTransaction);
+
+        result.Should().BeSameAs(expectedCursor);
+    }
+
+    [Fact]
+    public async Task BeginTransactionAsync_BeginsWithTheConfigBuiltFromItsAction()
+    {
+        var tx = Mock.Of<IInternalAsyncTransaction>();
+        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+            .Setup(f => f.BeginTransactionAsync(
+                It.Is<TransactionOptions>(o => o.AccessMode == AccessMode.Read && IsConfigured(o.TransactionConfig)),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tx);
+
+        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+
+        var result = await sut.BeginTransactionAsync(AccessMode.Read, ConfigureTransaction);
+
+        result.Should().BeSameAs(tx);
+    }
+
+    [Fact]
+    public async Task ExecuteReadAsync_BeginsWithTheConfigBuiltFromItsAction()
+    {
+        UsePassThroughRetryLogic();
+        var tx = new Mock<IInternalAsyncTransaction>();
+        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+            .Setup(f => f.BeginTransactionAsync(
+                It.Is<TransactionOptions>(o => o.AccessMode == AccessMode.Read && IsConfigured(o.TransactionConfig)),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tx.Object);
+
+        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+
+        var result = await sut.ExecuteReadAsync(
+            runner => Task.FromResult(ReferenceEquals(runner, tx.Object) ? 42 : -1),
+            ConfigureTransaction);
+
+        result.Should().Be(42);
+    }
+
+    [Fact]
+    public async Task PipelinedExecuteWriteAsync_BeginsWithTheGivenConfig()
+    {
+        UsePassThroughRetryLogic();
+        var config = new TransactionConfig(Metadata, Timeout);
+        var expected = new EagerResult<int>(42, Mock.Of<IResultSummary>(), []);
+        var tx = new Mock<IInternalAsyncTransaction>();
+        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+            .Setup(f => f.BeginTransactionAsync(
+                new TransactionOptions(AccessMode.Write, config),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tx.Object);
+
+        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+
+        var result = await sut.PipelinedExecuteWriteAsync(
+            runner => Task.FromResult(ReferenceEquals(runner, tx.Object) ? expected : null!),
+            config);
+
+        result.Should().BeSameAs(expected);
+    }
+
+    [Fact]
     public async Task DisposeAsync_ConsumesCursorFromLastRunAsync()
     {
         var query = new Query("RETURN 1");
         var cursor = new Mock<IResultCursor>();
 
         _autoMocker.GetMock<IAutoCommitRunner>()
-            .Setup(r => r.RunAsync(query, It.IsAny<CancellationToken>()))
+            .Setup(r => r.RunAsync(query, TransactionConfig.Default, It.IsAny<CancellationToken>()))
             .ReturnsAsync(cursor.Object);
 
         var sut = _autoMocker.CreateInstance<QueryApiSession>();
@@ -89,7 +180,7 @@ public class QueryApiSessionTests
         var tx = Mock.Of<IInternalAsyncTransaction>();
         _autoMocker.GetMock<IQueryApiTransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
-                new TransactionOptions(AccessMode.Read),
+                new TransactionOptions(AccessMode.Read, TransactionConfig.Default),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx);
 
@@ -107,7 +198,7 @@ public class QueryApiSessionTests
         var tx = Mock.Of<IInternalAsyncTransaction>();
         _autoMocker.GetMock<IQueryApiTransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
-                new TransactionOptions(AccessMode.Read),
+                new TransactionOptions(AccessMode.Read, TransactionConfig.Default),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx);
 
@@ -148,7 +239,7 @@ public class QueryApiSessionTests
         tx.Setup(t => t.CommitAsync()).Returns(Task.CompletedTask);
         _autoMocker.GetMock<IQueryApiTransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
-                new TransactionOptions(AccessMode.Read),
+                new TransactionOptions(AccessMode.Read, TransactionConfig.Default),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 

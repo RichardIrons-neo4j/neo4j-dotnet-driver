@@ -44,7 +44,7 @@ public class QueryApiTransactionTests
     private async Task<QueryApiTransaction> BegunTransactionAsync()
     {
         var transaction = _autoMocker.CreateInstance<QueryApiTransaction>();
-        await transaction.BeginAsync(new TransactionOptions(AccessMode.Write));
+        await transaction.BeginAsync(new TransactionOptions(AccessMode.Write, TransactionConfig.Default));
         return transaction;
     }
 
@@ -92,6 +92,18 @@ public class QueryApiTransactionTests
         var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
 
         subject.TransactionConfig.Should().BeSameAs(TransactionConfig.Default);
+    }
+
+    [Fact]
+    public async Task TransactionConfig_IsTheConfigItBeganWith()
+    {
+        var config = new TransactionConfig(timeout: TimeSpan.FromSeconds(5));
+        var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
+        await subject.BeginAsync(new TransactionOptions(AccessMode.Write, config));
+
+        var result = subject.TransactionConfig;
+
+        result.Should().BeSameAs(config);
     }
 
     [Fact]
@@ -272,7 +284,7 @@ public class QueryApiTransactionTests
             .Returns(Task.CompletedTask);
 
         var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
-        var begin = () => subject.BeginAsync(new TransactionOptions(AccessMode.Write));
+        var begin = () => subject.BeginAsync(new TransactionOptions(AccessMode.Write, TransactionConfig.Default));
         await begin.Should().ThrowAsync<ClientException>();
 
         await subject.DisposeAsync();

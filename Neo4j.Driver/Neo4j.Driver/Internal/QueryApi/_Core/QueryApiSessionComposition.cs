@@ -45,6 +45,9 @@ internal partial class QueryApiSessionComposition : IQueryApiTransactionScope
             .Bind<ISessionContext>().As(Singleton).To<QueryApiSessionContext>()
             .Bind<IBookmarkTracker>().As(Singleton).To<BookmarkTracker>()
 
+            .Bind<TransactionConfigBuilder>()
+            .To((DriverContext c) => new TransactionConfigBuilder(c.Neo4JLogger, new TransactionConfig()))
+
             .Bind<IAutoCommitRunner>().To<AutoCommitRunner>()
             .Bind<IQueryApiTransactionFactory>().To<QueryApiTransactionFactory>()
             .Bind<IQueryApiTransactionScope>().To((QueryApiSessionComposition c) => new QueryApiSessionComposition(c))

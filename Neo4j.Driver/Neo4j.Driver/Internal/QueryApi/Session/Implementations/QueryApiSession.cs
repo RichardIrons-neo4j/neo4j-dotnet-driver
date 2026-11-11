@@ -25,6 +25,7 @@ internal class QueryApiSession : IInternalAsyncSession
 {
     private readonly IAutoCommitRunner _autoCommitRunner;
     private readonly IBookmarkTracker _bookmarkTracker;
+    private readonly Func<TransactionConfigBuilder> _configBuilderFactory;
     private readonly ILogger _logger;
     private readonly IAsyncRetryLogic _retryLogic;
     private readonly IQueryApiTransactionFactory _transactionFactory;
@@ -39,6 +40,7 @@ internal class QueryApiSession : IInternalAsyncSession
         IQueryApiTransactionFactory transactionFactory,
         IAsyncRetryLogic retryLogic,
         IBookmarkTracker bookmarkTracker,
+        Func<TransactionConfigBuilder> configBuilderFactory,
         ILogger logger)
     {
         SessionConfig = sessionConfig;
@@ -46,6 +48,7 @@ internal class QueryApiSession : IInternalAsyncSession
         _transactionFactory = transactionFactory;
         _retryLogic = retryLogic;
         _bookmarkTracker = bookmarkTracker;
+        _configBuilderFactory = configBuilderFactory;
         _logger = logger;
     }
 
@@ -61,7 +64,7 @@ internal class QueryApiSession : IInternalAsyncSession
         bool disposeUnconsumedSessionResult)
     {
         _logger.LogDebug("Session auto-commit: {query}", query.Text);
-        var cursor = await _autoCommitRunner.RunAsync(query).ConfigureAwait(false);
+        var cursor = await _autoCommitRunner.RunAsync(query, BuildTransactionConfig(action)).ConfigureAwait(false);
         _lastCursor = cursor;
         return cursor;
     }
@@ -119,10 +122,22 @@ internal class QueryApiSession : IInternalAsyncSession
         EnsureNoOpenTransaction();
         _logger.LogDebug("Session beginning {mode} transaction", mode);
         var tx = await _transactionFactory
-            .BeginTransactionAsync(new TransactionOptions(mode))
+            .BeginTransactionAsync(new TransactionOptions(mode, BuildTransactionConfig(action)))
             .ConfigureAwait(false);
         _openTransaction = tx;
         return tx;
+    }
+
+    private TransactionConfig BuildTransactionConfig(Action<TransactionConfigBuilder>? action)
+    {
+        if (action is null)
+        {
+            return TransactionConfig.Default;
+        }
+
+        var builder = _configBuilderFactory();
+        action(builder);
+        return builder.Build();
     }
 
     private void EnsureNoOpenTransaction()
@@ -159,42 +174,42 @@ internal class QueryApiSession : IInternalAsyncSession
         Func<IAsyncQueryRunner, Task<TResult>> txFuncAsync,
         Action<TransactionConfigBuilder>? action = null)
     {
-        return RunTransactionWithRetryAsync(AccessMode.Read, txFuncAsync, action);
+        return RunTransactionWithRetryAsync(AccessMode.Read, txFuncAsync, BuildTransactionConfig(action));
     }
 
     public Task ExecuteReadAsync(
         Func<IAsyncQueryRunner, Task> txFuncAsync,
         Action<TransactionConfigBuilder>? action = null)
     {
-        return RunTransactionWithRetryAsync(AccessMode.Read, Adapt(txFuncAsync), action);
+        return RunTransactionWithRetryAsync(AccessMode.Read, Adapt(txFuncAsync), BuildTransactionConfig(action));
     }
 
     public Task<TResult> ExecuteWriteAsync<TResult>(
         Func<IAsyncQueryRunner, Task<TResult>> txFuncAsync,
         Action<TransactionConfigBuilder>? action = null)
     {
-        return RunTransactionWithRetryAsync(AccessMode.Write, txFuncAsync, action);
+        return RunTransactionWithRetryAsync(AccessMode.Write, txFuncAsync, BuildTransactionConfig(action));
     }
 
     public Task ExecuteWriteAsync(
         Func<IAsyncQueryRunner, Task> txFuncAsync,
         Action<TransactionConfigBuilder>? action = null)
     {
-        return RunTransactionWithRetryAsync(AccessMode.Write, Adapt(txFuncAsync), action);
+        return RunTransactionWithRetryAsync(AccessMode.Write, Adapt(txFuncAsync), BuildTransactionConfig(action));
     }
 
     public Task<EagerResult<T>> PipelinedExecuteReadAsync<T>(
         Func<IAsyncQueryRunner, Task<EagerResult<T>>> func,
         TransactionConfig config)
     {
-        return RunTransactionWithRetryAsync(AccessMode.Read, func, null);
+        return RunTransactionWithRetryAsync(AccessMode.Read, func, config);
     }
 
     public Task<EagerResult<T>> PipelinedExecuteWriteAsync<T>(
         Func<IAsyncQueryRunner, Task<EagerResult<T>>> func,
         TransactionConfig config)
     {
-        return RunTransactionWithRetryAsync(AccessMode.Write, func, null);
+        return RunTransactionWithRetryAsync(AccessMode.Write, func, config);
     }
 
     private static Func<IAsyncQueryRunner, Task<bool>> Adapt(Func<IAsyncQueryRunner, Task> txFuncAsync)
@@ -234,23 +249,22 @@ internal class QueryApiSession : IInternalAsyncSession
     private Task<TResult> RunTransactionWithRetryAsync<TResult>(
         AccessMode mode,
         Func<IAsyncQueryRunner, Task<TResult>> txFuncAsync,
-        Action<TransactionConfigBuilder>? action)
+        TransactionConfig config)
     {
-        return _retryLogic.RetryAsync(() => RunTransactionAsync(mode, txFuncAsync, action));
+        return _retryLogic.RetryAsync(() => RunTransactionAsync(new TransactionOptions(mode, config), txFuncAsync));
     }
 
     private async Task<TResult> RunTransactionAsync<TResult>(
-        AccessMode mode,
-        Func<IAsyncQueryRunner, Task<TResult>> txFuncAsync,
-        Action<TransactionConfigBuilder>? action)
+        TransactionOptions options,
+        Func<IAsyncQueryRunner, Task<TResult>> txFuncAsync)
     {
         var tx = await _transactionFactory
-            .BeginTransactionAsync(new TransactionOptions(mode))
+            .BeginTransactionAsync(options)
             .ConfigureAwait(false);
 
         try
         {
-            _logger.LogDebug("Session beginning work", mode);
+            _logger.LogDebug("Session beginning work", options.AccessMode);
             var result = await txFuncAsync(tx).ConfigureAwait(false);
             await tx.CommitAsync().ConfigureAwait(false);
             return result;

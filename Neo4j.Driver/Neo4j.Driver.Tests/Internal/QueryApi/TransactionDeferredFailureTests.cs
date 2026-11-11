@@ -67,7 +67,7 @@ public class TransactionDeferredFailureTests
         _autoMocker.Use<ITransactionRunner>(_autoMocker.CreateInstance<TransactionRunner>());
 
         var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
-        await subject.BeginAsync(new TransactionOptions(AccessMode.Write));
+        await subject.BeginAsync(new TransactionOptions(AccessMode.Write, TransactionConfig.Default));
         await subject.RunAsync(new Query("RETURN 1/0 AS n"));
         return subject;
     }

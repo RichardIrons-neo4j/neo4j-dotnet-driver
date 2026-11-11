@@ -33,7 +33,7 @@ public class QueryApiTransactionFactoryTests
     private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiTransaction>();
     private readonly Mock<IQueryApiTransactionScope> _transactionScope = new();
     private readonly QueryApiTransaction _transaction;
-    private readonly TransactionOptions _options = new(AccessMode.Read);
+    private readonly TransactionOptions _options = new(AccessMode.Read, TransactionConfig.Default);
 
     public QueryApiTransactionFactoryTests()
     {

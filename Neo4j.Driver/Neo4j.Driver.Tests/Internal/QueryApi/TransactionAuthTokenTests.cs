@@ -74,7 +74,7 @@ public class TransactionAuthTokenTests
                 });
 
         var beginner = _autoMocker.CreateInstance<TransactionBeginner>();
-        await beginner.BeginAsync(new TransactionOptions(AccessMode.Write));
+        await beginner.BeginAsync(new TransactionOptions(AccessMode.Write, TransactionConfig.Default));
         return enricher;
     }
 
