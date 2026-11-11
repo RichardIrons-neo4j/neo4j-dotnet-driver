@@ -96,12 +96,12 @@ public sealed class ErrorIT : DirectDriverTestBase
     [RequireServerFact]
     public void ShouldReportWrongScheme()
     {
-        var ex = Record.Exception(() => GraphDatabase.Driver("http://localhost"));
+        var ex = Record.Exception(() => GraphDatabase.Driver("ftp://localhost"));
 
         ex.Should()
             .BeOfType<NotSupportedException>()
             .Which
             .Message.Should()
-            .Be("Unsupported URI scheme: http");
+            .Be("Unsupported URI scheme: ftp");
     }
 }

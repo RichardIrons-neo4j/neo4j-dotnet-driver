@@ -252,11 +252,8 @@ public static class GraphDatabase
     {
         return context.InitialUri switch
         {
-            { Scheme: "neo4j" or "neo4j+s" or "bolt" or "bolt+s"} => GetBoltDriver(context),
-            
             { Scheme: "http" or "https" } => GetQueryApiDriver(context),
-            
-            _ => throw new ArgumentException($"Unsupported URI scheme: {context.InitialUri.Scheme}")
+            _ => GetBoltDriver(context)
         };
     }
 

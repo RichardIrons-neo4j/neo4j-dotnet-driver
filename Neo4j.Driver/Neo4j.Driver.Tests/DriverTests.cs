@@ -61,6 +61,21 @@ public class DriverTests
         }
     }
 
+    [Theory]
+    [InlineData("bolt")]
+    [InlineData("bolt+s")]
+    [InlineData("bolt+ssc")]
+    [InlineData("neo4j")]
+    [InlineData("neo4j+s")]
+    [InlineData("neo4j+ssc")]
+    public void ShouldAcceptEveryBoltScheme(string scheme)
+    {
+        using var driver = (InternalDriver)GraphDatabase.Driver($"{scheme}://localhost");
+
+        driver.Uri.Scheme.Should().Be(scheme);
+        driver.Uri.Port.Should().Be(7687);
+    }
+
     [Fact]
     public void ShouldErrorIfUriWrongFormat()
     {
