@@ -39,7 +39,7 @@ internal sealed class DriverContext : IDriverUri
         if (initialUri.Scheme is "http" or "https")
         {
             RoutingContext = null;
-            EncryptionManager = null;
+            EncryptionManager = EncryptionManager.CreateForHttp(initialUri, config);
         }
         else
         {

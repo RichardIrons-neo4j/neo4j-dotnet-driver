@@ -56,7 +56,7 @@ internal class AutoCommitRunner : IAutoCommitRunner
         _logger.LogDebug("Auto-commit: {query}", query.Text);
 
         var bookmarks = _bookmarkTracker.CurrentBookmarks.Values;
-        using var request = await BuildRequestAsync(query, bookmarks, cancellationToken).ConfigureAwait(false);
+        using var request = await BuildRequestAsync(query, config, bookmarks, cancellationToken).ConfigureAwait(false);
         var result = await _client.ExecuteQueryAsync(request, cancellationToken).ConfigureAwait(false);
 
         var body = result.Body;
@@ -73,16 +73,20 @@ internal class AutoCommitRunner : IAutoCommitRunner
 
     private async Task<HttpRequestMessage> BuildRequestAsync(
         Query query,
+        TransactionConfig config,
         IReadOnlyList<string> bookmarks,
         CancellationToken cancellationToken)
     {
+        var transactionConfig = new QueryApiTransactionConfig(config);
         var body = new RequestBody
         {
             Statement = query.Text,
             Parameters = query.Parameters.Count > 0 ? new QueryApiParameterDictionary(query.Parameters) : null,
             Bookmarks = bookmarks.Count > 0 ? [.. bookmarks] : null,
             ImpersonatedUser = _sessionContext.ImpersonatedUser,
-            AccessMode = _sessionContext.AccessMode == AccessMode.Read ? "Read" : "Write"
+            AccessMode = _sessionContext.AccessMode == AccessMode.Read ? "Read" : "Write",
+            TxMetadata = transactionConfig.TxMetadata,
+            MaxExecutionTime = transactionConfig.MaxExecutionTime
         };
 
         var request = await _requestBuilder.PostAsync("query/v2", body, cancellationToken).ConfigureAwait(false);
@@ -97,10 +101,12 @@ internal class AutoCommitRunner : IAutoCommitRunner
         public string? ImpersonatedUser { get; init; }
         public string? AccessMode { get; init; }
         public bool IncludeCounters { get; } = true;
+        public QueryApiParameterDictionary? TxMetadata { get; init; }
+        public int? MaxExecutionTime { get; init; }
 
         public IReadOnlyCollection<object?> GetParameterValues()
         {
-            return Parameters is null ? [] : [.. Parameters.Values];
+            return [.. Parameters?.Values ?? [], .. TxMetadata?.Values ?? []];
         }
     }
 }

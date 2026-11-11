@@ -80,19 +80,27 @@ internal class TransactionBeginner : ITransactionBeginner
         TransactionOptions options,
         CancellationToken cancellationToken)
     {
+        var config = new QueryApiTransactionConfig(options.TransactionConfig);
         var body = new RequestBody(
             bookmarks.ToArray(),
             _sessionContext.ImpersonatedUser,
-            options.AccessMode == AccessMode.Read ? "Read" : "Write");
+            options.AccessMode == AccessMode.Read ? "Read" : "Write",
+            config.TxMetadata,
+            config.MaxExecutionTime);
         var request = await _requestBuilder.PostAsync("query/v2/tx", body, cancellationToken).ConfigureAwait(false);
         return request;
     }
 
-    internal record RequestBody(string[]? Bookmarks, string? ImpersonatedUser, string AccessMode) : IQueryApiRequestBody
+    internal record RequestBody(
+        string[]? Bookmarks,
+        string? ImpersonatedUser,
+        string AccessMode,
+        QueryApiParameterDictionary? TxMetadata = null,
+        int? MaxExecutionTime = null) : IQueryApiRequestBody
     {
         public IReadOnlyCollection<object?> GetParameterValues()
         {
-            return [];
+            return TxMetadata is null ? [] : [.. TxMetadata.Values];
         }
     }
 

@@ -15,6 +15,9 @@
 
 #nullable enable
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -240,5 +243,91 @@ public class AutoCommitRunnerTests
         var cursor = await subject.RunAsync(new Query("RETURN 1/0 AS n"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
         cursor.Should().BeSameAs(expectedCursor);
+    }
+
+    private async Task<AutoCommitRunner.RequestBody> RunWithAsync(TransactionConfig config, Query? query = null)
+    {
+        IQueryApiRequestBody? capturedBody = null;
+        var request = new HttpRequestMessage();
+
+        _autoMocker.GetMock<IQueryApiRequestBuilder>()
+            .Setup(x => x.PostAsync(
+                It.IsAny<string>(),
+                It.IsAny<IQueryApiRequestBody>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, IQueryApiRequestBody, CancellationToken>((_, body, _) => capturedBody = body)
+            .ReturnsAsync(request);
+
+        _autoMocker.GetMock<IQueryApiClient>()
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new QueryApiQueryResult(new QueryApiResultBody(), new HttpResponseMessage().Headers, null));
+
+        _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), It.IsAny<IResponsePipelineError?>(), It.IsAny<Query>()))
+            .Returns(new Mock<IResultCursor>().Object);
+
+        var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
+        await subject.RunAsync(query ?? new Query("RETURN 1"), config, TestContext.Current.CancellationToken);
+
+        return capturedBody.Should().BeOfType<AutoCommitRunner.RequestBody>().Subject;
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(50, 1)]
+    [InlineData(1000, 1)]
+    [InlineData(1001, 2)]
+    [InlineData(5000, 5)]
+    public async Task RunAsync_RequestBody_IncludesTheTimeoutRoundedUpToWholeSeconds(
+        int milliseconds,
+        int expectedSeconds)
+    {
+        var config = new TransactionConfig(timeout: TimeSpan.FromMilliseconds(milliseconds));
+
+        var body = await RunWithAsync(config);
+
+        body.MaxExecutionTime.Should().Be(expectedSeconds);
+    }
+
+    [Fact]
+    public async Task RunAsync_RequestBody_ClampsAnUnboundedTimeoutToTheLargestWholeSecondCount()
+    {
+        var config = new TransactionConfig(timeout: TimeSpan.MaxValue);
+
+        var body = await RunWithAsync(config);
+
+        body.MaxExecutionTime.Should().Be(int.MaxValue);
+    }
+
+    [Fact]
+    public async Task RunAsync_RequestBody_IncludesTheTransactionMetadata()
+    {
+        var metadata = new Dictionary<string, object> { ["app"] = "tests", ["attempt"] = 3 };
+
+        var body = await RunWithAsync(new TransactionConfig(metadata));
+
+        body.TxMetadata.Should().NotBeNull();
+        body.TxMetadata!.ToDictionary(pair => pair.Key, pair => pair.Value).Should().BeEquivalentTo(metadata);
+    }
+
+    [Fact]
+    public async Task RunAsync_RequestBody_CountsParameterAndMetadataValuesForTheMediaVersion()
+    {
+        var query = new Query("RETURN $p", new Dictionary<string, object> { ["p"] = 1 });
+        var metadata = new Dictionary<string, object> { ["app"] = "tests" };
+
+        var body = await RunWithAsync(new TransactionConfig(metadata), query);
+
+        body.GetParameterValues().Should().BeEquivalentTo(new object[] { 1, "tests" });
+    }
+
+    [Fact]
+    public async Task RunAsync_RequestBody_OmitsTheTimeoutAndMetadata_WhenTheConfigSetsNeither()
+    {
+        var body = await RunWithAsync(new TransactionConfig());
+
+        body.MaxExecutionTime.Should().BeNull();
+        body.TxMetadata.Should().BeNull();
     }
 }

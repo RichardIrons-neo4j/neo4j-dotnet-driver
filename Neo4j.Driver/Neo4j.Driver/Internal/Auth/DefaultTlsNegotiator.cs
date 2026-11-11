@@ -39,31 +39,37 @@ internal sealed class DefaultTlsNegotiator : ITlsNegotiator
         return new SslStream(
             stream,
             true,
-            (_, certificate, chain, errors) =>
-            {
-                if (errors.HasFlag(SslPolicyErrors.RemoteCertificateNotAvailable))
-                {
-                    _neo4JLogger?.Error(null, $"{GetType().Name}: Certificate not available.");
-                    return false;
-                }
+            (_, certificate, chain, errors) => ValidateServerCertificate(uri, certificate, chain, errors));
+    }
 
-                var certData = certificate!.Export(X509ContentType.Cert);
-                var trust = _encryptionManager.TrustManager.ValidateServerCertificate(
-                    uri,
-                    _internalX509CertificateLoader.LoadCertificate(certData),
-                    chain,
-                    errors);
+    public bool ValidateServerCertificate(
+        Uri uri,
+        X509Certificate certificate,
+        X509Chain chain,
+        SslPolicyErrors errors)
+    {
+        if (errors.HasFlag(SslPolicyErrors.RemoteCertificateNotAvailable))
+        {
+            _neo4JLogger?.Error(null, $"{GetType().Name}: Certificate not available.");
+            return false;
+        }
 
-                if (trust)
-                {
-                    _neo4JLogger?.Debug("Trust is established, resuming connection.");
-                }
-                else
-                {
-                    _neo4JLogger?.Error(null, "Trust not established, aborting communication.");
-                }
+        var certData = certificate!.Export(X509ContentType.Cert);
+        var trust = _encryptionManager.TrustManager.ValidateServerCertificate(
+            uri,
+            _internalX509CertificateLoader.LoadCertificate(certData),
+            chain,
+            errors);
 
-                return trust;
-            });
+        if (trust)
+        {
+            _neo4JLogger?.Debug("Trust is established, resuming connection.");
+        }
+        else
+        {
+            _neo4JLogger?.Error(null, "Trust not established, aborting communication.");
+        }
+
+        return trust;
     }
 }

@@ -16,6 +16,8 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -245,5 +247,75 @@ public class TransactionBeginnerTests
 
         var body = _capturedBody.Should().BeOfType<TransactionBeginner.RequestBody>().Subject;
         body.AccessMode.Should().Be(expected);
+    }
+
+    private async Task<TransactionBeginner.RequestBody> BeginWithAsync(TransactionConfig config)
+    {
+        SetupChain();
+        UseRealContextTracker();
+        var subject = _autoMocker.CreateInstance<TransactionBeginner>();
+
+        await subject.BeginAsync(
+            new TransactionOptions(AccessMode.Write, config),
+            TestContext.Current.CancellationToken);
+
+        return _capturedBody.Should().BeOfType<TransactionBeginner.RequestBody>().Subject;
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(50, 1)]
+    [InlineData(1000, 1)]
+    [InlineData(1001, 2)]
+    [InlineData(5000, 5)]
+    public async Task BeginAsync_RequestBody_IncludesTheTimeoutRoundedUpToWholeSeconds(
+        int milliseconds,
+        int expectedSeconds)
+    {
+        var config = new TransactionConfig(timeout: TimeSpan.FromMilliseconds(milliseconds));
+
+        var body = await BeginWithAsync(config);
+
+        body.MaxExecutionTime.Should().Be(expectedSeconds);
+    }
+
+    [Fact]
+    public async Task BeginAsync_RequestBody_ClampsAnUnboundedTimeoutToTheLargestWholeSecondCount()
+    {
+        var config = new TransactionConfig(timeout: TimeSpan.MaxValue);
+
+        var body = await BeginWithAsync(config);
+
+        body.MaxExecutionTime.Should().Be(int.MaxValue);
+    }
+
+    [Fact]
+    public async Task BeginAsync_RequestBody_IncludesTheTransactionMetadata()
+    {
+        var metadata = new Dictionary<string, object> { ["app"] = "tests", ["attempt"] = 3 };
+
+        var body = await BeginWithAsync(new TransactionConfig(metadata));
+
+        body.TxMetadata.Should().NotBeNull();
+        body.TxMetadata!.ToDictionary(pair => pair.Key, pair => pair.Value).Should().BeEquivalentTo(metadata);
+    }
+
+    [Fact]
+    public async Task BeginAsync_RequestBody_CountsTheMetadataValuesForTheMediaVersion()
+    {
+        var metadata = new Dictionary<string, object> { ["app"] = "tests", ["attempt"] = 3 };
+
+        var body = await BeginWithAsync(new TransactionConfig(metadata));
+
+        body.GetParameterValues().Should().BeEquivalentTo(new object[] { "tests", 3 });
+    }
+
+    [Fact]
+    public async Task BeginAsync_RequestBody_OmitsTheTimeoutAndMetadata_WhenTheConfigSetsNeither()
+    {
+        var body = await BeginWithAsync(new TransactionConfig());
+
+        body.MaxExecutionTime.Should().BeNull();
+        body.TxMetadata.Should().BeNull();
     }
 }

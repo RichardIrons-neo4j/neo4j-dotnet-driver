@@ -56,6 +56,30 @@ internal class EncryptionManager
         return CreateFromUriScheme(uri, neo4JLogger);
     }
 
+    public static EncryptionManager CreateForHttp(Uri uri, Config config)
+    {
+        if (config.TlsNegotiator != null)
+        {
+            throw new NotSupportedException(
+                "A TlsNegotiator is not supported by the Query API over http or https.");
+        }
+
+        if (uri.Scheme == "https")
+        {
+            return CreateFromConfig(EncryptionLevel.Encrypted, config.TrustManager, config.Neo4JLogger);
+        }
+
+        if (config.NullableEncryptionLevel == EncryptionLevel.Encrypted || config.TrustManager != null)
+        {
+            throw new ArgumentException(
+                "The uri scheme and driver configuration specify conflicting encryption and trust settings. " +
+                $"uri scheme = {uri.Scheme}, encryption = {config.NullableEncryptionLevel}, " +
+                $"trust = {config.TrustManager}");
+        }
+
+        return null;
+    }
+
     private static EncryptionManager CreateFromUriScheme(Uri uri, INeo4jLogger neo4JLogger)
     {
         // let the uri scheme to decide

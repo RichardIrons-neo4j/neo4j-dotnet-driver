@@ -17,8 +17,10 @@
 
 using System;
 using System.Net.Http;
+using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
+using Neo4j.Driver.Internal.Auth;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
@@ -28,10 +30,61 @@ internal class QueryApiHttpTransport : IQueryApiHttpTransport
     private readonly ILogger _logger;
     private bool _disposed;
 
-    public QueryApiHttpTransport(ILogger logger)
+    public QueryApiHttpTransport(ILogger logger, DriverContext driverContext)
     {
         _logger = logger;
-        _client = new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(2) });
+        Handler = CreateHandler(driverContext);
+        _client = new HttpClient(Handler) { Timeout = Timeout.InfiniteTimeSpan };
+        _client.DefaultRequestHeaders.UserAgent.ParseAdd(Config.DefaultUserAgent);
+    }
+
+    internal SocketsHttpHandler Handler { get; }
+
+    internal HttpClient Client
+    {
+        get { return _client; }
+    }
+
+    private static SocketsHttpHandler CreateHandler(DriverContext driverContext)
+    {
+        var config = driverContext.Config;
+        var handler = new SocketsHttpHandler
+        {
+            ConnectTimeout = config.ConnectionTimeout,
+            MaxConnectionsPerServer =
+                config.MaxConnectionPoolSize == Config.Infinite ? int.MaxValue : config.MaxConnectionPoolSize,
+            PooledConnectionIdleTimeout = config.ConnectionIdleTimeout,
+            PooledConnectionLifetime = config.MaxConnectionLifetime
+        };
+
+        if (driverContext.EncryptionManager is { UseTls: true } encryption)
+        {
+            handler.SslOptions = CreateSslOptions(driverContext, encryption);
+        }
+
+        return handler;
+    }
+
+    private static SslClientAuthenticationOptions CreateSslOptions(
+        DriverContext driverContext,
+        EncryptionManager encryption)
+    {
+        var config = driverContext.Config;
+        var negotiator = new DefaultTlsNegotiator(config.Neo4JLogger, encryption);
+        var options = new SslClientAuthenticationOptions
+        {
+            EnabledSslProtocols = config.TlsVersion,
+            RemoteCertificateValidationCallback = (_, certificate, chain, errors) =>
+                negotiator.ValidateServerCertificate(driverContext.InitialUri, certificate, chain, errors)
+        };
+
+        if (config.ClientCertificateProvider is {} provider)
+        {
+            options.LocalCertificateSelectionCallback = (_, _, _, _, _) =>
+                provider.GetCertificateAsync().GetAwaiter().GetResult();
+        }
+
+        return options;
     }
 
     public async Task<HttpResponseMessage> SendAsync(

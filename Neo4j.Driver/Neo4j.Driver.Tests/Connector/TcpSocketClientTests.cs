@@ -364,11 +364,7 @@ public class TcpSocketClientTests
             using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
 
             var pfx = certificate.Export(X509ContentType.Pfx);
-#if NET9_0_OR_GREATER
-            return X509CertificateLoader.LoadPkcs12(pfx, null);
-#else
-            return new X509Certificate2(pfx);
-#endif
+            return new InternalX509CertificateLoader().LoadCertificate(pfx, null, X509KeyStorageFlags.DefaultKeySet);
         }
 
         private static bool WaitForReportedDead(TcpSocketClient client)
