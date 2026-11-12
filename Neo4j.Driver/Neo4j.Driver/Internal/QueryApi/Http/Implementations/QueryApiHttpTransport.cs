@@ -99,7 +99,18 @@ internal class QueryApiHttpTransport : IQueryApiHttpTransport
         }
 
         _logger.LogDebug("Sending {method} request to {uri}", request.Method, request.RequestUri);
-        var response = await _client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        HttpResponseMessage response;
+        try
+        {
+            response = await _client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception e) when (!cancellationToken.IsCancellationRequested && e.IsConnectionError())
+        {
+            throw new ServiceUnavailableException(
+                $"Connection with the server breaks due to {e.GetType().Name}: {e.Message}",
+                e);
+        }
+
         _logger.LogDebug(
             "{method} {uri} returned {statusCode}", request.Method, request.RequestUri, (int)response.StatusCode);
 

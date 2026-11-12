@@ -41,13 +41,15 @@ internal class LoopbackHttpServer : IAsyncDisposable
     private readonly TaskCompletionSource<LoopbackRequest> _firstRequest =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    private readonly bool _cutsOffResponses;
     private readonly bool _requireClientCertificate;
     private readonly Task _serving;
 
-    private LoopbackHttpServer(X509Certificate2? certificate, bool requireClientCertificate)
+    private LoopbackHttpServer(X509Certificate2? certificate, bool requireClientCertificate, bool cutsOffResponses)
     {
         Certificate = certificate;
         _requireClientCertificate = requireClientCertificate;
+        _cutsOffResponses = cutsOffResponses;
         _listener.Start();
 
         var scheme = certificate is null ? "http" : "https";
@@ -62,12 +64,17 @@ internal class LoopbackHttpServer : IAsyncDisposable
 
     public static LoopbackHttpServer Http()
     {
-        return new LoopbackHttpServer(null, false);
+        return new LoopbackHttpServer(null, false, false);
+    }
+
+    public static LoopbackHttpServer HttpCuttingOffResponses()
+    {
+        return new LoopbackHttpServer(null, false, true);
     }
 
     public static LoopbackHttpServer Https(bool requireClientCertificate = false)
     {
-        return new LoopbackHttpServer(SelfSignedCertificate("CN=localhost"), requireClientCertificate);
+        return new LoopbackHttpServer(SelfSignedCertificate("CN=localhost"), requireClientCertificate, false);
     }
 
     public static X509Certificate2 SelfSignedCertificate(string subject)
@@ -144,7 +151,10 @@ internal class LoopbackHttpServer : IAsyncDisposable
         var headers = await ReadHeadersAsync(stream).ConfigureAwait(false);
         _firstRequest.TrySetResult(new LoopbackRequest(headers, clientCertificate));
 
-        var response = Encoding.ASCII.GetBytes("HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        var response = Encoding.ASCII.GetBytes(
+            _cutsOffResponses
+                ? "HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\n{\"data\""
+                : "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
         await stream.WriteAsync(response, _stopping.Token).ConfigureAwait(false);
         await stream.FlushAsync(_stopping.Token).ConfigureAwait(false);
     }

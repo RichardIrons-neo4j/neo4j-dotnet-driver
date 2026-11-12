@@ -35,6 +35,7 @@ public class QueryApiTransactionTests
 
     private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiTransaction>();
     private readonly ClientException _serverFailure = new("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+    private readonly ServiceUnavailableException _connectionLost = new("Connection with the server breaks");
 
     public QueryApiTransactionTests()
     {
@@ -500,6 +501,48 @@ public class QueryApiTransactionTests
         await commit;
 
         cursor.Verify(c => c.ConsumeAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task CommitAsync_WhenTheConnectionIsLost_ThrowsIncompleteCommit()
+    {
+        _autoMocker.GetMock<ITransactionCommitter>()
+            .Setup(c => c.CommitAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(_connectionLost);
+        var subject = await BegunTransactionAsync();
+
+        var act = () => subject.CommitAsync();
+
+        (await act.Should().ThrowAsync<IncompleteCommitException>())
+            .Which.InnerException.Should().BeSameAs(_connectionLost);
+    }
+
+    [Fact]
+    public async Task CommitAsync_AfterTheConnectionWasLostOnCommit_ThrowsANonRetriableError()
+    {
+        var subject = await TransactionWhoseCommitFailedAsync(_connectionLost);
+
+        var act = () => subject.CommitAsync();
+
+        (await act.Should().ThrowAsync<TransactionTerminatedException>())
+            .Which.IsRetriable.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task CommitAsync_WhenConsumingACursorLosesTheConnection_KeepsItsRetriableError()
+    {
+        var cursor = new Mock<IResultCursor>();
+        cursor.Setup(c => c.ConsumeAsync()).ThrowsAsync(_connectionLost);
+        _autoMocker.GetMock<ITransactionRunner>()
+            .Setup(r => r.RunAsync(It.IsAny<Query>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cursor.Object);
+        var subject = await BegunTransactionAsync();
+        await subject.RunAsync(new Query("RETURN 1"));
+
+        var act = () => subject.CommitAsync();
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>())
+            .Which.Should().BeSameAs(_connectionLost);
     }
 
     [Fact]

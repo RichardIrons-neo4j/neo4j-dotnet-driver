@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Security;
+using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,6 +48,57 @@ public class QueryApiHttpTransportTests
         var source = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         source.CancelAfter(TimeSpan.FromSeconds(15));
         return source;
+    }
+
+    private static Uri LocalUri(TcpListener listener)
+    {
+        return new Uri($"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/");
+    }
+
+    private static Uri UnusedLocalUri()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        return LocalUri(listener);
+    }
+
+    [Fact]
+    public async Task SendAsync_WhenTheResponseIsCutOff_ThrowsServiceUnavailable()
+    {
+        await using var server = LoopbackHttpServer.HttpCuttingOffResponses();
+        await using var transport = CreateTransport(server.Uri);
+        using var cancellation = TimeLimit();
+
+        var act = () => transport.SendAsync(new HttpRequestMessage(HttpMethod.Get, server.Uri), cancellation.Token);
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>())
+            .Which.InnerException.Should().BeOfType<HttpRequestException>();
+    }
+
+    [Fact]
+    public async Task SendAsync_WhenTheConnectionIsRefused_ThrowsServiceUnavailable()
+    {
+        var uri = UnusedLocalUri();
+        await using var transport = CreateTransport(uri);
+        using var cancellation = TimeLimit();
+
+        var act = () => transport.SendAsync(new HttpRequestMessage(HttpMethod.Get, uri), cancellation.Token);
+
+        await act.Should().ThrowAsync<ServiceUnavailableException>();
+    }
+
+    [Fact]
+    public async Task SendAsync_WhenTheCallerCancels_ThrowsOperationCanceled()
+    {
+        using var silentServer = new TcpListener(IPAddress.Loopback, 0);
+        silentServer.Start();
+        var uri = LocalUri(silentServer);
+        await using var transport = CreateTransport(uri);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
+
+        var act = () => transport.SendAsync(new HttpRequestMessage(HttpMethod.Get, uri), cancellation.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]

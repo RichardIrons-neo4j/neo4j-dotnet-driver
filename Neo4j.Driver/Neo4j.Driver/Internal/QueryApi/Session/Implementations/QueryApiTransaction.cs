@@ -80,7 +80,7 @@ internal class QueryApiTransaction : IScopedTransaction
         try
         {
             await ConsumeCursorsAsync().ConfigureAwait(false);
-            await _committer.CommitAsync().ConfigureAwait(false);
+            await SendCommitAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -171,6 +171,21 @@ internal class QueryApiTransaction : IScopedTransaction
     public void Dispose()
     {
         DisposeAsync().AsTask().GetAwaiter().GetResult();
+    }
+
+    private async Task SendCommitAsync()
+    {
+        try
+        {
+            await _committer.CommitAsync().ConfigureAwait(false);
+        }
+        catch (ServiceUnavailableException e)
+        {
+            throw new IncompleteCommitException(
+                "The connection to the server was lost while committing the transaction, " +
+                "so it is unknown whether the transaction was committed.",
+                e);
+        }
     }
 
     private async Task SendRollbackAsync()
