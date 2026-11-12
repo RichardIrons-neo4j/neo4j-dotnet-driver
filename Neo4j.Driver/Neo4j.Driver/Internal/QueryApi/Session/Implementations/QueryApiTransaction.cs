@@ -30,6 +30,7 @@ internal class QueryApiTransaction : IScopedTransaction
     private readonly ILogger _logger;
     private readonly ITransactionRollback _rollback;
     private readonly ITransactionRunner _runner;
+    private readonly List<Task<IResultCursor>> _runs = [];
 
     private bool _disposed;
 
@@ -78,6 +79,7 @@ internal class QueryApiTransaction : IScopedTransaction
         _logger.LogDebug("Committing transaction");
         try
         {
+            await ConsumeCursorsAsync().ConfigureAwait(false);
             await _committer.CommitAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -92,6 +94,7 @@ internal class QueryApiTransaction : IScopedTransaction
     public async Task RollbackAsync()
     {
         _lifecycle.EnsureCanRollback();
+        await ConsumeCursorsAsync().ConfigureAwait(false);
         if (_lifecycle.GetState() == TransactionState.Failed)
         {
             return;
@@ -109,7 +112,14 @@ internal class QueryApiTransaction : IScopedTransaction
     public Task<IResultCursor> RunAsync(string query, IDictionary<string, object> parameters) =>
         RunAsync(new Query(query, parameters));
 
-    public async Task<IResultCursor> RunAsync(Query query)
+    public Task<IResultCursor> RunAsync(Query query)
+    {
+        var run = SendRunAsync(query);
+        _runs.Add(run);
+        return run;
+    }
+
+    private async Task<IResultCursor> SendRunAsync(Query query)
     {
         _lifecycle.EnsureCanRun();
         try
@@ -131,14 +141,31 @@ internal class QueryApiTransaction : IScopedTransaction
         }
 
         _disposed = true;
-
-        if (IsOpen)
+        try
         {
-            _logger.LogDebug("Disposing open transaction — rolling back");
-            await SendRollbackAsync().ConfigureAwait(false);
+            if (IsOpen)
+            {
+                _logger.LogDebug("Disposing open transaction — rolling back");
+                await RollbackAsync().ConfigureAwait(false);
+            }
         }
+        finally
+        {
+            await Disposed.FireAsync().ConfigureAwait(false);
+        }
+    }
 
-        await Disposed.FireAsync().ConfigureAwait(false);
+    private async Task ConsumeCursorsAsync()
+    {
+        foreach (var run in _runs)
+        {
+            await Task.WhenAny(run).ConfigureAwait(false);
+            if (run.IsCompletedSuccessfully)
+            {
+                var cursor = await run.ConfigureAwait(false);
+                await cursor.ConsumeAsync().ConfigureAwait(false);
+            }
+        }
     }
 
     public void Dispose()

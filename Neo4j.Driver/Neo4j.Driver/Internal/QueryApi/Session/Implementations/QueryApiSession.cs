@@ -63,6 +63,7 @@ internal class QueryApiSession : IInternalAsyncSession
         Action<TransactionConfigBuilder> action,
         bool disposeUnconsumedSessionResult)
     {
+        await EnsureCanRunMoreAsync(disposeUnconsumedSessionResult).ConfigureAwait(false);
         _logger.LogDebug("Session auto-commit: {query}", query.Text);
         var cursor = await _autoCommitRunner.RunAsync(query, BuildTransactionConfig(action)).ConfigureAwait(false);
         _lastCursor = cursor;
@@ -71,7 +72,7 @@ internal class QueryApiSession : IInternalAsyncSession
 
     public Task<IResultCursor> RunAsync(Query query, Action<TransactionConfigBuilder> action)
     {
-        return RunAsync(query, action, false);
+        return RunAsync(query, action, true);
     }
 
     public Task<IResultCursor> RunAsync(Query query)
@@ -119,7 +120,7 @@ internal class QueryApiSession : IInternalAsyncSession
         Action<TransactionConfigBuilder> action,
         bool disposeUnconsumedSessionResult)
     {
-        EnsureNoOpenTransaction();
+        await EnsureCanRunMoreAsync(disposeUnconsumedSessionResult).ConfigureAwait(false);
         _logger.LogDebug("Session beginning {mode} transaction", mode);
         var tx = await _transactionFactory
             .BeginTransactionAsync(new TransactionOptions(mode, BuildTransactionConfig(action)))
@@ -140,13 +141,58 @@ internal class QueryApiSession : IInternalAsyncSession
         return builder.Build();
     }
 
+    private async Task EnsureCanRunMoreAsync(bool disposeUnconsumedSessionResult)
+    {
+        EnsureSessionIsOpen();
+        EnsureNoOpenTransaction();
+        if (disposeUnconsumedSessionResult)
+        {
+            await ConsumeLastCursorAsync().ConfigureAwait(false);
+        }
+        else
+        {
+            EnsureLastCursorIsClosed();
+        }
+    }
+
+    private void EnsureSessionIsOpen()
+    {
+        if (_closed)
+        {
+            throw new ClientException(
+                "Cannot run more queries in the current session as it has already been disposed. " +
+                "Make sure that you do not have a bad reference to a disposed session " +
+                "and retry your query in another new session.");
+        }
+    }
+
     private void EnsureNoOpenTransaction()
     {
-        if (_openTransaction?.IsOpen == true)
+        if (_openTransaction is { IsOpen: true })
         {
             throw new TransactionNestingException(
                 "Attempting to nest transactions. A session can only have a single " +
                 "transaction open at a time. Commit or rollback the previous transaction before opening the next.");
+        }
+    }
+
+    private void EnsureLastCursorIsClosed()
+    {
+        if (_lastCursor is { IsOpen: true })
+        {
+            throw new ClientException(
+                "Please consume the current query result before running " +
+                "more queries/transaction in the same session.");
+        }
+    }
+
+    private async Task ConsumeLastCursorAsync()
+    {
+        var cursor = _lastCursor;
+        _lastCursor = null;
+        if (cursor is not null)
+        {
+            await cursor.ConsumeAsync().ConfigureAwait(false);
         }
     }
 
@@ -157,7 +203,7 @@ internal class QueryApiSession : IInternalAsyncSession
 
     public Task<IAsyncTransaction> BeginTransactionAsync(Action<TransactionConfigBuilder> action)
     {
-        return BeginTransactionAsync(action, false);
+        return BeginTransactionAsync(action, true);
     }
 
     public Task<IAsyncTransaction> BeginTransactionAsync(AccessMode mode)
@@ -167,7 +213,7 @@ internal class QueryApiSession : IInternalAsyncSession
 
     public Task<IAsyncTransaction> BeginTransactionAsync(AccessMode mode, Action<TransactionConfigBuilder> action)
     {
-        return BeginTransactionAsync(mode, action, false);
+        return BeginTransactionAsync(mode, action, true);
     }
 
     public Task<TResult> ExecuteReadAsync<TResult>(
@@ -233,12 +279,35 @@ internal class QueryApiSession : IInternalAsyncSession
         }
 
         _closed = true;
-        if (_lastCursor is not null)
+        try
         {
-            await _lastCursor.ConsumeAsync().ConfigureAwait(false);
+            await DisposeOpenTransactionAsync().ConfigureAwait(false);
+            await ConsumeLastCursorAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            await Disposed.FireAsync().ConfigureAwait(false);
+        }
+    }
+
+    private async Task DisposeOpenTransactionAsync()
+    {
+        if (_openTransaction is not { IsOpen: true } transaction)
+        {
+            return;
         }
 
-        await Disposed.FireAsync().ConfigureAwait(false);
+        try
+        {
+            await transaction.DisposeAsync().ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            throw new ClientException(
+                (e as Neo4jException)?.Code,
+                $"Error when disposing unclosed transaction in session: {e.Message}",
+                e);
+        }
     }
 
     public void Dispose()
@@ -258,9 +327,12 @@ internal class QueryApiSession : IInternalAsyncSession
         TransactionOptions options,
         Func<IAsyncQueryRunner, Task<TResult>> txFuncAsync)
     {
+        await EnsureCanRunMoreAsync(true).ConfigureAwait(false);
         var tx = await _transactionFactory
             .BeginTransactionAsync(options)
             .ConfigureAwait(false);
+
+        _openTransaction = tx;
 
         try
         {

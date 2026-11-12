@@ -74,6 +74,22 @@ public class QueryApiTransactionTests
         return subject;
     }
 
+    private async Task<(QueryApiTransaction Subject, Mock<IResultCursor> First, Mock<IResultCursor> Second)>
+        TransactionWithTwoRunsAsync()
+    {
+        var first = new Mock<IResultCursor>();
+        var second = new Mock<IResultCursor>();
+        _autoMocker.GetMock<ITransactionRunner>()
+            .SetupSequence(r => r.RunAsync(It.IsAny<Query>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(first.Object)
+            .ReturnsAsync(second.Object);
+
+        var subject = await BegunTransactionAsync();
+        await subject.RunAsync(new Query("RETURN 1"));
+        await subject.RunAsync(new Query("RETURN 2"));
+        return (subject, first, second);
+    }
+
     private Func<int> CountRollbackRequests(Exception? firstFailsWith = null)
     {
         var requests = 0;
@@ -455,5 +471,74 @@ public class QueryApiTransactionTests
 
         isOpen.Should().BeFalse();
         rollbackRequests().Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CommitAsync_ConsumesTheCursorsOfItsRuns()
+    {
+        var (subject, first, second) = await TransactionWithTwoRunsAsync();
+
+        await subject.CommitAsync();
+
+        first.Verify(c => c.ConsumeAsync(), Times.Once);
+        second.Verify(c => c.ConsumeAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task CommitAsync_WaitsForARunStillInFlight_ThenConsumesItsCursor()
+    {
+        var cursor = new Mock<IResultCursor>();
+        var response = new TaskCompletionSource<IResultCursor>();
+        _autoMocker.GetMock<ITransactionRunner>()
+            .Setup(r => r.RunAsync(It.IsAny<Query>(), It.IsAny<CancellationToken>()))
+            .Returns(response.Task);
+        var subject = await BegunTransactionAsync();
+        _ = subject.RunAsync(new Query("RETURN 1"));
+
+        var commit = subject.CommitAsync();
+        response.SetResult(cursor.Object);
+        await commit;
+
+        cursor.Verify(c => c.ConsumeAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task RollbackAsync_ConsumesTheCursorsOfItsRuns()
+    {
+        var (subject, first, second) = await TransactionWithTwoRunsAsync();
+
+        await subject.RollbackAsync();
+
+        first.Verify(c => c.ConsumeAsync(), Times.Once);
+        second.Verify(c => c.ConsumeAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task DisposeAsync_WhenOpen_ConsumesTheCursorsOfItsRuns()
+    {
+        var (subject, first, second) = await TransactionWithTwoRunsAsync();
+
+        await subject.DisposeAsync();
+
+        first.Verify(c => c.ConsumeAsync(), Times.Once);
+        second.Verify(c => c.ConsumeAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task DisposeAsync_WhenTheRollbackFails_StillRaisesDisposed()
+    {
+        CountRollbackRequests(firstFailsWith: new HttpRequestException("connection reset"));
+        var subject = await BegunTransactionAsync();
+        var disposedRaised = false;
+        subject.Disposed += (_, _) =>
+        {
+            disposedRaised = true;
+            return Task.CompletedTask;
+        };
+
+        var dispose = () => subject.DisposeAsync().AsTask();
+
+        await dispose.Should().ThrowAsync<HttpRequestException>();
+        disposedRaised.Should().BeTrue();
     }
 }
