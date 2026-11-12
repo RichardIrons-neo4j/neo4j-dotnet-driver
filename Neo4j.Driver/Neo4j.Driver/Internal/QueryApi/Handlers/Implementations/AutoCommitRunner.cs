@@ -60,7 +60,10 @@ internal class AutoCommitRunner : IAutoCommitRunner
         var result = await _client.ExecuteQueryAsync(request, cancellationToken).ConfigureAwait(false);
 
         var body = result.Body;
-        _bookmarkTracker.UpdateBookmarks(body.Bookmarks ?? []);
+        if (result.Failure is null)
+        {
+            _bookmarkTracker.UpdateBookmarks(body.Bookmarks ?? []);
+        }
 
         _logger.LogDebug(
             "Auto-commit complete: {fieldCount} field(s), {rowCount} row(s)",

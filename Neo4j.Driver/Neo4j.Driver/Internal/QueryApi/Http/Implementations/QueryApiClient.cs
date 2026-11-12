@@ -15,6 +15,7 @@
 
 #nullable enable
 
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -50,25 +51,23 @@ internal class QueryApiClient : IQueryApiClient
         CancellationToken cancellationToken = default)
         where TBody : QueryApiResponse
     {
-        var (body, headers, json, failure) =
-            await SendAndReadAsync<TBody>(request, cancellationToken).ConfigureAwait(false);
+        var received = await SendAndReadAsync<TBody>(request, cancellationToken).ConfigureAwait(false);
 
-        if (failure is not null)
+        if (received.Failure is not null)
         {
-            throw failure;
+            throw received.Failure;
         }
 
-        return new QueryApiResult<TBody>(body ?? throw UnparseableResponse(json), headers);
+        return new QueryApiResult<TBody>(received.Body ?? throw UnparseableResponse(received.Json), received.Headers);
     }
 
     public async Task ExecuteAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
-        var (_, _, _, failure) =
-            await SendAndReadAsync<ErrorsOnlyBody>(request, cancellationToken).ConfigureAwait(false);
+        var received = await SendAndReadAsync<ErrorsOnlyBody>(request, cancellationToken).ConfigureAwait(false);
 
-        if (failure is not null)
+        if (received.Failure is not null)
         {
-            throw failure;
+            throw received.Failure;
         }
     }
 
@@ -76,20 +75,27 @@ internal class QueryApiClient : IQueryApiClient
         HttpRequestMessage request,
         CancellationToken cancellationToken = default)
     {
-        var (body, headers, json, failure) =
-            await SendAndReadAsync<QueryApiResultBody>(request, cancellationToken).ConfigureAwait(false);
+        var received = await SendAndReadAsync<QueryApiResultBody>(request, cancellationToken).ConfigureAwait(false);
 
-        var hasHeader = body?.Data?.Fields is not null;
-        if (failure is not null && !hasHeader)
+        if (received.Failure is not null && IsRequestFailure(received))
         {
-            throw failure;
+            throw received.Failure;
         }
 
-        return new QueryApiQueryResult(body ?? throw UnparseableResponse(json), headers, failure);
+        return new QueryApiQueryResult(
+            received.Body ?? throw UnparseableResponse(received.Json),
+            received.Headers,
+            received.Failure);
     }
 
-    private async Task<(TBody? Body, HttpResponseHeaders Headers, string Json, Neo4jException? Failure)>
-        SendAndReadAsync<TBody>(HttpRequestMessage request, CancellationToken cancellationToken)
+    private bool IsRequestFailure(ReceivedResponse<QueryApiResultBody> received)
+    {
+        return received.Body is null || received.Status == HttpStatusCode.Unauthorized;
+    }
+
+    private async Task<ReceivedResponse<TBody>> SendAndReadAsync<TBody>(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
         where TBody : QueryApiResponse
     {
         await _serverDiscovery.EnsureDiscoveredAsync(cancellationToken).ConfigureAwait(false);
@@ -103,7 +109,7 @@ internal class QueryApiClient : IQueryApiClient
             await _securityExceptionNotifier.NotifyAsync(token, security, cancellationToken).ConfigureAwait(false);
         }
 
-        return (body, response.Headers, json, failure);
+        return new ReceivedResponse<TBody>(body, response.Headers, json, failure, response.StatusCode);
     }
 
     private ProtocolException UnparseableResponse(string json)
@@ -124,4 +130,12 @@ internal class QueryApiClient : IQueryApiClient
     }
 
     internal record ErrorsOnlyBody : QueryApiResponse;
+
+    private record ReceivedResponse<TBody>(
+        TBody? Body,
+        HttpResponseHeaders Headers,
+        string Json,
+        Neo4jException? Failure,
+        HttpStatusCode Status)
+        where TBody : QueryApiResponse;
 }

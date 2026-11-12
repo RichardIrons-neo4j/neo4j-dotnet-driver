@@ -223,6 +223,47 @@ public class QueryApiResultCursorBuilderTests
         return Builder.Build(body, new ResponsePipelineError(Failure), AnyQuery);
     }
 
+    private static IResultCursor BuildWithFailureAndNoHeader()
+    {
+        var body = new QueryApiResultBody
+        {
+            Errors = [new QueryApiErrorBody("Neo.ClientError.Statement.ArithmeticError", "/ by zero")]
+        };
+
+        return Builder.Build(body, new ResponsePipelineError(Failure), AnyQuery);
+    }
+
+    [Fact]
+    public async Task KeysAsync_ThrowsTheFailure_WhenTheResponseCarriedNoHeader()
+    {
+        var cursor = BuildWithFailureAndNoHeader();
+
+        var act = () => cursor.KeysAsync();
+
+        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(Failure);
+    }
+
+    [Fact]
+    public async Task KeysAsync_ThrowsTheFailureOnlyOnce_WhenTheResponseCarriedNoHeader()
+    {
+        var cursor = BuildWithFailureAndNoHeader();
+        await cursor.Invoking(c => c.KeysAsync()).Should().ThrowAsync<ClientException>();
+
+        var keys = await cursor.KeysAsync();
+
+        keys.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task KeysAsync_ReturnsTheFields_WhenTheFailureCameAfterTheHeader()
+    {
+        var cursor = BuildWithFailure(1);
+
+        var keys = await cursor.KeysAsync();
+
+        keys.Should().Equal("n");
+    }
+
     [Fact]
     public async Task FetchAsync_ThrowsTheFailure_AfterTheLastRecord()
     {

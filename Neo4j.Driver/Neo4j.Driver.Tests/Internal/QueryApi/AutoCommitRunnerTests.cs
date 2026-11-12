@@ -245,6 +245,27 @@ public class AutoCommitRunnerTests
         cursor.Should().BeSameAs(expectedCursor);
     }
 
+    [Fact]
+    public async Task RunAsync_KeepsTheSessionsBookmarks_WhenTheRunFailed()
+    {
+        _bookmarkTracker.UpdateBookmarks(["neo4j:bookmark:v1:tx54"]);
+        var failure = new ClientException("Neo.ClientError.Statement.SyntaxError", "Invalid input");
+        SetupChain(
+            new QueryApiResultBody
+            {
+                Errors = [new QueryApiErrorBody("Neo.ClientError.Statement.SyntaxError", "Invalid input")]
+            },
+            failure);
+        _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), It.IsAny<IResponsePipelineError?>(), It.IsAny<Query>()))
+            .Returns(new Mock<IResultCursor>().Object);
+        var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
+
+        await subject.RunAsync(new Query("Invalid"), TransactionConfig.Default, TestContext.Current.CancellationToken);
+
+        _bookmarkTracker.CurrentBookmarks.Values.Should().Equal("neo4j:bookmark:v1:tx54");
+    }
+
     private async Task<AutoCommitRunner.RequestBody> RunWithAsync(TransactionConfig config, Query? query = null)
     {
         IQueryApiRequestBody? capturedBody = null;

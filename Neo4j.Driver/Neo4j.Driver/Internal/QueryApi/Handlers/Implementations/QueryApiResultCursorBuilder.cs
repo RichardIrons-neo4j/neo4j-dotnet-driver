@@ -42,7 +42,8 @@ internal class QueryApiResultCursorBuilder : IQueryApiResultCursorBuilder
 
     public IResultCursor Build(QueryApiResultBody body, IResponsePipelineError? pendingError, Query query)
     {
-        var fields = body.Data?.Fields ?? [];
+        var header = body.Data?.Fields;
+        var fields = header ?? [];
         var lookup = new Dictionary<string, int>(fields.Length, StringComparer.Ordinal);
         var invariantLookup = new Dictionary<string, int>(fields.Length, StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < fields.Length; i++)
@@ -60,6 +61,6 @@ internal class QueryApiResultCursorBuilder : IQueryApiResultCursorBuilder
             .ToList();
 
         var summary = _summaryFactory.Create(query, _sessionContext.Database, body);
-        return new QueryApiResultCursor(records, fields, summary, pendingError);
+        return new QueryApiResultCursor(records, header, summary, pendingError);
     }
 }

@@ -258,24 +258,25 @@ public class QueryApiClientTests
     }
 
     [Fact]
-    public async Task ExecuteQueryAsync_ThrowsTheFailure_WhenTheBodyCarriesNoHeader()
+    public async Task ExecuteQueryAsync_ReturnsTheFailureOnTheResult_WhenTheBodyCarriesNoHeader()
     {
-        var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("no header") };
+        var response = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("no header") };
         var body = new QueryApiResultBody
         {
-            Errors = [new QueryApiErrorBody("Neo.ClientError.Statement.ArithmeticError", "/ by zero")]
+            Errors = [new QueryApiErrorBody("Neo.ClientError.Statement.SyntaxError", "Invalid input")]
         };
-        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        var failure = new ClientException("Neo.ClientError.Statement.SyntaxError", "Invalid input");
         SetupQueryResponse(response, "no header", body, failure);
 
         var subject = _autoMocker.CreateInstance<QueryApiClient>();
-        var act = () => subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+        var result = await subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
 
-        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
+        result.Body.Should().BeSameAs(body);
+        result.Failure.Should().BeSameAs(failure);
     }
 
     [Fact]
-    public async Task ExecuteQueryAsync_ThrowsTheFailure_WhenTheDataCarriesNoFields()
+    public async Task ExecuteQueryAsync_ReturnsTheFailureOnTheResult_WhenTheDataCarriesNoFields()
     {
         var response = new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("empty data") };
         var body = new QueryApiResultBody
@@ -287,9 +288,48 @@ public class QueryApiClientTests
         SetupQueryResponse(response, "empty data", body, failure);
 
         var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var result = await subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        result.Body.Should().BeSameAs(body);
+        result.Failure.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ExecuteQueryAsync_ThrowsTheFailure_WhenAuthenticationIsRejected()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.Unauthorized) { Content = new StringContent("rejected") };
+        var body = new QueryApiResultBody
+        {
+            Errors = [new QueryApiErrorBody("Neo.ClientError.Security.Unauthorized", "Invalid credential.")]
+        };
+        var failure = new AuthenticationException("Invalid credential.");
+        SetupQueryResponse(response, "rejected", body, failure);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
         var act = () => subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
 
-        (await act.Should().ThrowAsync<ClientException>()).Which.Should().BeSameAs(failure);
+        (await act.Should().ThrowAsync<AuthenticationException>()).Which.Should().BeSameAs(failure);
+    }
+
+    [Fact]
+    public async Task ExecuteQueryAsync_ThrowsTheReadersFailure_WhenTheBodyIsNotJson()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.BadGateway) { Content = new StringContent("<html>") };
+        _autoMocker.GetMock<IQueryApiHttpTransport>()
+            .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+        _autoMocker.GetMock<IJsonDeserializer>()
+            .Setup(x => x.DeserializeAsync<QueryApiResultBody>("<html>", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new JsonException("not json"));
+        var failure = new ServiceUnavailableException("HTTP 502");
+        _autoMocker.GetMock<IQueryApiFailureReader>()
+            .Setup(x => x.Read(response, "<html>", null))
+            .Returns(failure);
+
+        var subject = _autoMocker.CreateInstance<QueryApiClient>();
+        var act = () => subject.ExecuteQueryAsync(new HttpRequestMessage(), TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>()).Which.Should().BeSameAs(failure);
     }
 
     [Fact]

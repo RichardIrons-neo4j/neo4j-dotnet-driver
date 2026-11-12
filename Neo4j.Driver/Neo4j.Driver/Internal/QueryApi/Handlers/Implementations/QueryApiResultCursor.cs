@@ -26,7 +26,7 @@ namespace Neo4j.Driver.Internal.QueryApi;
 
 internal class QueryApiResultCursor : IResultCursor, IAsyncEnumerator<IRecord>
 {
-    private readonly string[] _keys;
+    private readonly string[]? _keys;
     private readonly IResponsePipelineError? _pendingError;
     private readonly IReadOnlyList<IRecord> _records;
     private readonly IResultSummary _summary;
@@ -36,7 +36,7 @@ internal class QueryApiResultCursor : IResultCursor, IAsyncEnumerator<IRecord>
 
     public QueryApiResultCursor(
         IReadOnlyList<IRecord> records,
-        string[] keys,
+        string[]? keys,
         IResultSummary summary,
         IResponsePipelineError? pendingError)
     {
@@ -82,6 +82,12 @@ internal class QueryApiResultCursor : IResultCursor, IAsyncEnumerator<IRecord>
 
     public Task<string[]> KeysAsync()
     {
+        if (_keys is null)
+        {
+            _pendingError?.EnsureThrown();
+            return Task.FromResult<string[]>([]);
+        }
+
         return Task.FromResult(_keys);
     }
 
