@@ -30,9 +30,9 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 
 public class QueryApiTransactionFactoryTests
 {
-    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiTransaction>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<ScopedTransaction>();
     private readonly Mock<IQueryApiTransactionScope> _transactionScope = new();
-    private readonly QueryApiTransaction _transaction;
+    private readonly ScopedTransaction _transaction;
     private readonly TransactionOptions _options = new(AccessMode.Read, TransactionConfig.Default);
 
     public QueryApiTransactionFactoryTests()
@@ -40,7 +40,7 @@ public class QueryApiTransactionFactoryTests
         _autoMocker.GetMock<ITransactionRollbacker>()
             .Setup(x => x.RollbackAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        _transaction = _autoMocker.CreateInstance<QueryApiTransaction>();
+        _transaction = _autoMocker.CreateInstance<ScopedTransaction>();
 
         _transactionScope.Setup(s => s.Transaction()).Returns(_transaction);
     }

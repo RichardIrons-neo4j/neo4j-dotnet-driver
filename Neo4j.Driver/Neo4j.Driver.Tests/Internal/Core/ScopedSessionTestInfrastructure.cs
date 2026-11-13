@@ -17,7 +17,7 @@ using System;
 using System.Threading.Tasks;
 using Neo4j.Driver.Internal;
 
-namespace Neo4j.Driver.Tests.Internal.QueryApi;
+namespace Neo4j.Driver.Tests.Internal.Core;
 
 internal class SimpleRetryLogic : IAsyncRetryLogic
 {
@@ -35,4 +35,4 @@ internal class SimpleRetryLogic : IAsyncRetryLogic
     }
 }
 
-internal class QueryApiTestException(string message) : Exception(message);
+internal class ScopedSessionTestException(string message) : Exception(message);

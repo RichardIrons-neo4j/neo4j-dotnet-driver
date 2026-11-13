@@ -62,11 +62,11 @@ public class TransactionDeferredFailureTests
             .Returns(Mock.Of<IResultCursor>());
     }
 
-    private async Task<QueryApiTransaction> TransactionWhoseRunReturnedADeferredFailureAsync()
+    private async Task<ScopedTransaction> TransactionWhoseRunReturnedADeferredFailureAsync()
     {
         _autoMocker.Use<ITransactionRunner>(_autoMocker.CreateInstance<TransactionRunner>());
 
-        var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
+        var subject = _autoMocker.CreateInstance<ScopedTransaction>();
         await subject.BeginAsync(new TransactionOptions(AccessMode.Write, TransactionConfig.Default));
         await subject.RunAsync(new Query("RETURN 1/0 AS n"));
         return subject;

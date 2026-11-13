@@ -44,7 +44,7 @@ public class QueryApiSessionFactoryTests
         var loggerFactory = new Mock<ILoggerFactory>();
         loggerFactory
             .Setup(f => f.GetLoggerForType(It.IsAny<Type>(), It.IsAny<ILoggingContextTracker>()))
-            .Returns(new TestLogger(typeof(QueryApiSession)));
+            .Returns(new TestLogger(typeof(ScopedSession)));
 
         _autoMocker.GetMock<IQueryApiSharedDriverServices>()
             .Setup(d => d.LoggerFactory())

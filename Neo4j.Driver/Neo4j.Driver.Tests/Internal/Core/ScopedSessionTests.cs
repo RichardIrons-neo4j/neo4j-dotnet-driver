@@ -23,20 +23,18 @@ using FluentAssertions;
 using Moq;
 using Moq.AutoMock;
 using Neo4j.Driver.Internal;
-using Neo4j.Driver.Internal.QueryApi;
-using Neo4j.Driver.Tests.Internal.Core;
 using Xunit;
 
-namespace Neo4j.Driver.Tests.Internal.QueryApi;
+namespace Neo4j.Driver.Tests.Internal.Core;
 
-public class QueryApiSessionTests
+public class ScopedSessionTests
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
     private static readonly Dictionary<string, object> Metadata = new() { ["app"] = "tests" };
 
-    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiSession>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<ScopedSession>();
 
-    public QueryApiSessionTests()
+    public ScopedSessionTests()
     {
         _autoMocker.Use(SessionConfig.Builder.Build());
         _autoMocker.Use<IBookmarkTracker>(new BookmarkTracker(SessionConfig.Builder.Build()));
@@ -62,7 +60,7 @@ public class QueryApiSessionTests
     private void UseThrowingRetryLogic()
     {
         _autoMocker.Use<IAsyncRetryLogic>(
-            new SimpleRetryLogic(_ => throw new QueryApiTestException("Retry failed")));
+            new SimpleRetryLogic(_ => throw new ScopedSessionTestException("Retry failed")));
     }
 
     private Mock<IResultCursor> FirstRunReturnsCursor(bool isOpen)
@@ -98,7 +96,7 @@ public class QueryApiSessionTests
             .Setup(r => r.RunAsync(query, TransactionConfig.Default, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedCursor);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         var result = await sut.RunAsync(query, null!, false);
 
         result.Should().BeSameAs(expectedCursor);
@@ -113,7 +111,7 @@ public class QueryApiSessionTests
             .Setup(r => r.RunAsync(query, It.Is<TransactionConfig>(c => IsConfigured(c)), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedCursor);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var result = await sut.RunAsync(query, ConfigureTransaction);
 
@@ -130,7 +128,7 @@ public class QueryApiSessionTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var result = await sut.BeginTransactionAsync(AccessMode.Read, ConfigureTransaction);
 
@@ -148,7 +146,7 @@ public class QueryApiSessionTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var result = await sut.ExecuteReadAsync(
             runner => Task.FromResult(ReferenceEquals(runner, tx.Object) ? 42 : -1),
@@ -170,7 +168,7 @@ public class QueryApiSessionTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var result = await sut.PipelinedExecuteWriteAsync(
             runner => Task.FromResult(ReferenceEquals(runner, tx.Object) ? expected : null!),
@@ -189,7 +187,7 @@ public class QueryApiSessionTests
             .Setup(r => r.RunAsync(query, TransactionConfig.Default, It.IsAny<CancellationToken>()))
             .ReturnsAsync(cursor.Object);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.RunAsync(query, null!, false);
 
         await sut.DisposeAsync();
@@ -207,7 +205,7 @@ public class QueryApiSessionTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var result = await sut.BeginTransactionAsync(AccessMode.Read);
 
@@ -225,7 +223,7 @@ public class QueryApiSessionTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var result = await sut.BeginTransactionAsync();
 
@@ -247,7 +245,7 @@ public class QueryApiSessionTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var act = () => sut.ExecuteWriteAsync(_ => Task.FromResult(0));
 
@@ -266,7 +264,7 @@ public class QueryApiSessionTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var result =
             await sut.ExecuteReadAsync(runner => Task.FromResult(ReferenceEquals(runner, tx.Object) ? 42 : -1));
@@ -279,17 +277,17 @@ public class QueryApiSessionTests
     {
         UseThrowingRetryLogic();
 
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         var act = () => sut.ExecuteWriteAsync(_ => Task.FromResult(42));
 
-        await act.Should().ThrowAsync<QueryApiTestException>().WithMessage("Retry failed");
+        await act.Should().ThrowAsync<ScopedSessionTestException>().WithMessage("Retry failed");
     }
 
     [Fact]
     public async Task RunAsync_WhileATransactionIsOpen_ThrowsTransactionNesting()
     {
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.BeginTransactionAsync();
 
         var act = () => sut.RunAsync("RETURN 1");
@@ -302,7 +300,7 @@ public class QueryApiSessionTests
     {
         UsePassThroughRetryLogic();
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var act = () => sut.ExecuteWriteAsync<IResultCursor>(_ => sut.RunAsync("RETURN 1"));
 
@@ -314,7 +312,7 @@ public class QueryApiSessionTests
     {
         UsePassThroughRetryLogic();
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
 
         var act = () => sut.ExecuteWriteAsync<IAsyncTransaction>(_ => sut.BeginTransactionAsync());
 
@@ -326,7 +324,7 @@ public class QueryApiSessionTests
     {
         UsePassThroughRetryLogic();
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.BeginTransactionAsync();
 
         var act = () => sut.ExecuteWriteAsync(_ => Task.FromResult(0));
@@ -338,7 +336,7 @@ public class QueryApiSessionTests
     public async Task RunAsync_ConsumesTheCursorOfThePreviousRun()
     {
         var previous = FirstRunReturnsCursor(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.RunAsync("RETURN 1");
 
         await sut.RunAsync("RETURN 2");
@@ -351,7 +349,7 @@ public class QueryApiSessionTests
     {
         var previous = FirstRunReturnsCursor(isOpen: true);
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.RunAsync("RETURN 1");
 
         await sut.BeginTransactionAsync();
@@ -365,7 +363,7 @@ public class QueryApiSessionTests
         UsePassThroughRetryLogic();
         var previous = FirstRunReturnsCursor(isOpen: true);
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.RunAsync("RETURN 1");
 
         await sut.ExecuteWriteAsync(_ => Task.FromResult(0));
@@ -377,7 +375,7 @@ public class QueryApiSessionTests
     public async Task RunAsync_KeepingUnconsumedResults_ThrowsWhileThePreviousCursorIsOpen()
     {
         FirstRunReturnsCursor(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.RunAsync(new Query("RETURN 1"), null!, false);
 
         var act = () => sut.RunAsync(new Query("RETURN 2"), null!, false);
@@ -389,7 +387,7 @@ public class QueryApiSessionTests
     public async Task RunAsync_KeepingUnconsumedResults_RunsOnceThePreviousCursorIsClosed()
     {
         FirstRunReturnsCursor(isOpen: false);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.RunAsync(new Query("RETURN 1"), null!, false);
 
         var act = () => sut.RunAsync(new Query("RETURN 2"), null!, false);
@@ -402,7 +400,7 @@ public class QueryApiSessionTests
     {
         FirstRunReturnsCursor(isOpen: true);
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.RunAsync(new Query("RETURN 1"), null!, false);
 
         var act = () => sut.BeginTransactionAsync(null!, false);
@@ -413,7 +411,7 @@ public class QueryApiSessionTests
     [Fact]
     public async Task RunAsync_AfterDispose_ThrowsClientException()
     {
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.DisposeAsync();
 
         var act = () => sut.RunAsync("RETURN 1");
@@ -425,7 +423,7 @@ public class QueryApiSessionTests
     public async Task BeginTransactionAsync_AfterDispose_ThrowsClientException()
     {
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.DisposeAsync();
 
         var act = () => sut.BeginTransactionAsync();
@@ -438,7 +436,7 @@ public class QueryApiSessionTests
     {
         UsePassThroughRetryLogic();
         FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.DisposeAsync();
 
         var act = () => sut.ExecuteWriteAsync(_ => Task.FromResult(0));
@@ -450,7 +448,7 @@ public class QueryApiSessionTests
     public async Task DisposeAsync_WithAnOpenTransaction_DisposesTheTransaction()
     {
         var tx = FactoryBeginsTransaction(isOpen: true);
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.BeginTransactionAsync();
 
         await sut.DisposeAsync();
@@ -464,7 +462,7 @@ public class QueryApiSessionTests
         var failure = new ServiceUnavailableException("HTTP 503");
         var tx = FactoryBeginsTransaction(isOpen: true);
         tx.Setup(t => t.DisposeAsync()).Returns(new ValueTask(Task.FromException(failure)));
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         await sut.BeginTransactionAsync();
 
         var act = () => sut.DisposeAsync().AsTask();
@@ -479,7 +477,7 @@ public class QueryApiSessionTests
         var previous = FirstRunReturnsCursor(isOpen: true);
         previous.Setup(c => c.ConsumeAsync())
             .ThrowsAsync(new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero"));
-        var sut = _autoMocker.CreateInstance<QueryApiSession>();
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
         var disposedRaised = false;
         sut.Disposed += (_, _) =>
         {

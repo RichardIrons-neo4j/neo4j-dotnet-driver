@@ -52,7 +52,7 @@ internal partial class QueryApiSessionComposition : IQueryApiTransactionScope
             .Bind<ITransactionFactory>().To<QueryApiTransactionFactory>()
             .Bind<IQueryApiTransactionScope>().To((QueryApiSessionComposition c) => new QueryApiSessionComposition(c))
 
-            .Bind<IInternalAsyncSession>().To<QueryApiSession>()
+            .Bind<IInternalAsyncSession>().To<ScopedSession>()
             .Root<IInternalAsyncSession>("Session", kind: RootKinds.Public | RootKinds.Method)
 
             .Bind<IQueryApiTransactionContextTracker>().As(Scoped).To<QueryApiTransactionContextTracker>()
@@ -66,7 +66,7 @@ internal partial class QueryApiSessionComposition : IQueryApiTransactionScope
             .Bind<ITransactionRollbacker>().To<TransactionRollbacker>()
             .Bind<ITransactionRunner>().To<TransactionRunner>()
 
-            .Bind<IScopedTransaction>().To<QueryApiTransaction>()
+            .Bind<IScopedTransaction>().To<ScopedTransaction>()
             .Root<IScopedTransaction>("Transaction", kind: RootKinds.Public | RootKinds.Method);
     }
 }

@@ -23,33 +23,31 @@ using FluentAssertions;
 using Moq;
 using Moq.AutoMock;
 using Neo4j.Driver.Internal;
-using Neo4j.Driver.Internal.QueryApi;
-using Neo4j.Driver.Tests.Internal.Core;
 using Xunit;
 
-namespace Neo4j.Driver.Tests.Internal.QueryApi;
+namespace Neo4j.Driver.Tests.Internal.Core;
 
-public class QueryApiTransactionTests
+public class ScopedTransactionTests
 {
     private const string TxId = "tx-1";
 
-    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<QueryApiTransaction>();
+    private readonly AutoMocker _autoMocker = AutoMocker.ForTesting<ScopedTransaction>();
     private readonly ClientException _serverFailure = new("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
     private readonly ServiceUnavailableException _connectionLost = new("Connection with the server breaks");
 
-    public QueryApiTransactionTests()
+    public ScopedTransactionTests()
     {
         _autoMocker.Use<ITransactionLifecycle>(new TransactionLifecycle());
     }
 
-    private async Task<QueryApiTransaction> BegunTransactionAsync()
+    private async Task<ScopedTransaction> BegunTransactionAsync()
     {
-        var transaction = _autoMocker.CreateInstance<QueryApiTransaction>();
+        var transaction = _autoMocker.CreateInstance<ScopedTransaction>();
         await transaction.BeginAsync(new TransactionOptions(AccessMode.Write, TransactionConfig.Default));
         return transaction;
     }
 
-    private async Task<QueryApiTransaction> TransactionWhoseRunFailedAsync(Exception failure)
+    private async Task<ScopedTransaction> TransactionWhoseRunFailedAsync(Exception failure)
     {
         _autoMocker.GetMock<ITransactionRunner>()
             .SetupSequence(r => r.RunAsync(It.IsAny<Query>(), It.IsAny<CancellationToken>()))
@@ -62,7 +60,7 @@ public class QueryApiTransactionTests
         return subject;
     }
 
-    private async Task<QueryApiTransaction> TransactionWhoseCommitFailedAsync(Exception failure)
+    private async Task<ScopedTransaction> TransactionWhoseCommitFailedAsync(Exception failure)
     {
         _autoMocker.GetMock<ITransactionCommitter>()
             .SetupSequence(c => c.CommitAsync(It.IsAny<CancellationToken>()))
@@ -75,7 +73,7 @@ public class QueryApiTransactionTests
         return subject;
     }
 
-    private async Task<(QueryApiTransaction Subject, Mock<IResultCursor> First, Mock<IResultCursor> Second)>
+    private async Task<(ScopedTransaction Subject, Mock<IResultCursor> First, Mock<IResultCursor> Second)>
         TransactionWithTwoRunsAsync()
     {
         var first = new Mock<IResultCursor>();
@@ -106,7 +104,7 @@ public class QueryApiTransactionTests
     [Fact]
     public void TransactionConfig_ReturnsDefault()
     {
-        var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
+        var subject = _autoMocker.CreateInstance<ScopedTransaction>();
 
         subject.TransactionConfig.Should().BeSameAs(TransactionConfig.Default);
     }
@@ -115,7 +113,7 @@ public class QueryApiTransactionTests
     public async Task TransactionConfig_IsTheConfigItBeganWith()
     {
         var config = new TransactionConfig(timeout: TimeSpan.FromSeconds(5));
-        var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
+        var subject = _autoMocker.CreateInstance<ScopedTransaction>();
         await subject.BeginAsync(new TransactionOptions(AccessMode.Write, config));
 
         var result = subject.TransactionConfig;
@@ -207,7 +205,7 @@ public class QueryApiTransactionTests
     [Fact]
     public void IsOpen_FalseBeforeBegin()
     {
-        _autoMocker.CreateInstance<QueryApiTransaction>().IsOpen.Should().BeFalse();
+        _autoMocker.CreateInstance<ScopedTransaction>().IsOpen.Should().BeFalse();
     }
 
     [Fact]
@@ -300,7 +298,7 @@ public class QueryApiTransactionTests
             .Callback(() => rollbackCalled = true)
             .Returns(Task.CompletedTask);
 
-        var subject = _autoMocker.CreateInstance<QueryApiTransaction>();
+        var subject = _autoMocker.CreateInstance<ScopedTransaction>();
         var begin = () => subject.BeginAsync(new TransactionOptions(AccessMode.Write, TransactionConfig.Default));
         await begin.Should().ThrowAsync<ClientException>();
 

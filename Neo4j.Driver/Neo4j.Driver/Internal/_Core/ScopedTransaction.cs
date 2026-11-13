@@ -20,9 +20,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo4j.Driver.Internal.QueryApi;
+namespace Neo4j.Driver.Internal;
 
-internal class QueryApiTransaction : IScopedTransaction
+internal class ScopedTransaction : IScopedTransaction
 {
     private readonly ITransactionBeginner _beginner;
     private readonly ITransactionCommitter _committer;
@@ -34,7 +34,7 @@ internal class QueryApiTransaction : IScopedTransaction
 
     private bool _disposed;
 
-    public QueryApiTransaction(
+    public ScopedTransaction(
         ITransactionBeginner beginner,
         ITransactionRunner runner,
         ITransactionCommitter committer,

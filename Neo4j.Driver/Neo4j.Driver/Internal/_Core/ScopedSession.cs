@@ -19,9 +19,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Neo4j.Driver.Internal.QueryApi;
+namespace Neo4j.Driver.Internal;
 
-internal class QueryApiSession : IInternalAsyncSession
+internal class ScopedSession : IInternalAsyncSession
 {
     private readonly IAutoCommitRunner _autoCommitRunner;
     private readonly IBookmarkTracker _bookmarkTracker;
@@ -34,7 +34,7 @@ internal class QueryApiSession : IInternalAsyncSession
     private IResultCursor? _lastCursor;
     private IInternalAsyncTransaction? _openTransaction;
 
-    public QueryApiSession(
+    public ScopedSession(
         SessionConfig sessionConfig,
         IAutoCommitRunner autoCommitRunner,
         ITransactionFactory transactionFactory,
