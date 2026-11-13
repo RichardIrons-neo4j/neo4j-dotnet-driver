@@ -23,11 +23,11 @@ namespace Neo4j.Driver.Internal.QueryApi;
 internal class QueryApiProtocolAdapter : IQueryApiProtocolAdapter
 {
     private readonly IConnectivityVerifier _connectivityVerifier;
-    private readonly IQueryApiSessionFactory _sessionFactory;
+    private readonly ISessionFactory _sessionFactory;
 
     public QueryApiProtocolAdapter(
         IConnectivityVerifier connectivityVerifier,
-        IQueryApiSessionFactory sessionFactory)
+        ISessionFactory sessionFactory)
     {
         _connectivityVerifier = connectivityVerifier ??
             throw new ArgumentNullException(nameof(connectivityVerifier));

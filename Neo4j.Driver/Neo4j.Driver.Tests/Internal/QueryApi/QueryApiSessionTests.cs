@@ -81,7 +81,7 @@ public class QueryApiSessionTests
     {
         var tx = new Mock<IInternalAsyncTransaction>();
         tx.SetupGet(t => t.IsOpen).Returns(isOpen);
-        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+        _autoMocker.GetMock<ITransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(It.IsAny<TransactionOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(tx.Object);
 
@@ -124,7 +124,7 @@ public class QueryApiSessionTests
     public async Task BeginTransactionAsync_BeginsWithTheConfigBuiltFromItsAction()
     {
         var tx = Mock.Of<IInternalAsyncTransaction>();
-        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+        _autoMocker.GetMock<ITransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
                 It.Is<TransactionOptions>(o => o.AccessMode == AccessMode.Read && IsConfigured(o.TransactionConfig)),
                 It.IsAny<CancellationToken>()))
@@ -142,7 +142,7 @@ public class QueryApiSessionTests
     {
         UsePassThroughRetryLogic();
         var tx = new Mock<IInternalAsyncTransaction>();
-        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+        _autoMocker.GetMock<ITransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
                 It.Is<TransactionOptions>(o => o.AccessMode == AccessMode.Read && IsConfigured(o.TransactionConfig)),
                 It.IsAny<CancellationToken>()))
@@ -164,7 +164,7 @@ public class QueryApiSessionTests
         var config = new TransactionConfig(Metadata, Timeout);
         var expected = new EagerResult<int>(42, Mock.Of<IResultSummary>(), []);
         var tx = new Mock<IInternalAsyncTransaction>();
-        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+        _autoMocker.GetMock<ITransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
                 new TransactionOptions(AccessMode.Write, config),
                 It.IsAny<CancellationToken>()))
@@ -201,7 +201,7 @@ public class QueryApiSessionTests
     public async Task BeginTransactionAsync_ReturnsTransactionFromFactory()
     {
         var tx = Mock.Of<IInternalAsyncTransaction>();
-        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+        _autoMocker.GetMock<ITransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
                 new TransactionOptions(AccessMode.Read, TransactionConfig.Default),
                 It.IsAny<CancellationToken>()))
@@ -219,7 +219,7 @@ public class QueryApiSessionTests
     {
         _autoMocker.Use(SessionConfig.Builder.WithDefaultAccessMode(AccessMode.Read).Build());
         var tx = Mock.Of<IInternalAsyncTransaction>();
-        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+        _autoMocker.GetMock<ITransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
                 new TransactionOptions(AccessMode.Read, TransactionConfig.Default),
                 It.IsAny<CancellationToken>()))
@@ -241,7 +241,7 @@ public class QueryApiSessionTests
         tx.SetupGet(t => t.IsOpen).Returns(true);
         tx.Setup(t => t.CommitAsync()).ThrowsAsync(commitError);
         tx.Setup(t => t.RollbackAsync()).ThrowsAsync(new ServiceUnavailableException("rollback also failed"));
-        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+        _autoMocker.GetMock<ITransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
                 It.IsAny<TransactionOptions>(),
                 It.IsAny<CancellationToken>()))
@@ -260,7 +260,7 @@ public class QueryApiSessionTests
         UsePassThroughRetryLogic();
         var tx = new Mock<IInternalAsyncTransaction>();
         tx.Setup(t => t.CommitAsync()).Returns(Task.CompletedTask);
-        _autoMocker.GetMock<IQueryApiTransactionFactory>()
+        _autoMocker.GetMock<ITransactionFactory>()
             .Setup(f => f.BeginTransactionAsync(
                 new TransactionOptions(AccessMode.Read, TransactionConfig.Default),
                 It.IsAny<CancellationToken>()))

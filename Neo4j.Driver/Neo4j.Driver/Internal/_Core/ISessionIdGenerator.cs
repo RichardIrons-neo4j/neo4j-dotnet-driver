@@ -15,21 +15,14 @@
 
 #nullable enable
 
-using System;
-using System.Linq;
+namespace Neo4j.Driver.Internal;
 
-namespace Neo4j.Driver.Internal.QueryApi;
-
-internal class SessionIdGenerator : ISessionIdGenerator
+/// <summary>
+/// Generates short identifiers for use in logging contexts. Identifiers are not guaranteed
+/// unique — collisions are possible and acceptable where the only consequence is minor
+/// log ambiguity (e.g. two concurrent sessions sharing the same display ID).
+/// </summary>
+internal interface ISessionIdGenerator
 {
-    private const string Chars = "0123456789abcdef";
-    private const int IdLength = 4;
-
-    public string Generate()
-    {
-        var randoms = Enumerable.Range(0, IdLength)
-            .Select(_ => Chars[Random.Shared.Next(Chars.Length)]);
-        
-        return new string([.. randoms]);
-    }
+    string Generate();
 }

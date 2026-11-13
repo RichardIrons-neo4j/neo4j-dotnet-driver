@@ -15,14 +15,9 @@
 
 #nullable enable
 
-namespace Neo4j.Driver.Internal.QueryApi;
+namespace Neo4j.Driver.Internal;
 
-/// <summary>
-/// Generates short identifiers for use in logging contexts. Identifiers are not guaranteed
-/// unique — collisions are possible and acceptable where the only consequence is minor
-/// log ambiguity (e.g. two concurrent sessions sharing the same display ID).
-/// </summary>
-internal interface ISessionIdGenerator
+internal interface ISessionFactory
 {
-    string Generate();
+    IInternalAsyncSession CreateSession(SessionConfig config, bool telemetryEnabled);
 }

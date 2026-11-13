@@ -28,7 +28,7 @@ namespace Neo4j.Driver.Tests.Internal.QueryApi;
 public class QueryApiProtocolAdapterTests
 {
     private readonly Mock<IConnectivityVerifier> _connectivityVerifier = new();
-    private readonly Mock<IQueryApiSessionFactory> _sessionFactory = new();
+    private readonly Mock<ISessionFactory> _sessionFactory = new();
 
     private QueryApiProtocolAdapter CreateAdapter() =>
         new(_connectivityVerifier.Object, _sessionFactory.Object);

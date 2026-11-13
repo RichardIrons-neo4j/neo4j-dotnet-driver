@@ -49,7 +49,7 @@ internal partial class QueryApiSessionComposition : IQueryApiTransactionScope
             .To((DriverContext c) => new TransactionConfigBuilder(c.Neo4JLogger, new TransactionConfig()))
 
             .Bind<IAutoCommitRunner>().To<AutoCommitRunner>()
-            .Bind<IQueryApiTransactionFactory>().To<QueryApiTransactionFactory>()
+            .Bind<ITransactionFactory>().To<QueryApiTransactionFactory>()
             .Bind<IQueryApiTransactionScope>().To((QueryApiSessionComposition c) => new QueryApiSessionComposition(c))
 
             .Bind<IInternalAsyncSession>().To<QueryApiSession>()

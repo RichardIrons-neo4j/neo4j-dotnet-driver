@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
-internal class QueryApiSessionFactory : IQueryApiSessionFactory
+internal class QueryApiSessionFactory : ISessionFactory
 {
     private readonly IQueryApiSharedDriverServices _driver;
     private readonly ILoggingContextTracker _driverTracker;

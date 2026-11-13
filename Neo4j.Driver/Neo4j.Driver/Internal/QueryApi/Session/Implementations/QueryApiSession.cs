@@ -28,7 +28,7 @@ internal class QueryApiSession : IInternalAsyncSession
     private readonly Func<TransactionConfigBuilder> _configBuilderFactory;
     private readonly ILogger _logger;
     private readonly IAsyncRetryLogic _retryLogic;
-    private readonly IQueryApiTransactionFactory _transactionFactory;
+    private readonly ITransactionFactory _transactionFactory;
 
     private bool _closed;
     private IResultCursor? _lastCursor;
@@ -37,7 +37,7 @@ internal class QueryApiSession : IInternalAsyncSession
     public QueryApiSession(
         SessionConfig sessionConfig,
         IAutoCommitRunner autoCommitRunner,
-        IQueryApiTransactionFactory transactionFactory,
+        ITransactionFactory transactionFactory,
         IAsyncRetryLogic retryLogic,
         IBookmarkTracker bookmarkTracker,
         Func<TransactionConfigBuilder> configBuilderFactory,

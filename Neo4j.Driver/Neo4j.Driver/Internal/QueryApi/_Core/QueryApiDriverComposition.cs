@@ -66,7 +66,7 @@ internal partial class QueryApiDriverComposition : IProtocolAdapter, IQueryApiSh
             .Bind<IConnectivityVerifier>().To<ConnectivityVerifier>()
             .Bind<IServerDiscovery>().As(Singleton).To<ServerDiscovery>()
             .Bind<IQueryApiHttpTransport>().As(Singleton).To<QueryApiHttpTransport>()
-            .Bind<IQueryApiSessionFactory>().To<QueryApiSessionFactory>()
+            .Bind<ISessionFactory>().To<QueryApiSessionFactory>()
             .Bind<ISessionIdGenerator>().To<SessionIdGenerator>()
 
             .Bind<IQueryApiProtocolAdapter>().As(Singleton).To<QueryApiProtocolAdapter>()

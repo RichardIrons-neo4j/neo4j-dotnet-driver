@@ -15,14 +15,21 @@
 
 #nullable enable
 
-using System.Threading;
-using System.Threading.Tasks;
+using System;
+using System.Linq;
 
-namespace Neo4j.Driver.Internal.QueryApi;
+namespace Neo4j.Driver.Internal;
 
-internal interface IQueryApiTransactionFactory
+internal class SessionIdGenerator : ISessionIdGenerator
 {
-    Task<IInternalAsyncTransaction> BeginTransactionAsync(
-        TransactionOptions options,
-        CancellationToken cancellationToken = default);
+    private const string Chars = "0123456789abcdef";
+    private const int IdLength = 4;
+
+    public string Generate()
+    {
+        var randoms = Enumerable.Range(0, IdLength)
+            .Select(_ => Chars[Random.Shared.Next(Chars.Length)]);
+        
+        return new string([.. randoms]);
+    }
 }

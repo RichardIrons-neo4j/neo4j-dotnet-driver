@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
-internal class QueryApiTransactionFactory : IQueryApiTransactionFactory
+internal class QueryApiTransactionFactory : ITransactionFactory
 {
     private readonly ILogger _logger;
     private readonly Func<IQueryApiTransactionScope> _scopeFactory;

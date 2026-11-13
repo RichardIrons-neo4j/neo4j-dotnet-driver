@@ -15,9 +15,14 @@
 
 #nullable enable
 
-namespace Neo4j.Driver.Internal.QueryApi;
+using System.Threading;
+using System.Threading.Tasks;
 
-internal interface IQueryApiSessionFactory
+namespace Neo4j.Driver.Internal;
+
+internal interface ITransactionFactory
 {
-    IInternalAsyncSession CreateSession(SessionConfig config, bool telemetryEnabled);
+    Task<IInternalAsyncTransaction> BeginTransactionAsync(
+        TransactionOptions options,
+        CancellationToken cancellationToken = default);
 }
