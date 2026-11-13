@@ -113,7 +113,7 @@ public class TransactionDeferredFailureTests
 
         await subject.DisposeAsync();
 
-        _autoMocker.GetMock<ITransactionRollback>()
+        _autoMocker.GetMock<ITransactionRollbacker>()
             .Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

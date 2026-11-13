@@ -63,7 +63,7 @@ internal partial class QueryApiSessionComposition : IQueryApiTransactionScope
             .Bind<IClusterAffinityExtractor>().To<QueryApiClusterAffinityExtractor>()
             .Bind<ITransactionBeginner>().To<TransactionBeginner>()
             .Bind<ITransactionCommitter>().To<TransactionCommitter>()
-            .Bind<ITransactionRollback>().To<TransactionRollbacker>()
+            .Bind<ITransactionRollbacker>().To<TransactionRollbacker>()
             .Bind<ITransactionRunner>().To<TransactionRunner>()
 
             .Bind<IScopedTransaction>().To<QueryApiTransaction>()

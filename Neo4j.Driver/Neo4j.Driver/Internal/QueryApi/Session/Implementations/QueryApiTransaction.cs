@@ -28,7 +28,7 @@ internal class QueryApiTransaction : IScopedTransaction
     private readonly ITransactionCommitter _committer;
     private readonly ITransactionLifecycle _lifecycle;
     private readonly ILogger _logger;
-    private readonly ITransactionRollback _rollback;
+    private readonly ITransactionRollbacker _rollback;
     private readonly ITransactionRunner _runner;
     private readonly List<Task<IResultCursor>> _runs = [];
 
@@ -38,7 +38,7 @@ internal class QueryApiTransaction : IScopedTransaction
         ITransactionBeginner beginner,
         ITransactionRunner runner,
         ITransactionCommitter committer,
-        ITransactionRollback rollback,
+        ITransactionRollbacker rollback,
         ITransactionLifecycle lifecycle,
         ILogger logger)
     {

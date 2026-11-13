@@ -37,7 +37,7 @@ public class QueryApiTransactionFactoryTests
 
     public QueryApiTransactionFactoryTests()
     {
-        _autoMocker.GetMock<ITransactionRollback>()
+        _autoMocker.GetMock<ITransactionRollbacker>()
             .Setup(x => x.RollbackAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _transaction = _autoMocker.CreateInstance<QueryApiTransaction>();

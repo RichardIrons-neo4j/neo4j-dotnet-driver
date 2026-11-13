@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Neo4j.Driver.Internal;
 
-internal interface ITransactionRollback
+internal interface ITransactionRollbacker
 {
     Task RollbackAsync(CancellationToken cancellationToken = default);
 }

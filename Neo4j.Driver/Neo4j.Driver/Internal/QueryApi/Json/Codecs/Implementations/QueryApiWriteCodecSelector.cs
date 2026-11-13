@@ -37,20 +37,18 @@ internal class QueryApiWriteCodecSelector : IQueryApiWriteCodecSelector
 
         return (matchingCodecs.Count, specificCodecs.Count) switch
         {
-            (0, 0) => throw new NotSupportedException(
-                "No codec can write value of type '" + value?.GetType().Name + "'."),
-
             (_, 1) => specificCodecs[0],
 
             (_, > 1) => throw new NotSupportedException(
                 $"Multiple codecs can write value of type '{value?.GetType().Name ?? "null"}'."),
 
-            (1, 0) => matchingCodecs[0],
+            (0, _) => throw new NotSupportedException(
+                "No codec can write value of type '" + value?.GetType().Name + "'."),
 
-            (> 1, 0) => throw new NotSupportedException(
-                $"Multiple container codecs can write value of type '{value?.GetType().Name ?? "null"}'."),
+            (1, _) => matchingCodecs[0],
 
-            _ => throw new InvalidOperationException("Unexpected codec selection state.")
+            _ => throw new NotSupportedException(
+                $"Multiple container codecs can write value of type '{value?.GetType().Name ?? "null"}'.")
         };
     }
 }

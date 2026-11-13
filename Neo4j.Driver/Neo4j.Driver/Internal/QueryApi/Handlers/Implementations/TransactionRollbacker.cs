@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Neo4j.Driver.Internal.QueryApi;
 
-internal class TransactionRollbacker : ITransactionRollback
+internal class TransactionRollbacker : ITransactionRollbacker
 {
     private readonly IQueryApiClient _client;
     private readonly ILogger _logger;

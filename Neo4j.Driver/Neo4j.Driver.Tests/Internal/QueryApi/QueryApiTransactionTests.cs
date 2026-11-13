@@ -94,7 +94,7 @@ public class QueryApiTransactionTests
     private Func<int> CountRollbackRequests(Exception? firstFailsWith = null)
     {
         var requests = 0;
-        _autoMocker.GetMock<ITransactionRollback>()
+        _autoMocker.GetMock<ITransactionRollbacker>()
             .Setup(r => r.RollbackAsync(It.IsAny<CancellationToken>()))
             .Returns(() => ++requests == 1 && firstFailsWith is not null
                 ? Task.FromException(firstFailsWith)
@@ -239,7 +239,7 @@ public class QueryApiTransactionTests
     {
         var rollbackCalled = false;
 
-        _autoMocker.GetMock<ITransactionRollback>()
+        _autoMocker.GetMock<ITransactionRollbacker>()
             .Setup(h => h.RollbackAsync(It.IsAny<CancellationToken>()))
             .Callback(() => rollbackCalled = true)
             .Returns(Task.CompletedTask);
@@ -256,7 +256,7 @@ public class QueryApiTransactionTests
     {
         var rollbackCalled = false;
 
-        _autoMocker.GetMock<ITransactionRollback>()
+        _autoMocker.GetMock<ITransactionRollbacker>()
             .Setup(h => h.RollbackAsync(It.IsAny<CancellationToken>()))
             .Callback(() => rollbackCalled = true)
             .Returns(Task.CompletedTask);
@@ -273,7 +273,7 @@ public class QueryApiTransactionTests
     {
         var rollbackCount = 0;
 
-        _autoMocker.GetMock<ITransactionRollback>()
+        _autoMocker.GetMock<ITransactionRollbacker>()
             .Setup(h => h.RollbackAsync(It.IsAny<CancellationToken>()))
             .Callback(() => rollbackCount++)
             .Returns(Task.CompletedTask);
@@ -295,7 +295,7 @@ public class QueryApiTransactionTests
             .Setup(b => b.BeginAsync(It.IsAny<TransactionOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ClientException("Neo.ClientError.Statement.SyntaxError", "nope"));
 
-        _autoMocker.GetMock<ITransactionRollback>()
+        _autoMocker.GetMock<ITransactionRollbacker>()
             .Setup(h => h.RollbackAsync(It.IsAny<CancellationToken>()))
             .Callback(() => rollbackCalled = true)
             .Returns(Task.CompletedTask);
