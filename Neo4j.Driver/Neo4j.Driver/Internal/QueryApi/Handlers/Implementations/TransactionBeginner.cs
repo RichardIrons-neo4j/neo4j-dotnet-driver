@@ -54,7 +54,7 @@ internal class TransactionBeginner : ITransactionBeginner
 
     public async Task BeginAsync(TransactionOptions options, CancellationToken cancellationToken = default)
     {
-        var bookmarks = _bookmarkTracker.CurrentBookmarks.Values;
+        var bookmarks = _bookmarkTracker.CurrentBookmarks?.Values ?? [];
         _logger.LogDebug("Beginning transaction with {bookmarkCount} bookmark(s)", bookmarks.Length);
 
         using var request = await BuildRequestAsync(bookmarks, options, cancellationToken).ConfigureAwait(false);

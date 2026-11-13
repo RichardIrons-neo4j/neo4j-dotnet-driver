@@ -85,11 +85,11 @@ public class TransactionCommitterTests
         var subject = _autoMocker.CreateInstance<TransactionCommitter>();
         await subject.CommitAsync(TestContext.Current.CancellationToken);
 
-        tracker.CurrentBookmarks.Values.Should().Equal("neo4j:bookmark:v1:tx300", "neo4j:bookmark:v1:tx301");
+        tracker.CurrentBookmarks!.Values.Should().Equal("neo4j:bookmark:v1:tx300", "neo4j:bookmark:v1:tx301");
     }
 
     [Fact]
-    public async Task CommitAsync_UpdatesBookmarkTracker_WithEmptyArray_WhenBodyHasNoBookmarks()
+    public async Task CommitAsync_KeepsTheSessionsBookmarks_WhenTheBodyHasNone()
     {
         SetupChain();
 
@@ -99,7 +99,7 @@ public class TransactionCommitterTests
         var subject = _autoMocker.CreateInstance<TransactionCommitter>();
         await subject.CommitAsync(TestContext.Current.CancellationToken);
 
-        tracker.CurrentBookmarks.Values.Should().BeEmpty();
+        tracker.CurrentBookmarks!.Values.Should().Equal("pre-existing");
     }
 
     [Fact]

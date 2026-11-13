@@ -55,7 +55,7 @@ internal class AutoCommitRunner : IAutoCommitRunner
     {
         _logger.LogDebug("Auto-commit: {query}", query.Text);
 
-        var bookmarks = _bookmarkTracker.CurrentBookmarks.Values;
+        var bookmarks = _bookmarkTracker.CurrentBookmarks?.Values ?? [];
         using var request = await BuildRequestAsync(query, config, bookmarks, cancellationToken).ConfigureAwait(false);
         var result = await _client.ExecuteQueryAsync(request, cancellationToken).ConfigureAwait(false);
 

@@ -99,7 +99,7 @@ public class AutoCommitRunnerTests
         var subject = _autoMocker.CreateInstance<AutoCommitRunner>();
         await subject.RunAsync(new Query("RETURN 1"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
-        _bookmarkTracker.CurrentBookmarks.Values.Should().Equal("neo4j:bookmark:v1:tx55");
+        _bookmarkTracker.CurrentBookmarks!.Values.Should().Equal("neo4j:bookmark:v1:tx55");
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public class AutoCommitRunnerTests
 
         await subject.RunAsync(new Query("Invalid"), TransactionConfig.Default, TestContext.Current.CancellationToken);
 
-        _bookmarkTracker.CurrentBookmarks.Values.Should().Equal("neo4j:bookmark:v1:tx54");
+        _bookmarkTracker.CurrentBookmarks!.Values.Should().Equal("neo4j:bookmark:v1:tx54");
     }
 
     private async Task<AutoCommitRunner.RequestBody> RunWithAsync(TransactionConfig config, Query? query = null)

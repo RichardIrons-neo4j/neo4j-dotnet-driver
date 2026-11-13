@@ -13,25 +13,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#nullable enable
 
 namespace Neo4j.Driver.Internal;
 
 internal class BookmarkTracker : IBookmarkTracker
 {
-    private Bookmarks _bookmarks;
-
     public BookmarkTracker(SessionConfig config)
     {
-        _bookmarks = config.Bookmarks != null
-            ? Bookmarks.From(config.Bookmarks)
-            : Bookmarks.Empty;
+        if (config.Bookmarks != null)
+        {
+            CurrentBookmarks = Bookmarks.From(config.Bookmarks);
+        }
     }
 
-    public Bookmarks CurrentBookmarks => _bookmarks;
+    public Bookmarks? CurrentBookmarks { get; private set; }
 
     public void UpdateBookmarks(string[] bookmarks)
     {
-        _bookmarks = Bookmarks.From(bookmarks);
-    }
+        if (bookmarks.Length == 0)
+        {
+            return;
+        }
 
+        CurrentBookmarks = Bookmarks.From(bookmarks);
+    }
 }

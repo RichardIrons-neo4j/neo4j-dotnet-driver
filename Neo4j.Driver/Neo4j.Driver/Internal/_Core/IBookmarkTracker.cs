@@ -19,6 +19,6 @@ namespace Neo4j.Driver.Internal;
 
 internal interface IBookmarkTracker
 {
-    Bookmarks CurrentBookmarks { get; }
+    Bookmarks? CurrentBookmarks { get; }
     void UpdateBookmarks(string[] bookmarks);
 }
