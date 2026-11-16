@@ -21,6 +21,7 @@ using Xunit;
 
 namespace Neo4j.Driver.IntegrationTests.Direct;
 
+[BoltSpecific]
 public sealed class EncryptionIT : DirectDriverTestBase
 {
     public EncryptionIT(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)

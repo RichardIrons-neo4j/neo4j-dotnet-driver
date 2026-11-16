@@ -40,11 +40,12 @@ public sealed class AuthenticationIT : DirectDriverTestBase
         exc.Should()
             .BeOfType<AuthenticationException>()
             .Which
-            .Message.Should()
-            .Contain("The client is unauthorized due to authentication failure.");
+            .Code.Should()
+            .Be("Neo.ClientError.Security.Unauthorized");
     }
 
     [RequireServerFact]
+    [BoltSpecific]
     public async Task ShouldProvideRealmWithBasicAuthToken()
     {
         var oldAuthToken = AuthToken.AsDictionary();
@@ -57,6 +58,7 @@ public sealed class AuthenticationIT : DirectDriverTestBase
     }
 
     [RequireServerFact]
+    [BoltSpecific]
     public async Task ShouldCreateCustomAuthToken()
     {
         var oldAuthToken = AuthToken.AsDictionary();
@@ -70,6 +72,7 @@ public sealed class AuthenticationIT : DirectDriverTestBase
     }
 
     [RequireServerFact]
+    [BoltSpecific]
     public async Task ShouldCreateCustomAuthTokenWithAdditionalParameters()
     {
         var oldAuthToken = AuthToken.AsDictionary();

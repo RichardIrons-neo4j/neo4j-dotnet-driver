@@ -27,6 +27,7 @@ using Xunit;
 
 namespace Neo4j.Driver.IntegrationTests.Direct;
 
+[BoltSpecific]
 public sealed class CertificateTrustIT : IClassFixture<CertificateTrustIT.CertificateTrustIntegrationTestFixture>
 {
     public CertificateTrustIT(CertificateTrustIntegrationTestFixture fixture)
@@ -204,7 +205,7 @@ public sealed class CertificateTrustIT : IClassFixture<CertificateTrustIT.Certif
     {
         public CertificateTrustIntegrationTestFixture()
         {
-            if (!BoltkitHelper.ServerAvailable())
+            if (!BoltkitHelper.ServerAvailable() || DefaultInstallation.UseQueryApi)
             {
                 return;
             }
