@@ -55,14 +55,14 @@ internal class AutoCommitRunner : IAutoCommitRunner
     {
         _logger.LogDebug("Auto-commit: {query}", query.Text);
 
-        var bookmarks = _bookmarkTracker.CurrentBookmarks?.Values ?? [];
+        var bookmarks = await _bookmarkTracker.GetBookmarksToSendAsync(cancellationToken).ConfigureAwait(false);
         using var request = await BuildRequestAsync(query, config, bookmarks, cancellationToken).ConfigureAwait(false);
         var result = await _client.ExecuteQueryAsync(request, cancellationToken).ConfigureAwait(false);
 
         var body = result.Body;
         if (result.Failure is null)
         {
-            _bookmarkTracker.UpdateBookmarks(body.Bookmarks ?? []);
+            await _bookmarkTracker.UpdateBookmarksAsync(body.Bookmarks ?? [], cancellationToken).ConfigureAwait(false);
         }
 
         _logger.LogDebug(

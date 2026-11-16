@@ -15,10 +15,14 @@
 
 #nullable enable
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Neo4j.Driver.Internal;
 
 internal interface IBookmarkTracker
 {
     Bookmarks? CurrentBookmarks { get; }
-    void UpdateBookmarks(string[] bookmarks);
+    Task<string[]> GetBookmarksToSendAsync(CancellationToken cancellationToken = default);
+    Task UpdateBookmarksAsync(string[] bookmarks, CancellationToken cancellationToken = default);
 }

@@ -15,7 +15,11 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Moq;
 using Neo4j.Driver.Internal;
 using Xunit;
 
@@ -23,6 +27,29 @@ namespace Neo4j.Driver.Tests.Internal.Core;
 
 public class BookmarkTrackerTests
 {
+    private const string Initial = "neo4j:bookmark:v1:initial";
+    private const string FromManager = "neo4j:bookmark:v1:manager";
+    private const string FromServer = "neo4j:bookmark:v1:server";
+
+    private readonly Mock<IBookmarkManager> _bookmarkManager = new();
+
+    public BookmarkTrackerTests()
+    {
+        _bookmarkManager
+            .Setup(x => x.GetBookmarksAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([FromManager]);
+    }
+
+    private BookmarkTracker TrackerWithBookmarkManager()
+    {
+        var config = SessionConfig.Builder
+            .WithBookmarks(Bookmarks.From(Initial))
+            .WithBookmarkManager(_bookmarkManager.Object)
+            .Build();
+
+        return new BookmarkTracker(config);
+    }
+
     [Fact]
     public void CurrentBookmarks_IsNull_WhenTheSessionHasNoBookmarksYet()
     {
@@ -44,25 +71,85 @@ public class BookmarkTrackerTests
     }
 
     [Fact]
-    public void UpdateBookmarks_KeepsThePreviousBookmarks_WhenTheUpdateHasNone()
+    public async Task UpdateBookmarksAsync_KeepsThePreviousBookmarks_WhenTheUpdateHasNone()
     {
         var subject = new BookmarkTracker(SessionConfig.Builder.Build());
-        subject.UpdateBookmarks(["neo4j:bookmark:v1:tx1"]);
+        await subject.UpdateBookmarksAsync(["neo4j:bookmark:v1:tx1"], TestContext.Current.CancellationToken);
 
-        subject.UpdateBookmarks([]);
+        await subject.UpdateBookmarksAsync([], TestContext.Current.CancellationToken);
         var bookmarks = subject.CurrentBookmarks;
 
         bookmarks!.Values.Should().Equal("neo4j:bookmark:v1:tx1");
     }
 
     [Fact]
-    public void UpdateBookmarks_LeavesNoBookmarks_WhenTheUpdateHasNoneAndThereWereNone()
+    public async Task UpdateBookmarksAsync_LeavesNoBookmarks_WhenTheUpdateHasNoneAndThereWereNone()
     {
         var subject = new BookmarkTracker(SessionConfig.Builder.Build());
 
-        subject.UpdateBookmarks([]);
+        await subject.UpdateBookmarksAsync([], TestContext.Current.CancellationToken);
         var bookmarks = subject.CurrentBookmarks;
 
         bookmarks.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetBookmarksToSendAsync_WithoutABookmarkManager_ReturnsTheCurrentBookmarks()
+    {
+        var subject = new BookmarkTracker(SessionConfig.Builder.WithBookmarks(Bookmarks.From(Initial)).Build());
+
+        var bookmarks = await subject.GetBookmarksToSendAsync(TestContext.Current.CancellationToken);
+
+        bookmarks.Should().Equal(Initial);
+    }
+
+    [Fact]
+    public async Task GetBookmarksToSendAsync_WithABookmarkManager_ReturnsItsBookmarksAndTheInitialOnes()
+    {
+        var subject = TrackerWithBookmarkManager();
+
+        var bookmarks = await subject.GetBookmarksToSendAsync(TestContext.Current.CancellationToken);
+
+        bookmarks.Should().Equal(FromManager, Initial);
+    }
+
+    [Fact]
+    public async Task GetBookmarksToSendAsync_WithABookmarkManager_MakesThemTheCurrentBookmarks()
+    {
+        var subject = TrackerWithBookmarkManager();
+
+        await subject.GetBookmarksToSendAsync(TestContext.Current.CancellationToken);
+        var bookmarks = subject.CurrentBookmarks;
+
+        bookmarks!.Values.Should().Equal(FromManager, Initial);
+    }
+
+    [Fact]
+    public async Task GetBookmarksToSendAsync_WithABookmarkManager_DropsTheInitialOnesAfterAnyUpdate()
+    {
+        var subject = TrackerWithBookmarkManager();
+        await subject.UpdateBookmarksAsync([], TestContext.Current.CancellationToken);
+
+        var bookmarks = await subject.GetBookmarksToSendAsync(TestContext.Current.CancellationToken);
+
+        bookmarks.Should().Equal(FromManager);
+    }
+
+    [Fact]
+    public async Task UpdateBookmarksAsync_WithABookmarkManager_TellsItThePreviousAndNewBookmarks_OfNonEmptyUpdates()
+    {
+        var updates = new List<(string[] Previous, string[] New)>();
+        _bookmarkManager
+            .Setup(x => x.UpdateBookmarksAsync(It.IsAny<string[]>(), It.IsAny<string[]>(), It.IsAny<CancellationToken>()))
+            .Callback<string[], string[], CancellationToken>((previous, next, _) => updates.Add((previous, next)))
+            .Returns(Task.CompletedTask);
+
+        var subject = TrackerWithBookmarkManager();
+        await subject.GetBookmarksToSendAsync(TestContext.Current.CancellationToken);
+        await subject.UpdateBookmarksAsync([], TestContext.Current.CancellationToken);
+        await subject.UpdateBookmarksAsync([FromServer], TestContext.Current.CancellationToken);
+
+        updates.Should().ContainSingle()
+            .Which.Should().BeEquivalentTo((Previous: new[] { FromManager, Initial }, New: new[] { FromServer }));
     }
 }

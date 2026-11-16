@@ -15,27 +15,54 @@
 
 #nullable enable
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Neo4j.Driver.Internal;
 
 internal class BookmarkTracker : IBookmarkTracker
 {
+    private readonly IBookmarkManager? _bookmarkManager;
+    private string[] _initialBookmarks = [];
+
     public BookmarkTracker(SessionConfig config)
     {
+        _bookmarkManager = config.BookmarkManager;
         if (config.Bookmarks != null)
         {
             CurrentBookmarks = Bookmarks.From(config.Bookmarks);
+            _initialBookmarks = CurrentBookmarks.Values;
         }
     }
 
     public Bookmarks? CurrentBookmarks { get; private set; }
 
-    public void UpdateBookmarks(string[] bookmarks)
+    public async Task<string[]> GetBookmarksToSendAsync(CancellationToken cancellationToken = default)
     {
+        if (_bookmarkManager is not null)
+        {
+            var managed = await _bookmarkManager.GetBookmarksAsync(cancellationToken).ConfigureAwait(false);
+            CurrentBookmarks = Bookmarks.From([.. managed, .. _initialBookmarks]);
+        }
+
+        return CurrentBookmarks?.Values ?? [];
+    }
+
+    public async Task UpdateBookmarksAsync(string[] bookmarks, CancellationToken cancellationToken = default)
+    {
+        _initialBookmarks = [];
         if (bookmarks.Length == 0)
         {
             return;
         }
 
+        var previousBookmarks = CurrentBookmarks?.Values ?? [];
         CurrentBookmarks = Bookmarks.From(bookmarks);
+        if (_bookmarkManager is not null)
+        {
+            await _bookmarkManager
+                .UpdateBookmarksAsync(previousBookmarks, bookmarks, cancellationToken)
+                .ConfigureAwait(false);
+        }
     }
 }

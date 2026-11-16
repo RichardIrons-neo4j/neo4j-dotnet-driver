@@ -52,7 +52,7 @@ internal class TransactionCommitter : ITransactionCommitter
         var result = await _client.ExecuteAsync<ResponseBody>(request, cancellationToken).ConfigureAwait(false);
 
         var bookmarks = result.Body.Bookmarks ?? [];
-        _bookmarkTracker.UpdateBookmarks(bookmarks);
+        await _bookmarkTracker.UpdateBookmarksAsync(bookmarks, cancellationToken).ConfigureAwait(false);
 
         var len = bookmarks.Length;
         _logger.LogDebug("Committed transaction" + (len == 0 ? "" : $" and got {len} bookmarks"));

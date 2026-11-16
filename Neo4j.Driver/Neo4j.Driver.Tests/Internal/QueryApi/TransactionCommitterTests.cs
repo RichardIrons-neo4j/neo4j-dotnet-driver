@@ -94,7 +94,7 @@ public class TransactionCommitterTests
         SetupChain();
 
         var tracker = UseRealBookmarkTracker();
-        tracker.UpdateBookmarks(["pre-existing"]);
+        await tracker.UpdateBookmarksAsync(["pre-existing"]);
 
         var subject = _autoMocker.CreateInstance<TransactionCommitter>();
         await subject.CommitAsync(TestContext.Current.CancellationToken);

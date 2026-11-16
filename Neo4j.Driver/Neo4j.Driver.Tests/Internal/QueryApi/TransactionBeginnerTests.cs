@@ -174,7 +174,7 @@ public class TransactionBeginnerTests
     public async Task BeginAsync_IncludesCurrentBookmarks_FromTracker_InRequest()
     {
         // Spec: current session bookmarks must be forwarded in the request for causal consistency
-        _bookmarkTracker.UpdateBookmarks(["session-bookmark"]);
+        await _bookmarkTracker.UpdateBookmarksAsync(["session-bookmark"]);
         UseRealContextTracker();
 
         object? capturedBody = null;

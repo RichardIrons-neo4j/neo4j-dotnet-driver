@@ -106,7 +106,7 @@ public class AutoCommitRunnerTests
     public async Task RunAsync_IncludesCurrentBookmarks_FromTracker_InRequest()
     {
         // Spec: current session bookmarks must be forwarded in the request for causal consistency
-        _bookmarkTracker.UpdateBookmarks(["existing-bookmark"]);
+        await _bookmarkTracker.UpdateBookmarksAsync(["existing-bookmark"]);
 
         object? capturedBody = null;
         var request = new HttpRequestMessage();
@@ -248,7 +248,7 @@ public class AutoCommitRunnerTests
     [Fact]
     public async Task RunAsync_KeepsTheSessionsBookmarks_WhenTheRunFailed()
     {
-        _bookmarkTracker.UpdateBookmarks(["neo4j:bookmark:v1:tx54"]);
+        await _bookmarkTracker.UpdateBookmarksAsync(["neo4j:bookmark:v1:tx54"]);
         var failure = new ClientException("Neo.ClientError.Statement.SyntaxError", "Invalid input");
         SetupChain(
             new QueryApiResultBody

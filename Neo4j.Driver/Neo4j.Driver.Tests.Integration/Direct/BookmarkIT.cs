@@ -87,6 +87,31 @@ public sealed class BookmarkIT : DirectDriverTestBase
         session.LastBookmarks.Should().Be(bookmark);
     }
 
+    [RequireServerFact("5.0.0", VersionComparison.GreaterThanOrEqualTo)]
+    public async Task ExecuteQueryShouldLeaveABookmarkInTheDriversBookmarkManager()
+    {
+        await Driver.ExecutableQuery("CREATE (a:Person {id: 1})")
+            .WithConfig(new QueryConfig(database: "neo4j"))
+            .ExecuteAsync();
+
+        var bookmarks = await Driver.GetExecutableQueryBookmarkManager().GetBookmarksAsync();
+
+        bookmarks.Should().NotBeEmpty();
+    }
+
+    [RequireServerFact("5.0.0", VersionComparison.GreaterThanOrEqualTo)]
+    public async Task AutoCommitRunShouldLeaveABookmarkInTheSessionsBookmarkManager()
+    {
+        var bookmarkManager = GraphDatabase.BookmarkManagerFactory.NewBookmarkManager();
+        await using var session = Driver.AsyncSession(o => o.WithBookmarkManager(bookmarkManager));
+        var cursor = await session.RunAsync("CREATE (a:Person {id: 1})");
+        await cursor.ConsumeAsync();
+
+        var bookmarks = await bookmarkManager.GetBookmarksAsync();
+
+        bookmarks.Should().NotBeEmpty();
+    }
+
     private static async Task CreateNodeInTx(IAsyncSession session, int id)
     {
         var tx = await session.BeginTransactionAsync();
