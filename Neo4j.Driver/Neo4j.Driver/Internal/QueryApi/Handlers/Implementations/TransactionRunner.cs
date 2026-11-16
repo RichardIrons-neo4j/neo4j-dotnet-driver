@@ -31,6 +31,7 @@ internal class TransactionRunner : ITransactionRunner
     private readonly ILogger _logger;
     private readonly IQueryApiRequestBuilder _requestBuilder;
     private readonly IQueryApiTransactionContextTracker _txContextTracker;
+    private Task _previousRun = Task.CompletedTask;
 
     public TransactionRunner(
         IQueryApiRequestBuilder requestBuilder,
@@ -49,6 +50,22 @@ internal class TransactionRunner : ITransactionRunner
     }
 
     public async Task<IResultCursor> RunAsync(Query query, CancellationToken cancellationToken = default)
+    {
+        var thisRun = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var previousRun = Interlocked.Exchange(ref _previousRun, thisRun.Task);
+        try
+        {
+            await previousRun.ConfigureAwait(false);
+            _lifecycle.EnsureCanRun();
+            return await SendAsync(query, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            thisRun.SetResult();
+        }
+    }
+
+    private async Task<IResultCursor> SendAsync(Query query, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Running query in tx {txId}: {query}", _txContextTracker.Context!.TxId, query.Text);
 

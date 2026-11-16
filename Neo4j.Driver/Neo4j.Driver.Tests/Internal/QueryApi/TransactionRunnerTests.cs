@@ -15,6 +15,8 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -59,6 +61,94 @@ public class TransactionRunnerTests
         _autoMocker.GetMock<IQueryApiClient>()
             .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new QueryApiQueryResult(body, new HttpResponseMessage().Headers, failure));
+    }
+
+    private static QueryApiQueryResult Response(Neo4jException? failure = null)
+    {
+        return new QueryApiQueryResult(new QueryApiResultBody(), new HttpResponseMessage().Headers, failure);
+    }
+
+    private void SetupRun(string statement, Task<QueryApiQueryResult> response, List<string> sent)
+    {
+        var request = new HttpRequestMessage();
+
+        _autoMocker.GetMock<IQueryApiRequestBuilder>()
+            .Setup(x => x.PostAsync(
+                $"query/v2/tx/{TxId}",
+                It.Is<TransactionRunner.RequestBody>(b => b.Statement == statement),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(request);
+
+        _autoMocker.GetMock<IQueryApiClient>()
+            .Setup(x => x.ExecuteQueryAsync(request, It.IsAny<CancellationToken>()))
+            .Callback(() => sent.Add(statement))
+            .Returns(response);
+    }
+
+    [Fact]
+    public async Task RunAsync_DoesNotSendARun_UntilThePreviousRunsResponseHasArrived()
+    {
+        var firstResponse = new TaskCompletionSource<QueryApiQueryResult>();
+        var sent = new List<string>();
+        SetupRun("RETURN 1", firstResponse.Task, sent);
+        SetupRun("RETURN 2", Task.FromResult(Response()), sent);
+
+        var subject = _autoMocker.CreateInstance<TransactionRunner>();
+        var first = subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
+        var second = subject.RunAsync(new Query("RETURN 2"), TestContext.Current.CancellationToken);
+        var sentBeforeFirstResponse = sent.ToList();
+        firstResponse.SetResult(Response());
+        await Task.WhenAll(first, second);
+
+        sentBeforeFirstResponse.Should().Equal("RETURN 1");
+        sent.Should().Equal("RETURN 1", "RETURN 2");
+    }
+
+    [Fact]
+    public async Task RunAsync_QueuedBehindADeferredFailure_ThrowsItWithoutSending()
+    {
+        _autoMocker.Use<ITransactionLifecycle>(new TransactionLifecycle());
+        var failure = new ClientException("Neo.ClientError.Statement.ArithmeticError", "/ by zero");
+        var firstResponse = new TaskCompletionSource<QueryApiQueryResult>();
+        var sent = new List<string>();
+        SetupRun("RETURN 1/0", firstResponse.Task, sent);
+        SetupRun("RETURN 2", Task.FromResult(Response()), sent);
+
+        var subject = _autoMocker.CreateInstance<TransactionRunner>();
+        var first = subject.RunAsync(new Query("RETURN 1/0"), TestContext.Current.CancellationToken);
+        var second = subject.RunAsync(new Query("RETURN 2"), TestContext.Current.CancellationToken);
+        firstResponse.SetResult(Response(failure));
+        await first;
+        var exception = await Record.ExceptionAsync(() => second);
+
+        exception.Should().BeSameAs(failure);
+        sent.Should().Equal("RETURN 1/0");
+    }
+
+    [Fact]
+    public async Task RunAsync_QueuedBehindARunThatThrew_IsSentOnceThatRunHasFailed()
+    {
+        var firstResponse = new TaskCompletionSource<QueryApiQueryResult>();
+        var sent = new List<string>();
+        SetupRun("RETURN 1", firstResponse.Task, sent);
+        SetupRun("RETURN 2", Task.FromResult(Response()), sent);
+
+        var secondQuery = new Query("RETURN 2");
+        var expectedCursor = new Mock<IResultCursor>().Object;
+        _autoMocker.GetMock<IQueryApiResultCursorBuilder>()
+            .Setup(x => x.Build(It.IsAny<QueryApiResultBody>(), null, secondQuery))
+            .Returns(expectedCursor);
+
+        var subject = _autoMocker.CreateInstance<TransactionRunner>();
+        var first = subject.RunAsync(new Query("RETURN 1"), TestContext.Current.CancellationToken);
+        var second = subject.RunAsync(secondQuery, TestContext.Current.CancellationToken);
+        var sentBeforeFirstFailed = sent.ToList();
+        firstResponse.SetException(new ServiceUnavailableException("Connection lost"));
+        await Record.ExceptionAsync(() => first);
+        var cursor = await second;
+
+        sentBeforeFirstFailed.Should().Equal("RETURN 1");
+        cursor.Should().BeSameAs(expectedCursor);
     }
 
     [Fact]
