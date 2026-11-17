@@ -15,6 +15,7 @@
 
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver.Preview.Encryption;
+using Neo4j.Driver.Preview.QueryApi;
 using Neo4j.Driver.TestKitBackend.Connection;
 using Neo4j.Driver.TestKitBackend.Dispatch;
 using Neo4j.Driver.TestKitBackend.ObjectStorage;
@@ -104,6 +105,7 @@ internal class NewDriverHandler : MessageHandler<NewDriverRequest>
             _configMapper.Apply(message, new ConfigBuilderAdapter(builder));
             builder.WithLogger(_neo4JLogger);
             builder.WithMetricsEnabled(true);
+            builder.EnableQueryApi();
             if (encryptionProfiles is not null)
             {
                 builder.WithPropertyEncryptionProfiles(encryptionProfiles);

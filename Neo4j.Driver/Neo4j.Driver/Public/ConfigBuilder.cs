@@ -618,6 +618,12 @@ public sealed class ConfigBuilder
         return this;
     }
 
+    internal ConfigBuilder Preview_EnableQueryApi()
+    {
+        _config.QueryApiEnabled = true;
+        return this;
+    }
+
     internal ConfigBuilder Preview_WithPropertyEncryptionProfiles(
         IReadOnlyList<IPropertyEncryptionProfile> propertyEncryptionProfiles)
     {

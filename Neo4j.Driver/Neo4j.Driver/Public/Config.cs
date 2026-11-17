@@ -172,6 +172,8 @@ public class Config
     /// <summary>Enable the driver level metrics. Internally used for testing and experimenting.</summary>
     internal bool MetricsEnabled { get; set; }
 
+    internal bool QueryApiEnabled { get; set; }
+
     /// <summary>The default read buffer size which the driver allocates for its internal buffers.</summary>
     public int DefaultReadBufferSize { get; internal set; } = Constants.DefaultReadBufferSize;
 

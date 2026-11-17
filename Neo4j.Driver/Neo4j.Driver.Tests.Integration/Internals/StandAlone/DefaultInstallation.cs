@@ -16,6 +16,7 @@
 using System;
 using System.Diagnostics;
 using Neo4j.Driver.Internal;
+using Neo4j.Driver.Preview.QueryApi;
 using Neo4j.Driver.Tests.TestUtil;
 
 namespace Neo4j.Driver.IntegrationTests.Internals;
@@ -69,7 +70,14 @@ public static class DefaultInstallation
 
     public static IDriver CreateDriver(Uri uri, IAuthToken authToken, Action<ConfigBuilder> configAction = null)
     {
-        var driver = GraphDatabase.Driver(uri, authToken, configAction);
+        var driver = GraphDatabase.Driver(
+            uri,
+            authToken,
+            o =>
+            {
+                configAction?.Invoke(o);
+                o.EnableQueryApi();
+            });
         return uri.Scheme is "http" or "https"
             ? new DefaultDatabaseDriver((IInternalDriver)driver, QueryApiDatabase)
             : driver;

@@ -244,6 +244,13 @@ public static class GraphDatabase
         action?.Invoke(builder);
         var config = builder.Build();
 
+        if (uri.Scheme is "http" or "https" && !config.QueryApiEnabled)
+        {
+            throw new NotSupportedException(
+                $"Unsupported URI scheme: {uri.Scheme}. The Query API is in preview: enable it with " +
+                "ConfigBuilder.EnableQueryApi() from the Neo4j.Driver.Preview.QueryApi namespace.");
+        }
+
         var context = new DriverContext(uri, authTokenManager, config);
         return CreateDriver(context);
     }
