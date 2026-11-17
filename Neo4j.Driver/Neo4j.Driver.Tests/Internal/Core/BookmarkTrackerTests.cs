@@ -51,21 +51,21 @@ public class BookmarkTrackerTests
     }
 
     [Fact]
-    public void CurrentBookmarks_IsNull_WhenTheSessionHasNoBookmarksYet()
+    public void GetCurrentBookmarks_ReturnsNull_WhenTheSessionHasNoBookmarksYet()
     {
         var subject = new BookmarkTracker(SessionConfig.Builder.Build());
 
-        var bookmarks = subject.CurrentBookmarks;
+        var bookmarks = subject.GetCurrentBookmarks();
 
         bookmarks.Should().BeNull();
     }
 
     [Fact]
-    public void CurrentBookmarks_IsEmpty_WhenTheSessionWasGivenAnEmptyList()
+    public void GetCurrentBookmarks_ReturnsEmpty_WhenTheSessionWasGivenAnEmptyList()
     {
         var subject = new BookmarkTracker(SessionConfig.Builder.WithBookmarks().Build());
 
-        var bookmarks = subject.CurrentBookmarks;
+        var bookmarks = subject.GetCurrentBookmarks();
 
         bookmarks!.Values.Should().BeEmpty();
     }
@@ -77,7 +77,7 @@ public class BookmarkTrackerTests
         await subject.UpdateBookmarksAsync(["neo4j:bookmark:v1:tx1"], TestContext.Current.CancellationToken);
 
         await subject.UpdateBookmarksAsync([], TestContext.Current.CancellationToken);
-        var bookmarks = subject.CurrentBookmarks;
+        var bookmarks = subject.GetCurrentBookmarks();
 
         bookmarks!.Values.Should().Equal("neo4j:bookmark:v1:tx1");
     }
@@ -88,7 +88,7 @@ public class BookmarkTrackerTests
         var subject = new BookmarkTracker(SessionConfig.Builder.Build());
 
         await subject.UpdateBookmarksAsync([], TestContext.Current.CancellationToken);
-        var bookmarks = subject.CurrentBookmarks;
+        var bookmarks = subject.GetCurrentBookmarks();
 
         bookmarks.Should().BeNull();
     }
@@ -119,7 +119,7 @@ public class BookmarkTrackerTests
         var subject = TrackerWithBookmarkManager();
 
         await subject.GetBookmarksToSendAsync(TestContext.Current.CancellationToken);
-        var bookmarks = subject.CurrentBookmarks;
+        var bookmarks = subject.GetCurrentBookmarks();
 
         bookmarks!.Values.Should().Equal(FromManager, Initial);
     }

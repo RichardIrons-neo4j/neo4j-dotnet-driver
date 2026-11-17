@@ -22,7 +22,7 @@ namespace Neo4j.Driver.Internal;
 
 internal interface IBookmarkTracker
 {
-    Bookmarks? CurrentBookmarks { get; }
+    Bookmarks? GetCurrentBookmarks();
     Task<string[]> GetBookmarksToSendAsync(CancellationToken cancellationToken = default);
     Task UpdateBookmarksAsync(string[] bookmarks, CancellationToken cancellationToken = default);
 }

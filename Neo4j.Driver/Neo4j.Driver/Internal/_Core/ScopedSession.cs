@@ -52,7 +52,7 @@ internal class ScopedSession : IInternalAsyncSession
         _logger = logger;
     }
 
-    public Bookmarks? LastBookmarks => _bookmarkTracker.CurrentBookmarks;
+    public Bookmarks? LastBookmarks => _bookmarkTracker.GetCurrentBookmarks();
 
     public SessionConfig SessionConfig { get; }
 

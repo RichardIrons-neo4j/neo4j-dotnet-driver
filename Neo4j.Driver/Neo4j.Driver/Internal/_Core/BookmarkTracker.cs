@@ -23,6 +23,7 @@ namespace Neo4j.Driver.Internal;
 internal class BookmarkTracker : IBookmarkTracker
 {
     private readonly IBookmarkManager? _bookmarkManager;
+    private Bookmarks? _currentBookmarks;
     private string[] _initialBookmarks = [];
 
     public BookmarkTracker(SessionConfig config)
@@ -30,22 +31,25 @@ internal class BookmarkTracker : IBookmarkTracker
         _bookmarkManager = config.BookmarkManager;
         if (config.Bookmarks != null)
         {
-            CurrentBookmarks = Bookmarks.From(config.Bookmarks);
-            _initialBookmarks = CurrentBookmarks.Values;
+            _currentBookmarks = Bookmarks.From(config.Bookmarks);
+            _initialBookmarks = _currentBookmarks.Values;
         }
     }
 
-    public Bookmarks? CurrentBookmarks { get; private set; }
+    public Bookmarks? GetCurrentBookmarks()
+    {
+        return _currentBookmarks;
+    }
 
     public async Task<string[]> GetBookmarksToSendAsync(CancellationToken cancellationToken = default)
     {
         if (_bookmarkManager is not null)
         {
             var managed = await _bookmarkManager.GetBookmarksAsync(cancellationToken).ConfigureAwait(false);
-            CurrentBookmarks = Bookmarks.From([.. managed, .. _initialBookmarks]);
+            _currentBookmarks = Bookmarks.From([.. managed, .. _initialBookmarks]);
         }
 
-        return CurrentBookmarks?.Values ?? [];
+        return _currentBookmarks?.Values ?? [];
     }
 
     public async Task UpdateBookmarksAsync(string[] bookmarks, CancellationToken cancellationToken = default)
@@ -56,8 +60,8 @@ internal class BookmarkTracker : IBookmarkTracker
             return;
         }
 
-        var previousBookmarks = CurrentBookmarks?.Values ?? [];
-        CurrentBookmarks = Bookmarks.From(bookmarks);
+        var previousBookmarks = _currentBookmarks?.Values ?? [];
+        _currentBookmarks = Bookmarks.From(bookmarks);
         if (_bookmarkManager is not null)
         {
             await _bookmarkManager
