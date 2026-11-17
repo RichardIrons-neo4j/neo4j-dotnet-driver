@@ -275,9 +275,8 @@ public static class GraphDatabase
     {
         Neo4jUri.EnsureNoRoutingContextOnBolt(driverContext.InitialUri);
         var parsedUri = Neo4jUri.ParseBoltUri(driverContext.InitialUri, Neo4jUri.DefaultBoltPort);
-        var adapter =  new BoltProtocolAdapter(parsedUri, driverContext);
+        var adapter = new BoltProtocolAdapter(parsedUri, driverContext);
         var composition = new DriverComposition(driverContext);
         return new Internal.Driver(parsedUri, adapter, driverContext, composition);
     }
-    
 }

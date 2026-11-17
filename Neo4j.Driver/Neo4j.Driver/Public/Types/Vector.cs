@@ -61,7 +61,7 @@ public abstract class Vector : IValue, IVector, IEquatable<IVector>
     /// <summary>
     /// Gets the elements of the vector as an array of objects, regardless of their underlying type.
     /// </summary>
-    public IEnumerable<object> UntypedValues { get; }
+    public IEnumerable<object> UntypedValues { get; protected set; }
 
     /// <summary>
     /// Gets the original byte stream from which the vector was deserialized, if applicable.
@@ -69,10 +69,17 @@ public abstract class Vector : IValue, IVector, IEquatable<IVector>
     public byte[] OriginalByteStream { get; protected set; }
 
     /// <summary>
+    /// Constructor for derived classes that set <see cref="UntypedValues"/> themselves.
+    /// </summary>
+    protected Vector()
+    {
+    }
+
+    /// <summary>
     /// Constructor for derived classes.
     /// </summary>
-    /// <param name="untypedValues"></param>
-    protected Vector(IEnumerable<object> untypedValues = null)
+    /// <param name="untypedValues">The elements of the vector, as objects.</param>
+    protected Vector(IEnumerable<object> untypedValues)
     {
         UntypedValues = untypedValues;
     }
