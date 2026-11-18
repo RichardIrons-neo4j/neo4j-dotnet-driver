@@ -23,7 +23,7 @@ namespace Neo4j.Driver.IntegrationTests.Internals;
 /// <summary>
 /// Marks a test (or an entire test class) as exercising Bolt-specific behaviour that has no Query
 /// API equivalent — e.g. routing, reactive sessions, or TLS/certificate handling. Such tests are
-/// skipped when the suite runs over the Query API protocol (<c>TEST_NEO4J_PROTOCOL=queryapi</c>)
+/// skipped when the suite runs over the Query API protocol (<c>TEST_NEO4J_SCHEME=http</c>)
 /// and run normally over Bolt. Composes with the existing <c>[RequireServerFact]</c>.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]

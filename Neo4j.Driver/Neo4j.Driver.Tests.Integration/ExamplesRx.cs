@@ -134,6 +134,7 @@ public class ExamplesRx
         }
     }
 
+    [BoltSpecific]
     public class ResultConsumeExample : BaseAsyncExample
     {
         public ResultConsumeExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -175,6 +176,7 @@ public class ExamplesRx
 }
 
 [Collection(SaIntegrationCollection.CollectionName)]
+[BoltSpecific]
 public abstract class BaseRxExample : AbstractRxTest, IDisposable
 {
     private bool _disposed;

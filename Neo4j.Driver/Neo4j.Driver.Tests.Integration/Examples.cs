@@ -56,6 +56,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class BasicAuthExample : BaseExample
     {
         public BasicAuthExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -81,6 +82,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class ConfigConnectionPoolExample : BaseExample
     {
         public ConfigConnectionPoolExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -113,6 +115,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class ConfigConnectionTimeoutExample : BaseExample
     {
         public ConfigConnectionTimeoutExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -141,6 +144,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class ConfigMaxRetryTimeExample : BaseExample
     {
         public ConfigMaxRetryTimeExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -169,6 +173,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class ConfigTrustExample : BaseExample
     {
         public ConfigTrustExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -197,6 +202,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class ConfigUnencryptedExample : BaseExample
     {
         public ConfigUnencryptedExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -288,6 +294,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class CustomAuthExample : BaseExample
     {
         public CustomAuthExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -413,6 +420,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class DriverLifecycleExampleTest : BaseExample
     {
         public DriverLifecycleExampleTest(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -448,6 +456,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class HelloWorldExampleTest : BaseExample
     {
         public HelloWorldExampleTest(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)

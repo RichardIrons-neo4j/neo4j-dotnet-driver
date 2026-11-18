@@ -31,6 +31,11 @@ public abstract class AbstractRxIT : AbstractRxTest, IDisposable
     protected AbstractRxIT(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
         : base(output)
     {
+        if (DefaultInstallation.UseQueryApi)
+        {
+            Assert.Skip("Reactive sessions are not supported by the Query API.");
+        }
+
         Server = fixture.StandAloneSharedInstance;
     }
 

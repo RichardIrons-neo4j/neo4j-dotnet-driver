@@ -235,6 +235,7 @@ public class ExamplesAsync
         }
     }
 
+    [BoltSpecific]
     public class BasicAuthExample : BaseAsyncExample
     {
         public BasicAuthExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -263,6 +264,7 @@ public class ExamplesAsync
         }
     }
 
+    [BoltSpecific]
     public class ConfigConnectionTimeoutExample : BaseAsyncExample
     {
         public ConfigConnectionTimeoutExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -294,6 +296,7 @@ public class ExamplesAsync
         }
     }
 
+    [BoltSpecific]
     public class ConfigMaxRetryTimeExample : BaseAsyncExample
     {
         public ConfigMaxRetryTimeExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -325,6 +328,7 @@ public class ExamplesAsync
         }
     }
 
+    [BoltSpecific]
     public class ConfigTrustExample : BaseAsyncExample
     {
         public ConfigTrustExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -356,6 +360,7 @@ public class ExamplesAsync
         }
     }
 
+    [BoltSpecific]
     public class ConfigUnencryptedExample : BaseAsyncExample
     {
         public ConfigUnencryptedExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -387,6 +392,7 @@ public class ExamplesAsync
         }
     }
 
+    [BoltSpecific]
     public class CustomAuthExample : BaseAsyncExample
     {
         public CustomAuthExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -477,6 +483,7 @@ public class ExamplesAsync
         }
     }
 
+    [BoltSpecific]
     public class DriverLifecycleExampleTest : BaseAsyncExample
     {
         public DriverLifecycleExampleTest(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -538,6 +545,7 @@ public class ExamplesAsync
         }
     }
 
+    [BoltSpecific]
     public class HelloWorldExampleTest : BaseAsyncExample
     {
         public HelloWorldExampleTest(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -591,6 +599,7 @@ public class ExamplesAsync
         // end::async-hello-world[]
     }
 
+    [BoltSpecific]
     public class DriverIntroductionExampleTest : BaseAsyncExample
     {
         public DriverIntroductionExampleTest(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)

@@ -23,8 +23,6 @@ namespace Neo4j.Driver.IntegrationTests.Internals;
 
 public static class DefaultInstallation
 {
-    public const string HttpUri = "http://127.0.0.1:7474";
-
     public const string BoltHeader = "bolt://";
     public const string QueryApiDatabase = "neo4j";
     public static readonly string User = "neo4j";
@@ -57,16 +55,28 @@ public static class DefaultInstallation
 
     public static string BoltUri => BoltHeader + BoltHost + ":" + BoltPort;
 
+    public static string HttpUri
+    {
+        get
+        {
+            if (!UseQueryApi)
+            {
+                return "http://127.0.0.1:7474";
+            }
+
+            return $"{TestScheme.ToLowerInvariant()}://{BoltHost}:{BoltPort}";
+        }
+    }
+
+    private static string TestScheme => Environment.GetEnvironmentVariable("TEST_NEO4J_SCHEME") ?? "";
+
     /// <summary>
-    /// Selects the protocol the integration suites run against. Defaults to Bolt; set
-    /// <c>TEST_NEO4J_PROTOCOL=queryapi</c> to run over the HTTP Query API instead. Both protocols
-    /// are covered by running the suite once per value, e.g. in a CI matrix.
+    /// True when <c>TEST_NEO4J_SCHEME</c> is <c>http</c> or <c>https</c>, which is how testkit asks for
+    /// the suites to run over the HTTP Query API instead of Bolt.
     /// </summary>
     public static bool UseQueryApi =>
-        string.Equals(
-            Environment.GetEnvironmentVariable("TEST_NEO4J_PROTOCOL"),
-            "queryapi",
-            StringComparison.OrdinalIgnoreCase);
+        TestScheme.Equals("http", StringComparison.OrdinalIgnoreCase)
+        || TestScheme.Equals("https", StringComparison.OrdinalIgnoreCase);
 
     public static IDriver CreateDriver(Uri uri, IAuthToken authToken, Action<ConfigBuilder> configAction = null)
     {

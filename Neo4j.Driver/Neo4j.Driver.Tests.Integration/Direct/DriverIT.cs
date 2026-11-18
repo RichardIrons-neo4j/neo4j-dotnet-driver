@@ -49,6 +49,7 @@ public sealed class DriverIT : DirectDriverTestBase
         value.Should().BeEquivalentTo(byteArray);
     }
 
+    [BoltSpecific]
     [RequireServerWithIPv6Fact("3.1.0", VersionComparison.GreaterThanOrEqualTo)]
     public async Task ShouldConnectIPv6AddressIfEnabled()
     {
@@ -73,6 +74,7 @@ public sealed class DriverIT : DirectDriverTestBase
         result.Should().Be(1);
     }
 
+    [BoltSpecific]
     [RequireServerWithIPv6Fact]
     public async Task ShouldConnectIPv4AddressIfIpv6Enabled()
     {
@@ -87,6 +89,7 @@ public sealed class DriverIT : DirectDriverTestBase
         result.Should().Be(1);
     }
 
+    [BoltSpecific]
     [RequireServerTheory]
     [InlineData(2)]
     [InlineData(10)]

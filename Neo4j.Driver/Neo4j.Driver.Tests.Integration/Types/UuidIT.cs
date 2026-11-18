@@ -26,6 +26,8 @@ namespace Neo4j.Driver.IntegrationTests.Types;
 
 // Native UUID support requires Bolt 6.1, available from server 2026.5.0.
 // [uuid-preview] search tag for removal of UUID preview workarounds
+// Remove [BoltSpecific] once the Query API supports UUID over HTTP.
+[BoltSpecific]
 public sealed class UuidIT : DirectDriverTestBase
 {
     private const string MinUuidServerVersion = "2026.5.0";
