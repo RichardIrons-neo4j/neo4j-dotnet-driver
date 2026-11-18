@@ -35,8 +35,8 @@ public class QueryApiRequestHeaderWriterTests
 
         _subject.ApplyMediaType(request, QueryApiMediaVersion.V1_0);
 
-        request.Headers.Accept.Should().Contain(h => h.MediaType == "application/vnd.neo4j.query.v1.0");
-        request.Content!.Headers.ContentType!.MediaType.Should().Be("application/vnd.neo4j.query.v1.0");
+        request.Headers.Accept.Should().Contain(h => h.MediaType == "application/vnd.neo4j.query");
+        request.Content!.Headers.ContentType!.MediaType.Should().Be("application/vnd.neo4j.query");
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class QueryApiRequestHeaderWriterTests
 
         _subject.ApplyMediaType(request, QueryApiMediaVersion.V1_0);
 
-        request.Headers.Accept.Should().Contain(h => h.MediaType == "application/vnd.neo4j.query.v1.0");
+        request.Headers.Accept.Should().Contain(h => h.MediaType == "application/vnd.neo4j.query");
         request.Content.Should().BeNull();
     }
 }

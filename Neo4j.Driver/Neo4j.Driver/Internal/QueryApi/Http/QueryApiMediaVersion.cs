@@ -29,13 +29,11 @@ internal static class QueryApiMediaVersionExtensions
 {
     public static string ToMediaTypeString(this QueryApiMediaVersion version)
     {
-        var (major, minor) = version switch
+        return version switch
         {
-            QueryApiMediaVersion.V1_0 => (1, 0),
-            QueryApiMediaVersion.V1_1 => (1, 1),
+            QueryApiMediaVersion.V1_0 => "application/vnd.neo4j.query",
+            QueryApiMediaVersion.V1_1 => "application/vnd.neo4j.query.v1.1",
             _ => throw new ArgumentOutOfRangeException(nameof(version), version, null)
         };
-
-        return $"application/vnd.neo4j.query.v{major}.{minor}";
     }
 }

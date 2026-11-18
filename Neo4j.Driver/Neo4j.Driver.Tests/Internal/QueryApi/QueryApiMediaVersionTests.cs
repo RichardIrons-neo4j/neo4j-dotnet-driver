@@ -26,7 +26,7 @@ public class QueryApiMediaVersionTests
     [Fact]
     public void ToMediaTypeString_RendersV1_0()
     {
-        QueryApiMediaVersion.V1_0.ToMediaTypeString().Should().Be("application/vnd.neo4j.query.v1.0");
+        QueryApiMediaVersion.V1_0.ToMediaTypeString().Should().Be("application/vnd.neo4j.query");
     }
 
     [Fact]
