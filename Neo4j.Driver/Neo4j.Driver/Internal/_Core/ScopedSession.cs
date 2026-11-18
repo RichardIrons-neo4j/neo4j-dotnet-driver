@@ -338,7 +338,11 @@ internal class ScopedSession : IInternalAsyncSession
         {
             _logger.LogDebug("Session beginning work", options.AccessMode);
             var result = await txFuncAsync(tx).ConfigureAwait(false);
-            await tx.CommitAsync().ConfigureAwait(false);
+            if (tx.IsOpen)
+            {
+                await tx.CommitAsync().ConfigureAwait(false);
+            }
+
             return result;
         }
         catch

@@ -253,6 +253,27 @@ public class ScopedSessionTests
     }
 
     [Fact]
+    public async Task ExecuteReadAsync_WhenWorkHandlesAQueryFailure_ReturnsItsResultWithoutCommitting()
+    {
+        UsePassThroughRetryLogic();
+        var tx = new Mock<IInternalAsyncTransaction>();
+        tx.SetupGet(t => t.IsOpen).Returns(false);
+        tx.Setup(t => t.CommitAsync())
+            .ThrowsAsync(new TransactionTerminatedException(new ClientException("Invalid input")));
+        _autoMocker.GetMock<ITransactionFactory>()
+            .Setup(f => f.BeginTransactionAsync(
+                It.IsAny<TransactionOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tx.Object);
+
+        var sut = _autoMocker.CreateInstance<ScopedSession>();
+
+        var result = await sut.ExecuteReadAsync(_ => Task.FromResult(-1));
+
+        result.Should().Be(-1);
+    }
+
+    [Fact]
     public async Task ExecuteReadAsync_PassesTransactionToWorkAndReturnsResult()
     {
         UsePassThroughRetryLogic();
