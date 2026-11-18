@@ -85,12 +85,13 @@ public sealed class TransactionConfigIT : DirectDriverTestBase
     public async Task ExplicitTransaction_ShouldTerminateAQueryThatRunsLongerThanTheTimeout()
     {
         await using var session = Driver.AsyncSession();
-        await using var transaction = await session.BeginTransactionAsync(
-            config => config.WithTimeout(TimeSpan.FromSeconds(1)));
 
         var exception = await Record.ExceptionAsync(
             async () =>
             {
+                await using var transaction = await session.BeginTransactionAsync(
+                    config => config.WithTimeout(TimeSpan.FromSeconds(1)));
+
                 var cursor = await transaction.RunAsync(SlowQuery);
                 await cursor.ConsumeAsync();
             });
