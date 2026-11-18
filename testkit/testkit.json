@@ -1,6 +1,6 @@
 {
   "testkit": {
     "uri": "https://github.com/neo4j-drivers/testkit.git",
-    "ref": "6.x"
+    "ref": "drivers-540-testkit-three-upstream-fixes-needed-for-http"
   }
 }
