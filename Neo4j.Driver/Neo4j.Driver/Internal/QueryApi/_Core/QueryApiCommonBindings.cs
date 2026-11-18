@@ -77,6 +77,9 @@ internal static class QueryApiCommonBindings
             .Bind<IQueryApiTypeCodec>(nameof(QueryApiPointCodec)).To<QueryApiPointCodec>()
             .Bind<IQueryApiTypeCodec>(nameof(QueryApiPrimitiveCodec)).To<QueryApiPrimitiveCodec>()
             .Bind<IQueryApiTypeCodec>(nameof(QueryApiRelationshipCodec)).To<QueryApiRelationshipCodec>()
+            .Bind<IQueryApiTypeCodec>(nameof(QueryApiSystemDateTimeCodec)).To<QueryApiSystemDateTimeCodec>()
+            .Bind<IQueryApiTypeCodec>(nameof(QueryApiSystemDateTimeOffsetCodec)).To<QueryApiSystemDateTimeOffsetCodec>()
+            .Bind<IQueryApiTypeCodec>(nameof(QueryApiSystemTimeSpanCodec)).To<QueryApiSystemTimeSpanCodec>()
             .Bind<IQueryApiTypeCodec>(nameof(QueryApiTimeCodec)).To<QueryApiTimeCodec>()
             .Bind<IQueryApiTypeCodec>(nameof(QueryApiVectorCodec)).To<QueryApiVectorCodec>()
             .Bind<IQueryApiTypeCodec>(nameof(QueryApiZonedDateTimeCodec)).To<QueryApiZonedDateTimeCodec>();
