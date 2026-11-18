@@ -29,6 +29,7 @@ public sealed class ErrorIT : DirectDriverTestBase
 
     private IDriver Driver => Server.Driver;
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ErrorToRunSessionInTransaction()
     {
@@ -50,6 +51,7 @@ public sealed class ErrorIT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ErrorToRunTransactionInTransaction()
     {

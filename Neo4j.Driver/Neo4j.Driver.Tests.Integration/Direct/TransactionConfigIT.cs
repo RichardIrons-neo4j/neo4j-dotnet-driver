@@ -39,6 +39,7 @@ public sealed class TransactionConfigIT : DirectDriverTestBase
 
     private IDriver Driver => Server.Driver;
 
+    [QueryApiMinServerVersion("2026.04")]
     [RequireServerFact]
     public async Task AutoCommit_ShouldSendTheTransactionMetadata()
     {
@@ -50,6 +51,7 @@ public sealed class TransactionConfigIT : DirectDriverTestBase
         record["metadata"].As<Dictionary<string, object>>().Should().BeEquivalentTo(Metadata);
     }
 
+    [QueryApiMinServerVersion("2026.04")]
     [RequireServerFact]
     public async Task ExplicitTransaction_ShouldSendTheTransactionMetadata()
     {
@@ -62,6 +64,7 @@ public sealed class TransactionConfigIT : DirectDriverTestBase
         record["metadata"].As<Dictionary<string, object>>().Should().BeEquivalentTo(Metadata);
     }
 
+    [QueryApiMinServerVersion("2026.04")]
     [RequireServerFact]
     public async Task AutoCommit_ShouldTerminateAQueryThatRunsLongerThanTheTimeout()
     {
@@ -77,6 +80,7 @@ public sealed class TransactionConfigIT : DirectDriverTestBase
         exception.Should().BeAssignableTo<Neo4jException>().Which.Code.Should().Contain("TransactionTimedOut");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ExplicitTransaction_ShouldTerminateAQueryThatRunsLongerThanTheTimeout()
     {

@@ -32,6 +32,7 @@ public sealed class ResultIT : DirectDriverTestBase
 
     private IDriver Driver => Server.Driver;
 
+    [QueryApiMinServerVersion("2026.07.1")]
     [RequireServerFact]
     public async Task GetSummary()
     {
@@ -276,6 +277,7 @@ public sealed class ResultIT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("2026.07.1")]
     [RequireServerFact]
     public async Task ErrorAccessRecordsAfterConsume()
     {
@@ -299,6 +301,7 @@ public sealed class ResultIT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("2026.07.1")]
     [RequireServerFact]
     public async Task BuffersResultsOfRunSoTheyCanBeReadAfterAnotherSubsequentRun()
     {
@@ -321,6 +324,7 @@ public sealed class ResultIT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("2026.07.1")]
     [RequireServerFact]
     public async Task ErrorAccessRecordsAfterSessionClose()
     {
@@ -341,6 +345,7 @@ public sealed class ResultIT : DirectDriverTestBase
         await CanAccessKeys(cursor);
     }
 
+    [QueryApiMinServerVersion("2026.07.1")]
     [RequireServerFact]
     public async Task ErrorAccessRecordsAfterTxClose()
     {

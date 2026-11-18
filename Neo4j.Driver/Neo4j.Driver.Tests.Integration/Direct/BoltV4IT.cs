@@ -70,12 +70,14 @@ public sealed class BoltV4IT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
     public async Task ShouldReturnDatabaseInfoForDefaultDatabaseInTx()
     {
         await VerifyDatabaseNameOnSummaryTx(null, "neo4j");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
     public async Task ShouldReturnDatabaseInfoForDefaultDatabaseWhenSpecifiedInTx()
     {
@@ -110,12 +112,14 @@ public sealed class BoltV4IT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
     public async Task ShouldReturnDatabaseInfoForDefaultDatabaseInTxFunc()
     {
         await VerifyDatabaseNameOnSummaryTxFunc(null, "neo4j");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact("4.0.0", GreaterThanOrEqualTo)]
     public async Task ShouldReturnDatabaseInfoForDefaultDatabaseWhenSpecifiedInTxFunc()
     {

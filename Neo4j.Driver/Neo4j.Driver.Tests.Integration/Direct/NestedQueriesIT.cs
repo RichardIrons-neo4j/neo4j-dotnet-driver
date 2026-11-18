@@ -51,6 +51,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
             .Contain("result has already been consumed");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithSessionAndTxRuns()
     {
@@ -73,6 +74,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
             .Contain("result has already been consumed");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithSessionRunAndTxFunc()
     {
@@ -101,6 +103,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
             .Contain("result has already been consumed");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxAndSessionRuns()
     {
@@ -127,6 +130,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
             .Contain("Attempting to nest transactions");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxRuns()
     {
@@ -150,6 +154,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
             .Contain("Attempting to nest transactions");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxRunAndTxFunc()
     {
@@ -177,6 +182,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
             .Contain("Attempting to nest transactions");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxFuncs()
     {
@@ -205,6 +211,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
             .Contain("Attempting to nest transactions");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxFuncAndSessionRun()
     {
@@ -232,6 +239,7 @@ public sealed class NestedQueriesIT : DirectDriverTestBase
             .Contain("Attempting to nest transactions");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldErrorToRunNestedQueriesWithTxFuncAndTxRun()
     {

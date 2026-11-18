@@ -28,6 +28,7 @@ public sealed class BookmarkIT : DirectDriverTestBase
 
     private IDriver Driver => Server.Driver;
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact("3.1.0", VersionComparison.GreaterThanOrEqualTo)]
     public async Task ShouldContainLastBookmarkAfterTx()
     {
@@ -41,6 +42,7 @@ public sealed class BookmarkIT : DirectDriverTestBase
         session.LastBookmarks.Values.Should().NotBeEmpty();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact("3.1.0", VersionComparison.GreaterThanOrEqualTo)]
     public async Task BookmarkUnchangedAfterRolledBackTx()
     {
@@ -64,6 +66,7 @@ public sealed class BookmarkIT : DirectDriverTestBase
         session.LastBookmarks.Should().Be(bookmark);
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact("3.1.0", VersionComparison.GreaterThanOrEqualTo)]
     public async Task BookmarkUnchangedAfterTxFailure()
     {
@@ -87,6 +90,7 @@ public sealed class BookmarkIT : DirectDriverTestBase
         session.LastBookmarks.Should().Be(bookmark);
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact("5.0.0", VersionComparison.GreaterThanOrEqualTo)]
     public async Task ExecuteQueryShouldLeaveABookmarkInTheDriversBookmarkManager()
     {

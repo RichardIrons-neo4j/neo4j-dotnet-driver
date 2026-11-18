@@ -31,6 +31,7 @@ public sealed class TransactionIT : DirectDriverTestBase
 
     private IDriver Driver => Server.Driver;
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldRetry()
     {
@@ -56,6 +57,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         timer.Elapsed.Should().BeGreaterThan(TimeSpan.FromSeconds(30));
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldCommitTransactionByDefault()
     {
@@ -74,6 +76,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         createResult.Should().BeEquivalentTo(matchResult);
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldNotCommitTransaction()
     {
@@ -107,6 +110,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         createResult.Should().Be(matchResult + 1);
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldNotCommitIfError()
     {
@@ -130,6 +134,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         matchResult.Should().Be(0);
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterRun()
     {
@@ -146,6 +151,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         await txc.CommitAsync();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterRunAndResultConsumption()
     {
@@ -165,6 +171,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         await txc.CommitAsync();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRun()
     {
@@ -184,6 +191,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         await txc.CommitAsync();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunAndResultConsumption()
     {
@@ -210,6 +218,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         await txc.CommitAsync();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunNoOrder()
     {
@@ -228,6 +237,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         await txc.CommitAsync();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task KeysShouldBeAvailableAfterConsecutiveRunAndResultConsumptionNoOrder()
     {
@@ -254,6 +264,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         await txc.CommitAsync();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldNotBeAbleToAccessRecordsAfterRollback()
     {
@@ -266,6 +277,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         error.Should().BeOfType<ResultConsumedException>();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldNotBeAbleToAccessRecordsAfterCommit()
     {
@@ -278,6 +290,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         error.Should().BeOfType<ResultConsumedException>();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldNotBeAbleToAccessRecordsAfterSummary()
     {
@@ -292,6 +305,7 @@ public sealed class TransactionIT : DirectDriverTestBase
         await txc.RollbackAsync();
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldBeAbleToRunNestedQueries()
     {

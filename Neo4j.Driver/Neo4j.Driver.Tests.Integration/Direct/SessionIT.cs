@@ -97,6 +97,7 @@ public sealed class SessionIT : DirectDriverTestBase
         keys.Should().BeEquivalentTo("Number");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldBeAbleToRunMultiQuerysInOneTransaction()
     {
@@ -150,6 +151,7 @@ public sealed class SessionIT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task RollBackTxIfErrorWithConsume()
     {
@@ -204,6 +206,7 @@ public sealed class SessionIT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireServerFact]
     public async Task ShouldNotThrowExceptionWhenSessionClosedAfterDriver()
     {
