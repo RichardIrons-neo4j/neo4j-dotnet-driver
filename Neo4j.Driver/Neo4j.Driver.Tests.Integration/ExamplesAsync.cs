@@ -26,6 +26,7 @@ namespace Neo4j.Driver.IntegrationTests;
 
 public class ExamplesAsync
 {
+    [QueryApiMinServerVersion("5.26.0")]
     public class AsyncSectionExamples : BaseAsyncExample
     {
         public AsyncSectionExamples(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -210,6 +211,7 @@ public class ExamplesAsync
     }
 
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("5.26.0")]
     public class AutocommitTransactionExample : BaseAsyncExample
     {
         public AutocommitTransactionExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -446,6 +448,7 @@ public class ExamplesAsync
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     public class CypherErrorExample : BaseAsyncExample
     {
         public CypherErrorExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -778,6 +781,7 @@ public class ExamplesAsync
         // end::driver-introduction-example[]
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     public class ReadWriteTransactionExample : BaseAsyncExample
     {
         public ReadWriteTransactionExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -813,6 +817,7 @@ public class ExamplesAsync
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     public class ResultConsumeExample : BaseAsyncExample
     {
         public ResultConsumeExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -846,6 +851,7 @@ public class ExamplesAsync
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     public class ResultRetainExample : BaseAsyncExample
     {
         public ResultRetainExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -961,6 +967,7 @@ public class ExamplesAsync
     }
 
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("5.26.0")]
     public class SessionExample : BaseAsyncExample
     {
         public SessionExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -986,6 +993,7 @@ public class ExamplesAsync
     }
 
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("5.26.0")]
     public class TransactionFunctionExample : BaseAsyncExample
     {
         public TransactionFunctionExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)

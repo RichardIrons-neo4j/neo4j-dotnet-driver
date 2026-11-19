@@ -98,6 +98,7 @@ public sealed class BoltV4IT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireEnterpriseEditionFact("5.0.0", GreaterThanOrEqualTo)]
     public async Task ShouldReturnDatabaseInfoForDatabaseInTxAsync()
     {
@@ -141,6 +142,7 @@ public sealed class BoltV4IT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireEnterpriseEditionFact("5.0.0", GreaterThanOrEqualTo)]
     public async Task ShouldReturnDatabaseInfoForDatabaseInTxFuncAsync()
     {
@@ -164,6 +166,7 @@ public sealed class BoltV4IT : DirectDriverTestBase
             .WithMessage("*database does not exist.*");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireEnterpriseEditionFact("4.0.0", GreaterThanOrEqualTo)]
     public void ShouldThrowForNonExistentDatabaseInTx()
     {
@@ -173,6 +176,7 @@ public sealed class BoltV4IT : DirectDriverTestBase
             .WithMessage("*database does not exist.*");
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     [RequireEnterpriseEditionFact("4.0.0", GreaterThanOrEqualTo)]
     public void ShouldThrowForNonExistentDatabaseInTxFunc()
     {

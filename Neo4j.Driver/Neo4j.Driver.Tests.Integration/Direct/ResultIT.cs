@@ -134,6 +134,7 @@ public sealed class ResultIT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("2026.07.1")]
     [RequireEnterpriseEditionFact]
     public async Task GetProfile()
     {
@@ -181,6 +182,7 @@ public sealed class ResultIT : DirectDriverTestBase
         }
     }
 
+    [QueryApiMinServerVersion("2026.07.1")]
     [RequireEnterpriseEditionFact]
     public async Task GetQueryProfile()
     {

@@ -31,6 +31,7 @@ namespace Neo4j.Driver.IntegrationTests;
 public class Examples
 {
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("5.26.0")]
     public class AutocommitTransactionExample : BaseExample
     {
         public AutocommitTransactionExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -383,6 +384,7 @@ public class Examples
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     public class CypherErrorExample : BaseExample
     {
         public CypherErrorExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -516,6 +518,7 @@ public class Examples
         // end::hello-world[]
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     public class ReadWriteTransactionExample : BaseExample
     {
         public ReadWriteTransactionExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -552,6 +555,7 @@ public class Examples
         // end::read-write-transaction[]
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     public class ResultConsumeExample : BaseExample
     {
         public ResultConsumeExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -583,6 +587,7 @@ public class Examples
         }
     }
 
+    [QueryApiMinServerVersion("5.26.0")]
     public class ResultRetainExample : BaseExample
     {
         public ResultRetainExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -680,6 +685,7 @@ public class Examples
     }
 
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("5.26.0")]
     public class SessionExample : BaseExample
     {
         public SessionExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -706,6 +712,7 @@ public class Examples
     }
 
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("5.26.0")]
     public class TransactionFunctionExample : BaseExample
     {
         public TransactionFunctionExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -732,6 +739,7 @@ public class Examples
     }
 
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("5.26.0")]
     public class TransactionTimeoutConfigExample : BaseExample
     {
         public TransactionTimeoutConfigExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -760,6 +768,7 @@ public class Examples
     }
 
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("2026.04")]
     public class TransactionMetadataConfigExample : BaseExample
     {
         public TransactionMetadataConfigExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -789,6 +798,7 @@ public class Examples
         }
     }
 
+    [BoltSpecific]
     public class DatabaseSelectionExampleTest : BaseExample
     {
         public DatabaseSelectionExampleTest(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
@@ -913,6 +923,7 @@ public class Examples
     }
 
     [SuppressMessage("ReSharper", "xUnit1013")]
+    [QueryApiMinServerVersion("5.26.0")]
     public class PassBookmarksExample : BaseExample
     {
         public PassBookmarksExample(ITestOutputHelper output, StandAloneIntegrationTestFixture fixture)
